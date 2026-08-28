@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register — DevPay</title>
+  <link rel="stylesheet" href="./css/global.css">
+  <link rel="stylesheet" href="./css/auth.css">
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#08090D">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    .password-wrapper {
+      position: relative;
+    }
+    .password-wrapper .form-control {
+      padding-right: 48px;
+    }
+    .eye-btn {
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px;
+      transition: color 0.2s;
+    }
+    .eye-btn:hover { color: var(--text-secondary); }
+    .eye-btn svg { width: 20px; height: 20px; }
+  </style>
+</head>
+<body>
+  <div id="app-container">
+    <div id="toast-container"></div>
+    <div id="spinner-overlay" class="spinner-overlay">
+      <div class="spinner"></div>
+    </div>
+
+    <div class="auth-wrapper">
+      <div class="auth-header">
+        <h1 class="auth-logo gradient-text">Join DevPay</h1>
+        <p class="auth-subtitle">Register and start earning cashback with DevPay</p>
+      </div>
+
+      <div class="auth-card glass">
+        <form id="register-form">
+          <div class="form-group">
+            <label class="form-label" for="reg-name">Full Name</label>
+            <input class="form-control" type="text" id="reg-name" required placeholder="John Doe">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="reg-phone">Phone Number</label>
+            <input class="form-control" type="tel" id="reg-phone" required placeholder="01712345678">
+            <p class="phone-helper">Used to receive task refunds &amp; withdrawals</p>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="reg-password">Password</label>
+            <div class="password-wrapper">
+              <input class="form-control" type="password" id="reg-password" required minlength="6" placeholder="••••••••">
+              <button type="button" class="eye-btn" id="toggle-reg-pass" aria-label="Show/hide password">
+                <svg id="eye-icon-reg" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="reg-referrer">Referral Code (Optional)</label>
+            <input class="form-control" type="text" id="reg-referrer" placeholder="A1B2C3D4" style="text-transform: uppercase;">
+          </div>
+
+          <button type="submit" class="btn-primary auth-btn">Create Account</button>
+        </form>
+
+        <div class="auth-footer">
+          Already have an account? <a class="auth-link" href="./login.html">Login</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./js/supabase.js"></script>
+  <script src="./js/auth.js"></script>
+  <script src="./js/pwa-install.js"></script>
+  <script>
+    // ─── Eye icon toggle ───────────────────────────────────────────────────────
+    const toggleBtn = document.getElementById('toggle-reg-pass');
+    const passInput = document.getElementById('reg-password');
+    const eyeIcon   = document.getElementById('eye-icon-reg');
+
+    const eyeOpenSVG = `
+      <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+      <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>`;
+    const eyeClosedSVG = `
+      <path stroke-linecap="round" stroke-linejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/>`;
+
+    toggleBtn.addEventListener('click', () => {
+      const isHidden = passInput.type === 'password';
+      passInput.type = isHidden ? 'text' : 'password';
+      eyeIcon.innerHTML = isHidden ? eyeClosedSVG : eyeOpenSVG;
+    });
+
+    // ─── Auto-fill referral code from URL (?ref=XXXX) ─────────────────────────
+    window.addEventListener('DOMContentLoaded', () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const refCode = urlParams.get('ref') || urlParams.get('referrer');
+      if (refCode) {
+        const refInput = document.getElementById('reg-referrer');
+        if (refInput) refInput.value = refCode.toUpperCase();
+      }
+    });
+
+    // ─── Registration + Auto Login ─────────────────────────────────────────────
+    document.getElementById('register-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name     = document.getElementById('reg-name').value.trim();
+      const phone    = document.getElementById('reg-phone').value.trim();
+      const password = document.getElementById('reg-password').value;
+      const referrer = document.getElementById('reg-referrer').value.trim().toUpperCase();
+
+      if (!name || !phone || !password) {
+        showToast('Please fill in all fields', 'error');
+        return;
+      }
+
+      // Bangladesh phone validation
+      if (!/^01[3-9]\d{8}$/.test(phone)) {
+        showToast('Please enter a valid Bangladesh phone number (e.g. 017XXXXXXXX)', 'error');
+        return;
+      }
+
+      if (password.length < 6) {
+        showToast('Password must be at least 6 characters', 'error');
+        return;
+      }
+
+      // Silently convert phone to dummy email for Supabase Auth backend
+      const email = `${phone}@devpay.app`;
+
+      showSpinner(true);
+      try {
+        // Step 0: Pre-check if phone is already registered in profiles
+        const { data: existingUser, error: checkErr } = await supabaseClient
+          .from('profiles')
+          .select('phone')
+          .eq('phone', phone)
+          .maybeSingle();
+
+        if (existingUser) {
+          throw new Error('This phone number is already registered. Please login.');
+        }
+        // Step 1: Sign up
+        const { data: signUpData, error: signUpErr } = await supabaseClient.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              full_name: name,
+              phone: phone,
+              referrer_code: referrer
+            }
+          }
+        });
+
+        if (signUpErr) throw signUpErr;
+
+        showToast('Account created! Logging you in...', 'success');
+
+        // Step 2: Auto login immediately after sign up
+        const { data: loginData, error: loginErr } = await supabaseClient.auth.signInWithPassword({
+          email,
+          password
+        });
+
+        if (loginErr) {
+          // If auto-login fails (e.g. email confirmation required), redirect to login page
+          setTimeout(() => { window.location.href = './login.html'; }, 1500);
+          return;
+        }
+
+        // Step 3: Redirect to app
+        showToast('Welcome to DevPay! 🎉', 'success');
+        setTimeout(() => {
+          window.location.href = './app.html';
+        }, 800);
+
+      } catch (err) {
+        showToast(err.message, 'error');
+      } finally {
+        showSpinner(false);
+      }
+    });
+
+    function showSpinner(show) {
+      document.getElementById('spinner-overlay').classList.toggle('active', show);
+    }
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.innerText = message;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.animation = 'none';
+        toast.offsetHeight;
+        toast.style.animation = 'toast-in 0.2s reverse forwards';
+        setTimeout(() => toast.remove(), 200);
+      }, 3000);
+    }
+  </script>
+</body>
+</html>

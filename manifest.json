@@ -1,0 +1,24 @@
+{
+  "name": "DevPay - Earn & Withdraw",
+  "short_name": "DevPay",
+  "description": "DevPay — Premium Dark Mobile Task & Cashback Rewards App",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#08090D",
+  "theme_color": "#08090D",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "./assets/icons/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./assets/icons/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ]
+}

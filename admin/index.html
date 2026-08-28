@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DevPay Admin Panel</title>
+  <link rel="stylesheet" href="../css/global.css">
+  <link rel="stylesheet" href="../css/admin.css">
+  <link rel="manifest" href="../manifest.json">
+  <meta name="theme-color" content="#08090D">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    .admin-main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Spinner -->
+  <div class="spinner-full" id="spinner"><div class="spinner-ring"></div></div>
+
+  <!-- Toast Zone -->
+  <div id="toast-zone"></div>
+
+  <!-- Lightbox -->
+  <div id="lightbox">
+    <button id="lightbox-close" onclick="closeLightbox()">✕</button>
+    <img id="lightbox-img" src="" alt="Screenshot">
+  </div>
+
+  <!-- Sidebar overlay on mobile -->
+  <div class="overlay-bg" id="overlay-bg" onclick="closeSidebar()"></div>
+
+  <!-- ═══════════════════════════════════════════════════ SIDEBAR -->
+  <aside id="sidebar">
+    <div class="sidebar-logo">
+      <h2>DevPay</h2>
+      <p>Admin Control Panel</p>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Overview</div>
+      <div class="nav-link active" data-page="dashboard">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+        Dashboard
+      </div>
+
+      <div class="nav-section-label">Finance</div>
+      <div class="nav-link" data-page="submissions">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>
+        Submissions
+        <span class="nav-badge" id="badge-submissions" style="display:none">0</span>
+      </div>
+      <div class="nav-link" data-page="refunds">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
+        Refunds
+        <span class="nav-badge" id="badge-refunds" style="display:none">0</span>
+      </div>
+      <div class="nav-link" data-page="withdrawals">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.1 0-2-.9-2-2V5c0-1.1.9-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+        Withdrawals
+        <span class="nav-badge" id="badge-withdrawals" style="display:none">0</span>
+      </div>
+
+      <div class="nav-section-label">Management</div>
+      <div class="nav-link" data-page="tasks">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+        Tasks
+      </div>
+      <div class="nav-link" data-page="users">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+        Users
+      </div>
+      <div class="nav-link" data-page="notifications">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
+        Notifications
+      </div>
+
+      <div class="nav-section-label">System</div>
+      <div class="nav-link" data-page="settings">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+        Settings
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="admin-user-info">
+        <div class="admin-avatar" id="sidebar-avatar">A</div>
+        <div class="admin-meta">
+          <div class="admin-meta-name" id="sidebar-name">Admin</div>
+          <div class="admin-meta-role">Administrator</div>
+        </div>
+        <button class="logout-btn" onclick="logoutAdmin()" title="Logout">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5-5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ═══════════════════════════════════════════════════ MAIN -->
+  <div id="main-wrap">
+    <!-- Top Bar -->
+    <header id="top-bar">
+      <button id="menu-toggle" onclick="toggleSidebar()">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+      </button>
+      <span id="page-title">Dashboard</span>
+      <div class="topbar-actions">
+        <button class="refresh-btn" onclick="reloadCurrentPage()">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+          Refresh
+        </button>
+      </div>
+    </header>
+
+    <!-- Content -->
+    <div id="content-area">
+
+      <!-- ─── PAGE: DASHBOARD ─────────────────────────── -->
+      <div class="admin-page active" id="page-dashboard">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-card-label">Total Users</div>
+            <div class="stat-card-value" id="d-total-users">—</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-label">Active Users</div>
+            <div class="stat-card-value green" id="d-active-users">—</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-label">Pending Verif.</div>
+            <div class="stat-card-value orange" id="d-pending-sub">—</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-label">Refunds Pending</div>
+            <div class="stat-card-value orange" id="d-pending-ref">—</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-label">Withdrawals</div>
+            <div class="stat-card-value cyan" id="d-pending-wdr">—</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-label">Tasks Done</div>
+            <div class="stat-card-value green" id="d-done-tasks">—</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-label">Total Bonuses</div>
+            <div class="stat-card-value green" id="d-total-bonus">৳—</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-label">Active Tasks</div>
+            <div class="stat-card-value cyan" id="d-active-tasks">—</div>
+          </div>
+        </div>
+
+        <div class="section-header"><h3>Recent Submissions</h3></div>
+        <div class="data-table-wrap" id="d-recent-wrap">
+          <div class="empty-state">Loading...</div>
+        </div>
+      </div>
+
+      <!-- ─── PAGE: SUBMISSIONS ───────────────────────── -->
+      <div class="admin-page" id="page-submissions">
+        <div class="section-header">
+          <h3>Payment Submissions</h3>
+          <select class="form-control" id="sub-filter" style="width:auto;padding:6px 12px;font-size:13px;" onchange="loadSubmissions()">
+            <option value="pending,under_review">Pending Review</option>
+            <option value="refund_pending">Refund Pending</option>
+            <option value="refunded">Completed</option>
+            <option value="rejected">Rejected</option>
+          </select>
+        </div>
+        <div class="data-table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Task</th>
+                <th>Sender No.</th>
+                <th>Txn ID</th>
+                <th>Amount</th>
+                <th>Screenshot</th>
+                <th>Submitted</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="submissions-tbody">
+              <tr><td colspan="9"><div class="empty-state">Loading...</div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ─── PAGE: REFUNDS ───────────────────────────── -->
+      <div class="admin-page" id="page-refunds">
+        <div class="section-header"><h3>Pending Refunds</h3></div>
+        <div class="data-table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Phone</th>
+                <th>Task</th>
+                <th>Refund To</th>
+                <th>Amount</th>
+                <th>Txn ID</th>
+                <th>Verified At</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="refunds-tbody">
+              <tr><td colspan="8"><div class="empty-state">Loading...</div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ─── PAGE: WITHDRAWALS ───────────────────────── -->
+      <div class="admin-page" id="page-withdrawals">
+        <div class="section-header">
+          <h3>Withdrawal Requests</h3>
+          <select class="form-control" id="wdr-filter" style="width:auto;padding:6px 12px;font-size:13px;" onchange="loadWithdrawals()">
+            <option value="pending,processing">Pending</option>
+            <option value="paid">Paid</option>
+            <option value="rejected">Rejected</option>
+          </select>
+        </div>
+        <div class="data-table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Method</th>
+                <th>Account</th>
+                <th>Amount</th>
+                <th>Requested</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="withdrawals-tbody">
+              <tr><td colspan="7"><div class="empty-state">Loading...</div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ─── PAGE: TASKS ─────────────────────────────── -->
+      <div class="admin-page" id="page-tasks">
+        <div class="section-header">
+          <h3>Task Management</h3>
+          <button class="btn btn-green" onclick="openTaskModal()">+ Create Task</button>
+        </div>
+        <div class="data-table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Method</th>
+                <th>Receiver No.</th>
+                <th>Send Amount</th>
+                <th>Bonus</th>
+                <th>Refund Time</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="tasks-tbody">
+              <tr><td colspan="8"><div class="empty-state">Loading...</div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ─── PAGE: USERS ─────────────────────────────── -->
+      <div class="admin-page" id="page-users">
+        <div class="section-header">
+          <h3>User Management</h3>
+          <input class="form-control" type="search" id="user-search" placeholder="Search by name or phone..." style="width:220px;padding:7px 12px;font-size:13px;" oninput="filterUsers()">
+        </div>
+        <div class="data-table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Phone</th>
+                <th>Referral Code</th>
+                <th>Status</th>
+                <th>Joined</th>
+                <th>Balance</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="users-tbody">
+              <tr><td colspan="7"><div class="empty-state">Loading...</div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ─── PAGE: NOTIFICATIONS ─────────────────────── -->
+      <div class="admin-page" id="page-notifications">
+        <div class="section-header">
+          <h3>Send Notification</h3>
+        </div>
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;max-width:500px;margin-bottom:28px;">
+          <form id="notif-form">
+            <div class="form-group">
+              <label class="form-label">Target</label>
+              <select class="form-control" id="notif-target">
+                <option value="all">All Users</option>
+                <option value="specific">Specific User (by phone)</option>
+              </select>
+            </div>
+            <div class="form-group" id="notif-phone-wrap" style="display:none;">
+              <label class="form-label">User Phone</label>
+              <input class="form-control" type="tel" id="notif-phone" placeholder="01XXXXXXXXX">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Title</label>
+              <input class="form-control" type="text" id="notif-title" required placeholder="Notification title">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Message</label>
+              <textarea class="form-control" id="notif-message" required placeholder="Notification message..."></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary-full" style="padding:10px 24px;font-size:14px;">Send Notification</button>
+          </form>
+        </div>
+
+        <div class="section-header"><h3>Recent Notifications Sent</h3></div>
+        <div class="data-table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr><th>Title</th><th>Message</th><th>User</th><th>Sent At</th><th>Read</th></tr>
+            </thead>
+            <tbody id="notif-tbody">
+              <tr><td colspan="5"><div class="empty-state">Loading...</div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ─── PAGE: SETTINGS ──────────────────────────── -->
+      <div class="admin-page" id="page-settings">
+        <div style="max-width:500px;">
+          <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px;">
+            <h3 style="margin-bottom:20px;font-size:15px;">Platform Settings</h3>
+            <form id="settings-form">
+              <div class="form-grid-2">
+                <div class="form-group">
+                  <label class="form-label">Min Withdrawal (৳)</label>
+                  <input class="form-control" type="number" id="s-min-wdr">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Max Withdrawal (৳)</label>
+                  <input class="form-control" type="number" id="s-max-wdr">
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Support WhatsApp Number</label>
+                <input class="form-control" type="text" id="s-support">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Maintenance Mode</label>
+                <select class="form-control" id="s-maintenance">
+                  <option value="false">OFF — Site is Live</option>
+                  <option value="true">ON — Site Offline</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Task Availability</label>
+                <select class="form-control" id="s-tasks-avail">
+                  <option value="true">Tasks Visible</option>
+                  <option value="false">Tasks Hidden</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Default Task Instructions</label>
+                <textarea class="form-control" id="s-instructions"></textarea>
+              </div>
+              <button type="submit" class="btn btn-green" style="padding:10px 20px;font-size:14px;">Save Settings</button>
+            </form>
+          </div>
+
+          <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;">
+            <h3 style="margin-bottom:16px;font-size:15px;">Make Admin</h3>
+            <p style="font-size:13px;color:var(--txt2);margin-bottom:16px;">Enter a user's phone number to grant admin access.</p>
+            <form id="make-admin-form">
+              <div class="form-group">
+                <label class="form-label">User Phone Number</label>
+                <input class="form-control" type="tel" id="new-admin-phone" placeholder="01XXXXXXXXX">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Role</label>
+                <select class="form-control" id="new-admin-role">
+                  <option value="admin">Admin</option>
+                  <option value="superadmin">Super Admin</option>
+                  <option value="editor">Editor</option>
+                </select>
+              </div>
+              <button type="submit" class="btn btn-cyan" style="padding:10px 20px;font-size:14px;">Grant Admin Access</button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- end content-area -->
+  </div><!-- end main-wrap -->
+
+  <!-- ═══════════════════════ TASK MODAL -->
+  <div class="modal-backdrop" id="task-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title" id="task-modal-title">Create Task</span>
+        <button class="modal-close" onclick="closeTaskModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <form id="task-form">
+          <input type="hidden" id="t-id">
+          <div class="form-group">
+            <label class="form-label">Task Title</label>
+            <input class="form-control" type="text" id="t-title" required placeholder="e.g. ৳100 bKash Task">
+          </div>
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label">Payment Method</label>
+              <select class="form-control" id="t-method">
+                <option value="bKash">bKash</option>
+                <option value="Nagad">Nagad</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Status</label>
+              <select class="form-control" id="t-active">
+                <option value="true">Active</option>
+                <option value="false">Inactive</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Receiver Account Number</label>
+            <input class="form-control" type="tel" id="t-number" required placeholder="01XXXXXXXXX">
+          </div>
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label">Send Amount (৳)</label>
+              <input class="form-control" type="number" id="t-amount" required placeholder="100">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Cashback Bonus (৳)</label>
+              <input class="form-control" type="number" id="t-bonus" required placeholder="23">
+            </div>
+          </div>
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label">Min Refund (min)</label>
+              <input class="form-control" type="number" id="t-min" value="10">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Max Refund (min)</label>
+              <input class="form-control" type="number" id="t-max" value="30">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Instructions</label>
+            <textarea class="form-control" id="t-instructions" required placeholder="Step-by-step payment instructions..."></textarea>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeTaskModal()">Cancel</button>
+        <button class="btn btn-green" onclick="saveTask()">Save Task</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════ REFUND CONFIRM MODAL -->
+  <div class="modal-backdrop" id="refund-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title">Confirm Manual Refund</span>
+        <button class="modal-close" onclick="closeModal('refund-modal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size:13px;color:var(--txt2);margin-bottom:16px;">
+          You are about to confirm that you have manually sent <strong id="r-amount-display" style="color:var(--green)">৳0</strong> to <strong id="r-phone-display" style="color:var(--cyan)">01X</strong> via <strong id="r-method-display">bKash</strong>.<br><br>
+          This will also credit the task cashback bonus to the user's wallet <strong>exactly once</strong>.
+        </p>
+        <input type="hidden" id="r-submission-id">
+        <div class="form-group">
+          <label class="form-label">Your Refund Transaction ID (TxnID)</label>
+          <input class="form-control" type="text" id="r-txn-id" required placeholder="Enter the TxnID you sent">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Admin Note (optional)</label>
+          <input class="form-control" type="text" id="r-note" placeholder="e.g. Refunded successfully">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeModal('refund-modal')">Cancel</button>
+        <button class="btn btn-green" onclick="confirmRefund()">✓ Confirm Refunded & Credit Bonus</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════ REJECT / NOTE MODAL -->
+  <div class="modal-backdrop" id="note-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title" id="note-modal-title">Reject Submission</span>
+        <button class="modal-close" onclick="closeModal('note-modal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Reason / Note</label>
+          <textarea class="form-control" id="note-text" placeholder="Enter rejection reason..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeModal('note-modal')">Cancel</button>
+        <button class="btn btn-red" id="note-confirm-btn">Confirm Reject</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./js/supabase.js"></script>
+  <script src="./js/admin.js"></script>
+</body>
+</html>

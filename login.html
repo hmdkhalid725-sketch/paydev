@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login — DevPay</title>
+  <link rel="stylesheet" href="./css/global.css">
+  <link rel="stylesheet" href="./css/auth.css">
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#08090D">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    .password-wrapper {
+      position: relative;
+    }
+    .password-wrapper .form-control {
+      padding-right: 48px;
+    }
+    .eye-btn {
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px;
+      transition: color 0.2s;
+    }
+    .eye-btn:hover { color: var(--text-secondary); }
+    .eye-btn svg { width: 20px; height: 20px; }
+  </style>
+</head>
+<body>
+  <div id="app-container">
+    <div id="toast-container"></div>
+    <div id="spinner-overlay" class="spinner-overlay">
+      <div class="spinner"></div>
+    </div>
+
+    <div class="auth-wrapper">
+      <div class="auth-header">
+        <h1 class="auth-logo gradient-text">DevPay</h1>
+        <p class="auth-subtitle">Login to your DevPay account</p>
+      </div>
+
+      <div class="auth-card glass">
+        <form id="login-form">
+          <div class="form-group">
+            <label class="form-label" for="login-phone">Phone Number or Email</label>
+            <input class="form-control" type="text" id="login-phone" required placeholder="017XXXXXXXX or email@example.com">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="login-password">Password</label>
+            <div class="password-wrapper">
+              <input class="form-control" type="password" id="login-password" required placeholder="••••••••">
+              <button type="button" class="eye-btn" id="toggle-login-pass" aria-label="Show/hide password">
+                <!-- Eye open icon (shown by default = password hidden) -->
+                <svg id="eye-icon-login" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <button type="submit" class="btn-primary auth-btn">Login</button>
+        </form>
+
+        <div class="auth-footer">
+          Don't have an account? <a class="auth-link" href="./register.html">Sign Up</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./js/supabase.js"></script>
+  <script src="./js/auth.js"></script>
+  <script src="./js/pwa-install.js"></script>
+  <script>
+    // Eye icon toggle for password visibility
+    const toggleBtn = document.getElementById('toggle-login-pass');
+    const passInput = document.getElementById('login-password');
+    const eyeIcon  = document.getElementById('eye-icon-login');
+
+    const eyeOpenSVG = `
+      <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+      <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>`;
+    const eyeClosedSVG = `
+      <path stroke-linecap="round" stroke-linejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/>`;
+
+    toggleBtn.addEventListener('click', () => {
+      const isHidden = passInput.type === 'password';
+      passInput.type = isHidden ? 'text' : 'password';
+      eyeIcon.innerHTML = isHidden ? eyeClosedSVG : eyeOpenSVG;
+    });
+
+    // Login form submit
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const loginVal = document.getElementById('login-phone').value.trim();
+      const password = document.getElementById('login-password').value;
+
+      if (!loginVal || !password) {
+        showToast('Please fill in all fields', 'error');
+        return;
+      }
+
+      // Convert phone number to dummy email format silently if it's not a raw email
+      const email = loginVal.includes('@') ? loginVal : `${loginVal}@devpay.app`;
+
+      showSpinner(true);
+      try {
+        const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+
+        showToast('Login successful!', 'success');
+
+        // Check if user profile is suspended or active
+        const { data: profile } = await supabaseClient
+          .from('profiles')
+          .select('status')
+          .eq('id', data.user.id)
+          .single();
+
+        if (profile && profile.status === 'suspended') {
+          await supabaseClient.auth.signOut();
+          throw new Error('Your account has been suspended by administration.');
+        }
+
+        // Check if admin
+        const { data: isAdmin } = await supabaseClient
+          .from('admin_users')
+          .select('role')
+          .eq('id', data.user.id)
+          .maybeSingle();
+
+        setTimeout(() => {
+          window.location.href = isAdmin ? './admin/index.html' : './app.html';
+        }, 800);
+
+      } catch (err) {
+        showToast(err.message, 'error');
+      } finally {
+        showSpinner(false);
+      }
+    });
+
+    function showSpinner(show) {
+      document.getElementById('spinner-overlay').classList.toggle('active', show);
+    }
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.innerText = message;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.animation = 'none';
+        toast.offsetHeight;
+        toast.style.animation = 'toast-in 0.2s reverse forwards';
+        setTimeout(() => toast.remove(), 200);
+      }, 3000);
+    }
+  </script>
+</body>
+</html>
