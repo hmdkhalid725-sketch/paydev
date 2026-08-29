@@ -145,11 +145,13 @@ CREATE TABLE IF NOT EXISTS public.app_settings (
     task_availability BOOLEAN DEFAULT TRUE,
     default_refund_message TEXT DEFAULT 'Your refund has been manually processed to your wallet/mobile number.',
     default_task_instructions TEXT DEFAULT 'Please send the exact amount to our receiver number and enter details.',
+    global_bkash_number TEXT DEFAULT '01780647586',
+    global_nagad_number TEXT DEFAULT '01892736004',
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- Insert default app settings
-INSERT INTO public.app_settings (id) VALUES (TRUE) ON CONFLICT DO NOTHING;
+INSERT INTO public.app_settings (id, global_bkash_number, global_nagad_number) VALUES (TRUE, '01780647586', '01892736004') ON CONFLICT DO NOTHING;
 
 
 -- ====================================================

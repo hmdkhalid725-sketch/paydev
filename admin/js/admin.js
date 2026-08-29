@@ -73,6 +73,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('notif-form').addEventListener('submit', sendNotification);
     document.getElementById('make-admin-form').addEventListener('submit', makeAdmin);
 
+    // Toggle number on method change for new tasks
+    document.getElementById('t-method').addEventListener('change', (e) => {
+      const id = document.getElementById('t-id').value;
+      if (!id && window.globalSettingsCached) {
+        const method = e.target.value;
+        document.getElementById('t-number').value = method === 'bKash' ? window.globalSettingsCached.global_bkash_number : window.globalSettingsCached.global_nagad_number;
+      }
+    });
+
     // Initial load
     await navigateTo('dashboard');
 
@@ -525,6 +534,16 @@ async function openTaskModal(taskId = null) {
     }
   } else {
     document.getElementById('task-modal-title').innerText = 'Create Task';
+    try {
+      const { data: settings } = await supabaseClient.from('app_settings').select('global_bkash_number, global_nagad_number').eq('id', true).single();
+      if (settings) {
+        window.globalSettingsCached = settings;
+        const method = document.getElementById('t-method').value;
+        document.getElementById('t-number').value = method === 'bKash' ? settings.global_bkash_number : settings.global_nagad_number;
+      }
+    } catch (err) {
+      console.error("Failed to load global numbers for task template:", err);
+    }
   }
 
   openModal('task-modal');
@@ -738,6 +757,8 @@ async function loadSettings() {
   document.getElementById('s-min-wdr').value     = data.min_withdrawal;
   document.getElementById('s-max-wdr').value     = data.max_withdrawal;
   document.getElementById('s-support').value     = data.support_contact;
+  document.getElementById('s-global-bkash').value = data.global_bkash_number || '';
+  document.getElementById('s-global-nagad').value = data.global_nagad_number || '';
   document.getElementById('s-maintenance').value = data.maintenance_mode.toString();
   document.getElementById('s-tasks-avail').value = data.task_availability.toString();
   document.getElementById('s-instructions').value = data.default_task_instructions;
@@ -747,10 +768,16 @@ async function saveSettings(e) {
   e.preventDefault();
   showSpinner(true);
   try {
+    const bkashNum = document.getElementById('s-global-bkash').value.trim();
+    const nagadNum = document.getElementById('s-global-nagad').value.trim();
+
+    // 1. Update app_settings
     const { error } = await supabaseClient.from('app_settings').update({
       min_withdrawal:           parseFloat(document.getElementById('s-min-wdr').value),
       max_withdrawal:           parseFloat(document.getElementById('s-max-wdr').value),
       support_contact:          document.getElementById('s-support').value.trim(),
+      global_bkash_number:      bkashNum,
+      global_nagad_number:      nagadNum,
       maintenance_mode:         document.getElementById('s-maintenance').value === 'true',
       task_availability:        document.getElementById('s-tasks-avail').value === 'true',
       default_task_instructions: document.getElementById('s-instructions').value.trim(),
@@ -758,7 +785,25 @@ async function saveSettings(e) {
     }).eq('id', true);
 
     if (error) throw error;
-    toast('Settings saved ✓', 'success');
+
+    // 2. Propagate updates to all tasks under each payment method
+    if (bkashNum) {
+      const { error: bkashErr } = await supabaseClient
+        .from('tasks')
+        .update({ payment_number: bkashNum })
+        .eq('payment_method', 'bKash');
+      if (bkashErr) throw bkashErr;
+    }
+
+    if (nagadNum) {
+      const { error: nagadErr } = await supabaseClient
+        .from('tasks')
+        .update({ payment_number: nagadNum })
+        .eq('payment_method', 'Nagad');
+      if (nagadErr) throw nagadErr;
+    }
+
+    toast('Settings & global numbers updated successfully ✓', 'success');
   } catch (err) {
     toast(err.message, 'error');
   } finally {

@@ -111,10 +111,17 @@
       eyeIcon.innerHTML = isHidden ? eyeClosedSVG : eyeOpenSVG;
     });
 
-    // ─── Auto-fill referral code from URL (?ref=XXXX) ─────────────────────────
+    // ─── Auto-fill referral code (URL or localStorage fallback) ───────────────
     window.addEventListener('DOMContentLoaded', () => {
       const urlParams = new URLSearchParams(window.location.search);
-      const refCode = urlParams.get('ref') || urlParams.get('referrer');
+      let refCode = urlParams.get('ref') || urlParams.get('referrer');
+      
+      if (refCode) {
+        localStorage.setItem('referred_by_code', refCode.toUpperCase());
+      } else {
+        refCode = localStorage.getItem('referred_by_code');
+      }
+
       if (refCode) {
         const refInput = document.getElementById('reg-referrer');
         if (refInput) refInput.value = refCode.toUpperCase();
@@ -190,6 +197,7 @@
         }
 
         // Step 3: Redirect to app
+        localStorage.removeItem('referred_by_code');
         showToast('Welcome to DevPay! 🎉', 'success');
         setTimeout(() => {
           window.location.href = './app.html';

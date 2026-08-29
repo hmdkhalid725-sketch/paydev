@@ -6,6 +6,13 @@
 document.addEventListener('DOMContentLoaded', () => {
   if (!supabaseClient) return;
 
+  // Global Referral Tracker: Persist referral code to localStorage
+  const urlParams = new URLSearchParams(window.location.search);
+  const refCode = urlParams.get('ref') || urlParams.get('referrer');
+  if (refCode) {
+    localStorage.setItem('referred_by_code', refCode.toUpperCase());
+  }
+
   const currentPath = window.location.pathname;
   const isAuthPage = currentPath.includes('login.html') || currentPath.includes('register.html') || currentPath.endsWith('/') || currentPath.includes('index.html');
   const isAppPage = currentPath.includes('app.html');
