@@ -35,6 +35,7 @@ async function initApp() {
     }
 
     if (session) {
+      await loadGlobalSettings();
       await refreshCurrentTabData('home');
       listenNotifications(); // Start realtime listener
       showAnnouncementNotice(); // Show notice popup on entry
@@ -201,5 +202,35 @@ function showAnnouncementNotice() {
     clearInterval(autoCloseTimer);
     modal.classList.remove('active');
   };
+}
+
+// Global settings state
+window.globalAppSettings = null;
+
+async function loadGlobalSettings() {
+  if (!supabaseClient) return;
+  try {
+    const { data, error } = await supabaseClient
+      .from('app_settings')
+      .select('*')
+      .eq('id', true)
+      .single();
+      
+    if (!error && data) {
+      window.globalAppSettings = data;
+      
+      // Update Maintenance Mode UI
+      const maintOverlay = document.getElementById('maintenance-overlay');
+      if (maintOverlay) {
+        if (data.maintenance_mode) {
+          maintOverlay.style.display = 'flex';
+        } else {
+          maintOverlay.style.display = 'none';
+        }
+      }
+    }
+  } catch (err) {
+    console.error("Error loading app settings:", err);
+  }
 }
 

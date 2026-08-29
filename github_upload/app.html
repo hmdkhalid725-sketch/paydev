@@ -12,6 +12,15 @@
 </head>
 <body>
   <div id="app-container">
+    <!-- MAINTENANCE OVERLAY -->
+    <div id="maintenance-overlay" class="spinner-overlay" style="background: var(--bg-primary); z-index: 99999; display: none; flex-direction: column; gap: 16px; text-align: center; padding: 24px; justify-content: center; opacity: 1; pointer-events: auto;">
+      <div style="font-size: 64px;">🛠️</div>
+      <h2 style="font-weight: 800; color: #fff; font-size: 24px;">অ্যাপ রক্ষণাবেক্ষণ চলছে</h2>
+      <p style="color: var(--text-secondary); max-width: 320px; font-size: 14.5px; line-height: 1.7; margin: 0 auto;">
+        আমাদের অ্যাপের রক্ষণাবেক্ষণের কাজ চলছে। আপনারা <strong>নির্ভয়ে থাকুন</strong>, আগামীকাল থেকে আবার নিয়মিত কাজ করতে পারবেন। ধন্যবাদ।
+      </p>
+    </div>
+
     <!-- Toast system -->
     <div id="toast-container"></div>
 
@@ -122,7 +131,7 @@
         <!-- Method & Pill Filter bar -->
         <div style="margin-bottom:16px; display:flex; flex-direction:column; gap:12px;">
           <!-- Method Selection -->
-          <div style="display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px;">
+          <div style="display: none; gap: 8px; overflow-x: auto; padding-bottom: 4px;">
             <button class="btn-filter active" id="filter-all" onclick="setMethodFilter('all')">সব টাস্ক</button>
             <button class="btn-filter" id="filter-bkash" onclick="setMethodFilter('bKash')">বিকাশ</button>
             <button class="btn-filter" id="filter-nagad" onclick="setMethodFilter('Nagad')">নগদ</button>

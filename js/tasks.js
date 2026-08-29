@@ -4,13 +4,29 @@
 
 let activeTasksList = [];
 let filteredTasks   = [];
-let currentMethod   = 'all';
+let currentMethod   = 'Nagad';
 let currentMinAmt   = 100;
 let currentMaxAmt   = 199; // Default selected range: 100 - 199
 
 // ── LOAD TASKS ────────────────────────────────────────────────────────────────
 async function loadTasks() {
   if (!supabaseClient) return;
+
+  const container = document.getElementById('tasks-list-container');
+
+  // Enforce task availability setting from admin settings
+  if (window.globalAppSettings && window.globalAppSettings.task_availability === false) {
+    if (container) {
+      container.innerHTML = `
+        <div class="empty-state" style="padding: 60px 20px; text-align: center;">
+          <div style="font-size: 40px; margin-bottom: 12px;">🚫</div>
+          <p class="empty-state-text" style="font-size:14px; color:var(--text-secondary); line-height:1.6;">
+            টাস্ক বর্তমানে বন্ধ আছে। অনুগ্রহ করে পরবর্তীতে আবার চেষ্টা করুন।
+          </p>
+        </div>`;
+    }
+    return;
+  }
 
   try {
     const { data: tasks, error } = await supabaseClient
