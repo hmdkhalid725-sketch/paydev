@@ -85,6 +85,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     });
 
+    // Auto-calculate 8% bonus when amount is entered
+    document.getElementById('t-amount').addEventListener('input', (e) => {
+      const amt = parseFloat(e.target.value) || 0;
+      if (amt > 0) {
+        document.getElementById('t-bonus').value = (amt * 0.08).toFixed(2);
+      }
+    });
+
     // Initial load
     await navigateTo('dashboard');
 

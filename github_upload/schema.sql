@@ -34,8 +34,8 @@ CREATE TABLE IF NOT EXISTS public.tasks (
     payment_number TEXT NOT NULL,
     payment_amount NUMERIC(12,2) NOT NULL CHECK (payment_amount > 0),
     bonus_amount NUMERIC(12,2) NOT NULL CHECK (bonus_amount >= 0),
-    refund_min_minutes INTEGER DEFAULT 10,
-    refund_max_minutes INTEGER DEFAULT 30,
+    refund_min_minutes INTEGER DEFAULT 1,
+    refund_max_minutes INTEGER DEFAULT 10,
     instructions TEXT NOT NULL,
     is_active BOOLEAN DEFAULT TRUE,
     daily_limit INTEGER DEFAULT 0, -- 0 means unlimited
