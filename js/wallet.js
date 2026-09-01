@@ -2,8 +2,45 @@
 // WALLET LEDGER & WITHDRAWAL SYSTEM CONTROLLER
 // ====================================================
 
-let selectedWithdrawMethod = 'bKash';
-let cachedUserBalanceBdt = 0;
+var selectedWithdrawMethod = 'bKash';
+var cachedUserBalanceBdt = 0;
+var cachedMinBdtWithdrawal = 100;
+var cachedMinUsdtWithdrawal = 3.00;
+
+function selectWithdrawMethod(method) {
+  selectedWithdrawMethod = method;
+
+  const bkashBtn = document.getElementById('method-bkash-btn');
+  const nagadBtn = document.getElementById('method-nagad-btn');
+  const usdtBtn  = document.getElementById('method-usdt-btn');
+
+  const options = [bkashBtn, nagadBtn, usdtBtn];
+  options.forEach(o => {
+    if (o) {
+      o.classList.remove('selected');
+      o.style.border = '2px solid rgba(255,255,255,0.07)';
+      o.style.background = 'rgba(255,255,255,0.02)';
+    }
+  });
+
+  if (method === 'bKash' && bkashBtn) {
+    bkashBtn.classList.add('selected');
+    bkashBtn.style.border = '2px solid #e2136e';
+    bkashBtn.style.background = 'rgba(226,19,110,0.08)';
+  } else if (method === 'Nagad' && nagadBtn) {
+    nagadBtn.classList.add('selected');
+    nagadBtn.style.border = '2px solid #ff6a00';
+    nagadBtn.style.background = 'rgba(255,106,0,0.08)';
+  } else if (method === 'USDT' && usdtBtn) {
+    usdtBtn.classList.add('selected');
+    usdtBtn.style.border = '2px solid #00e676';
+    usdtBtn.style.background = 'rgba(0,230,118,0.12)';
+  }
+
+  updateWithdrawalFormUi();
+}
+
+window.selectWithdrawMethod = selectWithdrawMethod;
 
 // Set active withdrawal method option
 document.addEventListener('DOMContentLoaded', () => {
@@ -24,18 +61,10 @@ function setupWithdrawalMethodSwitch() {
   const methodOptions = document.querySelectorAll('.method-option');
   methodOptions.forEach(opt => {
     opt.addEventListener('click', () => {
-      selectedWithdrawMethod = opt.getAttribute('data-method');
-
-      // Reset all to unselected style
-      methodOptions.forEach(o => {
-        o.classList.remove('selected');
-        o.style.border = '2px solid rgba(255,255,255,0.07)';
-        o.style.background = 'rgba(255,255,255,0.02)';
-      });
-
-      // Apply selected brand style
-      opt.classList.add('selected');
-      updateWithdrawalFormUi();
+      const method = opt.getAttribute('data-method');
+      if (typeof window.selectWithdrawMethod === 'function') {
+        window.selectWithdrawMethod(method);
+      }
     });
   });
 }
@@ -60,8 +89,8 @@ function updateWithdrawalFormUi() {
     if (accInput)  accInput.placeholder = '01XXXXXXXXX';
     if (amtLabel)  amtLabel.innerText = 'উইথড্র পরিমাণ (৳)';
     if (curPrefix) curPrefix.innerText = '৳';
-    if (minLabel)  minLabel.innerText = '৳100';
-    if (amtInput)  { amtInput.min = 100; amtInput.placeholder = '0'; }
+    if (minLabel)  minLabel.innerText = `৳${cachedMinBdtWithdrawal}`;
+    if (amtInput)  { amtInput.min = cachedMinBdtWithdrawal; amtInput.placeholder = '0'; }
     if (convHint)  convHint.style.display = 'none';
     if (balDisplay) balDisplay.innerText = `৳${cachedUserBalanceBdt.toFixed(2)}`;
 
@@ -71,8 +100,8 @@ function updateWithdrawalFormUi() {
     if (accInput)  accInput.placeholder = '01XXXXXXXXX';
     if (amtLabel)  amtLabel.innerText = 'উইথড্র পরিমাণ (৳)';
     if (curPrefix) curPrefix.innerText = '৳';
-    if (minLabel)  minLabel.innerText = '৳100';
-    if (amtInput)  { amtInput.min = 100; amtInput.placeholder = '0'; }
+    if (minLabel)  minLabel.innerText = `৳${cachedMinBdtWithdrawal}`;
+    if (amtInput)  { amtInput.min = cachedMinBdtWithdrawal; amtInput.placeholder = '0'; }
     if (convHint)  convHint.style.display = 'none';
     if (balDisplay) balDisplay.innerText = `৳${cachedUserBalanceBdt.toFixed(2)}`;
 
@@ -82,8 +111,8 @@ function updateWithdrawalFormUi() {
     if (accInput)  accInput.placeholder = 'যেমন: 0x155070856B... (BEP20 Address)';
     if (amtLabel)  amtLabel.innerText = 'উইথড্র পরিমাণ ($ USDT)';
     if (curPrefix) curPrefix.innerText = '$';
-    if (minLabel)  minLabel.innerText = '$1.00 USDT (৳130)';
-    if (amtInput)  { amtInput.min = 1; amtInput.placeholder = '1'; }
+    if (minLabel)  minLabel.innerText = `$${cachedMinUsdtWithdrawal.toFixed(2)} USDT (৳${(cachedMinUsdtWithdrawal * 130).toFixed(0)})`;
+    if (amtInput)  { amtInput.min = cachedMinUsdtWithdrawal; amtInput.placeholder = cachedMinUsdtWithdrawal.toString(); }
     if (convHint)  convHint.style.display = 'block';
 
     const balUsdt = cachedUserBalanceBdt / 130;
@@ -133,22 +162,19 @@ async function loadWalletData() {
     }
     cachedUserBalanceBdt = bal;
 
-    updateWithdrawalFormUi();
-
     // 2. Fetch withdrawal settings limits dynamically
     const { data: settings } = await supabaseClient
       .from('app_settings')
-      .select('min_withdrawal, max_withdrawal')
-      .single();
+      .select('min_withdrawal, min_usdt_withdrawal, max_withdrawal')
+      .limit(1)
+      .maybeSingle();
 
-    if (settings && selectedWithdrawMethod !== 'USDT') {
-      const inputAmt = document.getElementById('withdraw-amount');
-      if (inputAmt) {
-        inputAmt.min = settings.min_withdrawal;
-        const minLabel = document.getElementById('min-withdraw-label');
-        if (minLabel) minLabel.innerText = `৳${settings.min_withdrawal}`;
-      }
+    if (settings) {
+      if (settings.min_withdrawal) cachedMinBdtWithdrawal = parseFloat(settings.min_withdrawal);
+      if (settings.min_usdt_withdrawal) cachedMinUsdtWithdrawal = parseFloat(settings.min_usdt_withdrawal);
     }
+
+    updateWithdrawalFormUi();
 
     // 3. Fetch transaction ledger logs
     const { data: transactions, error: ledgerErr } = await supabaseClient
@@ -226,15 +252,15 @@ async function handleWithdrawalRequest(e) {
   let successMsg = `৳${inputAmt} টাকা উইথড্র রিকোয়েস্ট সফল হয়েছে!`;
 
   if (selectedWithdrawMethod === 'USDT') {
-    if (inputAmt < 1) {
-      showToast('USDT উইথড্রর জন্য সর্বনিম্ন $1.00 USDT দিতে হবে', 'error');
+    if (inputAmt < cachedMinUsdtWithdrawal) {
+      showToast(`USDT উইথড্রর জন্য সর্বনিম্ন $${cachedMinUsdtWithdrawal.toFixed(2)} USDT দিতে হবে`, 'error');
       return;
     }
     withdrawAmtBdt = inputAmt * 130;
     successMsg = `$${inputAmt.toFixed(2)} USDT (৳${withdrawAmtBdt.toFixed(0)} BDT) উইথড্র রিকোয়েস্ট জমা হয়েছে!`;
   } else {
-    if (inputAmt < 100) {
-      showToast('বিকাশ/নগদে উইথড্রর জন্য সর্বনিম্ন ৳100 টাকা দিতে হবে', 'error');
+    if (inputAmt < cachedMinBdtWithdrawal) {
+      showToast(`বিকাশ/নগদে উইথড্রর জন্য সর্বনিম্ন ৳${cachedMinBdtWithdrawal} টাকা দিতে হবে`, 'error');
       return;
     }
   }
@@ -268,3 +294,10 @@ async function handleWithdrawalRequest(e) {
     showSpinner(false);
   }
 }
+
+// Global Window Exports
+window.loadWalletData = loadWalletData;
+window.handleWithdrawalRequest = handleWithdrawalRequest;
+window.updateWithdrawalFormUi = updateWithdrawalFormUi;
+window.updateWithdrawConversionHint = updateWithdrawConversionHint;
+window.selectWithdrawMethod = selectWithdrawMethod;

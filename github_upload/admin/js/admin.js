@@ -625,7 +625,7 @@ async function loadUsers() {
   const { data, error } = await supabaseClient
     .from('profiles')
     .select('*, admin_users(role)')
-    .order('created_at', { ascending: false });
+    .order('last_active_at', { ascending: false, nullsFirst: false });
 
   if (error) throw error;
   allUsers = data || [];
@@ -633,10 +633,11 @@ async function loadUsers() {
 }
 
 function filterUsers() {
-  const q = document.getElementById('user-search').value.toLowerCase();
+  const q = document.getElementById('user-search').value.trim().toLowerCase();
   renderUsers(allUsers.filter(u =>
     (u.full_name || '').toLowerCase().includes(q) ||
-    (u.phone || '').includes(q)
+    (u.phone || '').includes(q) ||
+    (u.referral_code || '').toLowerCase().includes(q)
   ));
 }
 
@@ -648,7 +649,14 @@ function renderUsers(users) {
     return;
   }
 
-  tbody.innerHTML = users.map(u => {
+  // Sort active/online & most recently active users to the top
+  const sortedUsers = [...users].sort((a, b) => {
+    const timeA = new Date(a.last_active_at || a.created_at || 0).getTime();
+    const timeB = new Date(b.last_active_at || b.created_at || 0).getTime();
+    return timeB - timeA;
+  });
+
+  tbody.innerHTML = sortedUsers.map(u => {
     const isAdmin = u.admin_users !== null;
 
     // Joined date & time
@@ -657,16 +665,36 @@ function renderUsers(users) {
       hour: '2-digit', minute: '2-digit', hour12: true
     }) : '—';
 
-    // Last Active status
-    let lastActiveHtml = '<span style="color:var(--txt3);">Never</span>';
-    if (u.last_active_at) {
-      const diffMinutes = Math.floor((Date.now() - new Date(u.last_active_at)) / 60000);
-      if (diffMinutes < 3) {
-        lastActiveHtml = '<span style="color:var(--green);font-weight:700;">🟢 Online</span>';
+    // Last Active status: fallback to created_at if last_active_at is missing
+    const activeTs = u.last_active_at || u.created_at;
+    let lastActiveHtml = '—';
+    if (activeTs) {
+      const activeDate = new Date(activeTs);
+      const diffMinutes = Math.floor((Date.now() - activeDate.getTime()) / 60000);
+
+      const formattedTime = activeDate.toLocaleString('en-US', {
+        month: 'short', day: 'numeric', year: 'numeric',
+        hour: '2-digit', minute: '2-digit', hour12: true
+      });
+
+      if (u.last_active_at && diffMinutes < 3) {
+        lastActiveHtml = `<span style="color:var(--green);font-weight:800;" title="${formattedTime}">🟢 Online</span>`;
       } else {
-        lastActiveHtml = timeAgo(u.last_active_at);
+        lastActiveHtml = `<span style="color:var(--txt2);font-size:11.5px;">${formattedTime}</span>`;
       }
     }
+
+    // Auto-fetch balance for each user
+    setTimeout(() => {
+      supabaseClient.rpc('get_user_balance', { user_id: u.id }).then(({ data: bal }) => {
+        const el = document.getElementById(`bal-${u.id}`);
+        if (el) {
+          let b = parseFloat(bal || 0);
+          if (b > 0 && b < 5) b = b * 130;
+          el.innerText = '৳' + b.toFixed(2);
+        }
+      });
+    }, 50);
 
     return `<tr>
       <td>
@@ -694,7 +722,10 @@ async function viewUserBalance(userId) {
   try {
     const { data: bal } = await supabaseClient.rpc('get_user_balance', { user_id: userId });
     const el = document.getElementById(`bal-${userId}`);
-    if (el) el.innerText = '৳' + parseFloat(bal || 0).toFixed(2);
+    let b = parseFloat(bal || 0);
+    if (b > 0 && b < 5) b = b * 130;
+    if (el) el.innerText = '৳' + b.toFixed(2);
+    toast(`User balance: ৳${b.toFixed(2)}`, 'info');
   } catch (err) {
     toast(err.message, 'error');
   }
@@ -787,6 +818,9 @@ async function loadSettings() {
   currentSettingsRowId = data.id;
   document.getElementById('s-min-wdr').value       = data.min_withdrawal;
   document.getElementById('s-max-wdr').value       = data.max_withdrawal;
+  if (document.getElementById('s-min-usdt-wdr')) {
+    document.getElementById('s-min-usdt-wdr').value  = data.min_usdt_withdrawal || 3.00;
+  }
   document.getElementById('s-support').value       = data.support_contact;
   document.getElementById('s-global-bkash').value   = data.global_bkash_number || '';
   document.getElementById('s-global-nagad').value   = data.global_nagad_number || '';
@@ -812,9 +846,13 @@ async function saveSettings(e) {
       if (row) currentSettingsRowId = row.id;
     }
 
+    const usdtMinInput = document.getElementById('s-min-usdt-wdr');
+    const minUsdtVal = usdtMinInput ? parseFloat(usdtMinInput.value) || 1.00 : 1.00;
+
     const payload = {
       min_withdrawal:           parseFloat(document.getElementById('s-min-wdr').value),
       max_withdrawal:           parseFloat(document.getElementById('s-max-wdr').value),
+      min_usdt_withdrawal:      minUsdtVal,
       support_contact:          document.getElementById('s-support').value.trim(),
       global_bkash_number:      bkashNum,
       global_nagad_number:      nagadNum,

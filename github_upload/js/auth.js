@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (!supabaseClient) return;
 
   checkMaintenanceModeOnAllPages();
+  setInterval(checkMaintenanceModeOnAllPages, 10000);
 
   // Global Referral Tracker: Persist referral code to localStorage
   const urlParams = new URLSearchParams(window.location.search);
@@ -89,16 +90,8 @@ async function checkMaintenanceModeOnAllPages() {
       .maybeSingle();
 
     if (data && data.maintenance_mode === true) {
-      // Allow admin users to bypass maintenance mode
-      const { data: { session } } = await supabaseClient.auth.getSession();
-      if (session) {
-        const { data: isAdmin } = await supabaseClient
-          .from('admin_users')
-          .select('role')
-          .eq('id', session.user.id)
-          .maybeSingle();
-        if (isAdmin) return;
-      }
+      // If currently on admin panel, do not show user maintenance screen
+      if (window.location.pathname.includes('/admin/')) return;
 
       // Show maintenance overlay on landing/auth/app pages
       let overlay = document.getElementById('maintenance-overlay');

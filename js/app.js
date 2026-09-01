@@ -9,6 +9,8 @@ document.addEventListener('DOMContentLoaded', () => {
   initApp();
 });
 
+let currentActiveTab = 'home';
+
 async function initApp() {
   setupNavigation();
   setupNotificationsDrawer();
@@ -19,6 +21,9 @@ async function initApp() {
   try {
     // 1. Load global settings & maintenance check first
     await loadGlobalSettings();
+
+    // Start 15-second background maintenance status checker
+    setInterval(loadGlobalSettings, 15000);
 
     // 2. Check if session is already recovered
     let { data: { session } } = await supabaseClient.auth.getSession();
@@ -40,7 +45,7 @@ async function initApp() {
     if (session) {
       await refreshCurrentTabData('home');
       updateLastActive(session.user.id);
-      setInterval(() => updateLastActive(session.user.id), 90000);
+      setInterval(() => updateLastActive(session.user.id), 30000);
       listenNotifications(); // Start realtime listener
       showAnnouncementNotice(); // Show notice popup on entry
     } else {
@@ -53,27 +58,58 @@ async function initApp() {
   }
 }
 
+// Update user's last_active_at timestamp in Supabase
+async function updateLastActive(userId) {
+  if (!supabaseClient || !userId) return;
+  try {
+    await supabaseClient
+      .from('profiles')
+      .update({ last_active_at: new Date().toISOString() })
+      .eq('id', userId);
+  } catch (err) {
+    console.error("Failed to update last_active_at:", err);
+  }
+}
+
 // Switch between tabs dynamically
 function setupNavigation() {
   const navItems = document.querySelectorAll('.bottom-nav .nav-item');
   navItems.forEach(item => {
     item.addEventListener('click', async (e) => {
       const targetTab = item.getAttribute('data-tab');
+
+      // If tapping Home tab, perform full reload & maintenance check
+      if (targetTab === 'home') {
+        showSpinner(true);
+        const settings = await loadGlobalSettings();
+        if (settings && settings.maintenance_mode) return;
+        await refreshCurrentTabData('home');
+        showSpinner(false);
+        showToast('🔄 পেজ রিফ্রেশ করা হয়েছে', 'info');
+        if (currentActiveTab === 'home') return;
+      }
+
       switchTab(targetTab);
     });
   });
 
   // Home Quick Action Links redirection
-  document.getElementById('action-tasks').addEventListener('click', () => switchTab('tasks'));
-  document.getElementById('action-wallet').addEventListener('click', () => switchTab('wallet'));
-  document.getElementById('action-support').addEventListener('click', openSupportContact);
-  document.getElementById('view-activities-link').addEventListener('click', (e) => {
+  document.getElementById('action-tasks')?.addEventListener('click', () => switchTab('tasks'));
+  document.getElementById('action-wallet')?.addEventListener('click', () => switchTab('wallet'));
+  document.getElementById('action-support')?.addEventListener('click', openSupportContact);
+  document.getElementById('view-activities-link')?.addEventListener('click', (e) => {
     e.preventDefault();
     switchTab('wallet');
   });
 }
 
 async function switchTab(tabId) {
+  // Always check global settings & maintenance mode when switching tabs
+  const settings = await loadGlobalSettings();
+  if (settings && settings.maintenance_mode) return;
+
+  currentActiveTab = tabId;
+
   // Update active state in navigation
   const navItems = document.querySelectorAll('.bottom-nav .nav-item');
   navItems.forEach(nav => {
@@ -199,7 +235,7 @@ function showAnnouncementNotice() {
   // Show notice modal
   modal.classList.add('active');
 
-  let secondsLeft = 5;
+  let secondsLeft = 15;
   timerEl.innerText = secondsLeft;
 
   let autoCloseTimer = setInterval(() => {
