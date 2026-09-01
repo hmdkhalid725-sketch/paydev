@@ -147,13 +147,16 @@
         <div style="margin-bottom:16px; display:flex; flex-direction:column; gap:12px;">
           <!-- Method Selection -->
           <div style="display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px;">
-            <button class="btn-filter active" id="filter-nagad" onclick="setMethodFilter('Nagad')">নগদ টাস্ক</button>
+            <button class="btn-filter active" id="filter-bkash" onclick="setMethodFilter('bKash')">বিকাশ টাস্ক</button>
+            <button class="btn-filter" id="filter-nagad" onclick="setMethodFilter('Nagad')">নগদ টাস্ক</button>
             <button class="btn-filter" id="filter-usdt" onclick="setMethodFilter('USDT')">💎 USDT (Crypto 6%)</button>
+            <button class="btn-filter" id="filter-all" onclick="setMethodFilter('all')">সকল টাস্ক</button>
           </div>
 
           <!-- Amount Range Pills -->
           <div style="display:flex; gap:8px; overflow-x:auto; padding-bottom:4px;" id="pills-container">
-            <button class="btn-pill active" id="pill-1" onclick="setPillFilter(100, 199, 'pill-1')">100 - 199</button>
+            <button class="btn-pill active" id="pill-all" onclick="setPillFilter(0, 999999, 'pill-all')">সব পরিমাণ</button>
+            <button class="btn-pill" id="pill-1" onclick="setPillFilter(100, 199, 'pill-1')">100 - 199</button>
             <button class="btn-pill" id="pill-2" onclick="setPillFilter(200, 1000, 'pill-2')">200 - 1K</button>
             <button class="btn-pill" id="pill-3" onclick="setPillFilter(1000, 4000, 'pill-3')">1K - 4K</button>
             <button class="btn-pill" id="pill-4" onclick="setPillFilter(4000, 10000, 'pill-4')">4K - 10K</button>

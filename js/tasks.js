@@ -4,9 +4,9 @@
 
 let activeTasksList = [];
 let filteredTasks   = [];
-let currentMethod   = 'Nagad';
-let currentMinAmt   = 100;
-let currentMaxAmt   = 199; // Default selected range: 100 - 199
+let currentMethod   = 'bKash';
+let currentMinAmt   = 0;
+let currentMaxAmt   = 999999; // Default selected range: All Amounts
 
 // ── LOAD TASKS ────────────────────────────────────────────────────────────────
 async function loadTasks() {
