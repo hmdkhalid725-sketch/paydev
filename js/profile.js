@@ -156,9 +156,9 @@ function getHelpContent() {
     <p><strong>যেকোনো সাহায্যের জন্য:</strong></p>
     <p>টাস্ক ভেরিফিকেশন, পেন্ডিং পেমেন্ট, রিফান্ড পেতে দেরি হওয়া অথবা উইথড্র সংক্রান্ত যেকোনো সমস্যার জন্য সরাসরি আমাদের অফিসিয়াল টেলিগ্রাম সাপোর্ট চ্যানেলে যোগাযোগ করুন।</p>
     
-    <a href="https://t.me/lcmathod" target="_blank" 
+    <a href="https://t.me/devpaysupport" target="_blank" 
       style="display: block; text-align: center; background: linear-gradient(135deg, #0088cc 0%, #00a2ed 100%); color: #fff; font-size: 15px; font-weight: 800; border: none; border-radius: 12px; padding: 14px; margin: 18px 0; text-decoration: none; box-shadow: 0 4px 12px rgba(0,136,204,0.3);">
-      💬 টেলিগ্রাম সাপোর্ট চ্যানেল (Join Here)
+      💬 @devpaysupport — টেলিগ্রাম সাপোর্ট
     </a>
 
     <p style="font-size: 12px; color: var(--text-muted); line-height: 1.4;">দ্রষ্টব্য: কথা বলার সময় আপনার ট্রানজেকশন আইডি (TrxID) এবং পেমেন্ট করার তথ্য সাথে রাখুন।</p>

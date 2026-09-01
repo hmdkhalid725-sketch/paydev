@@ -166,7 +166,7 @@ async function copyToClipboard(text, element) {
 
 // Load support details dynamically
 async function openSupportContact() {
-  window.open('https://t.me/lcmathod', '_blank');
+  window.open('https://t.me/devpaysupport', '_blank');
 }
 
 // Global UI Spinner helpers
