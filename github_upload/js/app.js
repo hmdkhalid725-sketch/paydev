@@ -17,10 +17,13 @@ async function initApp() {
   // Load initial tab data (Home)
   showSpinner(true);
   try {
-    // 1. Check if session is already recovered
+    // 1. Load global settings & maintenance check first
+    await loadGlobalSettings();
+
+    // 2. Check if session is already recovered
     let { data: { session } } = await supabaseClient.auth.getSession();
     
-    // 2. If session is still loading/restoring, wait for onAuthStateChange
+    // 3. If session is still loading/restoring, wait for onAuthStateChange
     if (!session) {
       session = await new Promise((resolve) => {
         const timeout = setTimeout(() => resolve(null), 1500); // 1.5s fallback timeout
@@ -35,7 +38,6 @@ async function initApp() {
     }
 
     if (session) {
-      await loadGlobalSettings();
       await refreshCurrentTabData('home');
       updateLastActive(session.user.id);
       setInterval(() => updateLastActive(session.user.id), 90000);
@@ -220,30 +222,32 @@ function showAnnouncementNotice() {
 window.globalAppSettings = null;
 
 async function loadGlobalSettings() {
-  if (!supabaseClient) return;
+  if (!supabaseClient) return null;
   try {
     const { data, error } = await supabaseClient
       .from('app_settings')
       .select('*')
-      .eq('id', true)
-      .single();
-      
+      .limit(1)
+      .maybeSingle();
+
     if (!error && data) {
       window.globalAppSettings = data;
-      
+
       // Update Maintenance Mode UI
       const maintOverlay = document.getElementById('maintenance-overlay');
       if (maintOverlay) {
-        if (data.maintenance_mode) {
+        if (data.maintenance_mode === true) {
           maintOverlay.style.display = 'flex';
         } else {
           maintOverlay.style.display = 'none';
         }
       }
+      return data;
     }
   } catch (err) {
     console.error("Error loading app settings:", err);
   }
+  return null;
 }
 
 // Track user activity timestamp

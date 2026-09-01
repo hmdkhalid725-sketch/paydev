@@ -779,9 +779,12 @@ async function sendNotification(e) {
 }
 
 // ── SETTINGS ─────────────────────────────────────────────────────────────────
+let currentSettingsRowId = null;
+
 async function loadSettings() {
-  const { data, error } = await supabaseClient.from('app_settings').select('*').eq('id', true).single();
+  const { data, error } = await supabaseClient.from('app_settings').select('*').limit(1).single();
   if (error) throw error;
+  currentSettingsRowId = data.id;
   document.getElementById('s-min-wdr').value       = data.min_withdrawal;
   document.getElementById('s-max-wdr').value       = data.max_withdrawal;
   document.getElementById('s-support').value       = data.support_contact;
@@ -792,8 +795,8 @@ async function loadSettings() {
   document.getElementById('s-usdt-erc20').value    = data.usdt_erc20_address || '';
   document.getElementById('s-usdt-sol').value      = data.usdt_sol_address || '';
   document.getElementById('s-usdt-polygon').value  = data.usdt_polygon_address || '';
-  document.getElementById('s-maintenance').value   = data.maintenance_mode.toString();
-  document.getElementById('s-tasks-avail').value   = data.task_availability.toString();
+  document.getElementById('s-maintenance').value   = data.maintenance_mode ? 'true' : 'false';
+  document.getElementById('s-tasks-avail').value   = data.task_availability ? 'true' : 'false';
   document.getElementById('s-instructions').value  = data.default_task_instructions;
 }
 
@@ -804,8 +807,12 @@ async function saveSettings(e) {
     const bkashNum = document.getElementById('s-global-bkash').value.trim();
     const nagadNum = document.getElementById('s-global-nagad').value.trim();
 
-    // 1. Update app_settings
-    const { error } = await supabaseClient.from('app_settings').update({
+    if (!currentSettingsRowId) {
+      const { data: row } = await supabaseClient.from('app_settings').select('id').limit(1).single();
+      if (row) currentSettingsRowId = row.id;
+    }
+
+    const payload = {
       min_withdrawal:           parseFloat(document.getElementById('s-min-wdr').value),
       max_withdrawal:           parseFloat(document.getElementById('s-max-wdr').value),
       support_contact:          document.getElementById('s-support').value.trim(),
@@ -816,12 +823,20 @@ async function saveSettings(e) {
       usdt_erc20_address:       document.getElementById('s-usdt-erc20').value.trim(),
       usdt_sol_address:         document.getElementById('s-usdt-sol').value.trim(),
       usdt_polygon_address:     document.getElementById('s-usdt-polygon').value.trim(),
-      maintenance_mode:         document.getElementById('s-maintenance').value === 'true',
-      task_availability:        document.getElementById('s-tasks-avail').value === 'true',
+      maintenance_mode:         (document.getElementById('s-maintenance').value === 'true'),
+      task_availability:        (document.getElementById('s-tasks-avail').value === 'true'),
       default_task_instructions: document.getElementById('s-instructions').value.trim(),
-      updated_at:               new Date()
-    }).eq('id', true);
+      updated_at:               new Date().toISOString()
+    };
 
+    let updateQuery = supabaseClient.from('app_settings').update(payload);
+    if (currentSettingsRowId !== null && currentSettingsRowId !== undefined) {
+      updateQuery = updateQuery.eq('id', currentSettingsRowId);
+    } else {
+      updateQuery = updateQuery.neq('min_withdrawal', -99999);
+    }
+
+    const { error } = await updateQuery;
     if (error) throw error;
 
     // 2. Propagate updates to all tasks under each payment method
