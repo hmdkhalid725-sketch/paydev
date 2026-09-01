@@ -716,6 +716,7 @@ function renderUsers(users) {
             ? `<button class="btn btn-red" onclick="setUserStatus('${u.id}', 'suspended')">Suspend</button>`
             : `<button class="btn btn-green" onclick="setUserStatus('${u.id}', 'active')">Activate</button>`}
           <button class="btn btn-ghost" onclick="viewUserBalance('${u.id}')">Balance</button>
+          <button class="btn btn-green" style="padding: 3px 10px; font-size: 11px; font-weight: 800; background: #00e676; color: #000; border: none;" onclick="openAddBalanceModal('${u.id}', '${escapeHtml(u.full_name || 'User')}', '${u.phone || 'N/A'}')">💰 Add Balance</button>
         </div>
       </td>
     </tr>`;
@@ -724,14 +725,94 @@ function renderUsers(users) {
 
 async function viewUserBalance(userId) {
   try {
+    const { data: u } = await supabaseClient.from('profiles').select('full_name, phone').eq('id', userId).single();
+    openAddBalanceModal(userId, u?.full_name || 'User', u?.phone || 'N/A');
+  } catch (err) {
+    openAddBalanceModal(userId, 'User', 'N/A');
+  }
+}
+
+async function openAddBalanceModal(userId, userName, userPhone) {
+  document.getElementById('bal-modal-user-id').value = userId;
+  document.getElementById('bal-modal-user-name').innerText = userName;
+  document.getElementById('bal-modal-user-phone').innerText = `📱 ${userPhone}`;
+  document.getElementById('bal-modal-current-bal').innerText = 'Loading...';
+  document.getElementById('bal-modal-amount').value = '';
+  document.getElementById('bal-modal-reason').value = 'Admin Bonus';
+  document.getElementById('bal-modal-action').value = 'add';
+
+  openModal('balance-modal');
+
+  try {
     const { data: bal } = await supabaseClient.rpc('get_user_balance', { user_id: userId });
-    const el = document.getElementById(`bal-${userId}`);
     let b = parseFloat(bal || 0);
     if (b > 0 && b < 5) b = b * 130;
-    if (el) el.innerText = '৳' + b.toFixed(2);
-    toast(`User balance: ৳${b.toFixed(2)}`, 'info');
+    document.getElementById('bal-modal-current-bal').innerText = `৳${b.toFixed(2)}`;
   } catch (err) {
+    document.getElementById('bal-modal-current-bal').innerText = '৳0.00';
+  }
+}
+
+async function submitAdminBalanceAdjustment() {
+  const userId = document.getElementById('bal-modal-user-id').value;
+  const action = document.getElementById('bal-modal-action').value;
+  const rawAmt = parseFloat(document.getElementById('bal-modal-amount').value);
+  const reason = document.getElementById('bal-modal-reason').value.trim();
+  const notify = document.getElementById('bal-modal-notify-user').checked;
+
+  if (!userId) {
+    toast('Select a valid user', 'error');
+    return;
+  }
+  if (!rawAmt || isNaN(rawAmt) || rawAmt <= 0) {
+    toast('সঠিক টাকার পরিমাণ টাইপ করুন।', 'error');
+    return;
+  }
+  if (!reason) {
+    toast('টাকা যোগ/কাটার কারণ উল্লেখ করুন।', 'error');
+    return;
+  }
+
+  const finalAmount = action === 'add' ? rawAmt : -rawAmt;
+
+  showSpinner(true);
+  try {
+    // 1. Insert into wallet_transactions to adjust balance
+    const { error: txErr } = await supabaseClient
+      .from('wallet_transactions')
+      .insert({
+        user_id: userId,
+        type: 'adjustment',
+        amount: finalAmount,
+        reference_type: 'admin_adjustment',
+        description: `Admin Adjustment: ৳${rawAmt} (${reason})`
+      });
+
+    if (txErr) throw txErr;
+
+    // 2. Send in-app notification if requested
+    if (notify) {
+      const notifTitle = action === 'add' ? '🎉 অ্যাকাউন্টে ব্যালেন্স যোগ হয়েছে!' : '⚠️ অ্যাকাউন্ট ব্যালেন্স এডজাস্টমেন্ট';
+      const notifMsg   = `আপনার ওয়ালেটে ৳${rawAmt.toFixed(2)} ${action === 'add' ? 'যোগ' : 'কাটা'} করা হয়েছে। (কারণ: ${reason})`;
+      
+      await supabaseClient.from('notifications').insert({
+        user_id: userId,
+        title: notifTitle,
+        message: notifMsg
+      });
+    }
+
+    toast(`✅ ৳${rawAmt} ${action === 'add' ? 'যোগ' : 'কাটা'} সফল হয়েছে!`, 'success');
+    closeModal('balance-modal');
+
+    // Update balance on user table row dynamically
+    viewUserBalance(userId);
+
+  } catch (err) {
+    console.error("Error adjusting user balance:", err);
     toast(err.message, 'error');
+  } finally {
+    showSpinner(false);
   }
 }
 
@@ -1492,3 +1573,5 @@ window.insertAdminQuickReply = insertAdminQuickReply;
 window.sendAdminSupportReply = sendAdminSupportReply;
 window.handleAdminSupportImageSelect = handleAdminSupportImageSelect;
 window.removeAdminSupportImageAttachment = removeAdminSupportImageAttachment;
+window.openAddBalanceModal = openAddBalanceModal;
+window.submitAdminBalanceAdjustment = submitAdminBalanceAdjustment;
