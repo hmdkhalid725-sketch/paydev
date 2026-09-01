@@ -40,6 +40,19 @@ function toggleSupportChatModal() {
   }
 }
 
+function openSupportChatModal() {
+  const modal = document.getElementById('modal-live-support');
+  if (!modal) return;
+  modal.classList.add('active');
+  loadSupportMessages();
+}
+
+function closeSupportChatModal() {
+  const modal = document.getElementById('modal-live-support');
+  if (!modal) return;
+  modal.classList.remove('active');
+}
+
 async function loadSupportMessages() {
   if (!supabaseClient || !currentChatUserId) return;
 
@@ -269,6 +282,8 @@ function escapeHtml(str) {
 }
 
 window.toggleSupportChatModal = toggleSupportChatModal;
+window.openSupportChatModal = openSupportChatModal;
+window.closeSupportChatModal = closeSupportChatModal;
 window.sendSupportMessage = sendSupportMessage;
 window.loadSupportMessages = loadSupportMessages;
 window.handleSupportImageSelect = handleSupportImageSelect;

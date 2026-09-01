@@ -216,7 +216,9 @@ async function copyToClipboard(text, element) {
 
 // Load support details dynamically
 async function openSupportContact() {
-  if (typeof toggleSupportChatModal === 'function') {
+  if (typeof openSupportChatModal === 'function') {
+    openSupportChatModal();
+  } else if (typeof toggleSupportChatModal === 'function') {
     toggleSupportChatModal();
   } else {
     window.open('https://t.me/devpaysupport', '_blank');

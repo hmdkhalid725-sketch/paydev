@@ -15,7 +15,9 @@ function setupProfileMenuActions() {
   if (btnHistory) btnHistory.addEventListener('click', openSubmissionsHistoryModal);
   if (btnReferred) btnReferred.addEventListener('click', openReferredUsersModal);
   if (btnHelp) btnHelp.addEventListener('click', () => {
-    if (typeof toggleSupportChatModal === 'function') {
+    if (typeof openSupportChatModal === 'function') {
+      openSupportChatModal();
+    } else if (typeof toggleSupportChatModal === 'function') {
       toggleSupportChatModal();
     } else {
       openLegalModal('হেল্প ও সাপোর্ট চ্যানেল', getHelpContent());
