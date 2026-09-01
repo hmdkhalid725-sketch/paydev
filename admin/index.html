@@ -10,11 +10,55 @@
   <meta name="theme-color" content="#08090D">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    .admin-main {
-      flex: 1;
-      overflow-y: auto;
-      padding: 20px;
+    /* ===== CRITICAL SCROLL FIX ===== */
+    html, body {
+      height: 100% !important;
+      max-height: 100% !important;
+      overflow: hidden !important;
+      margin: 0 !important;
+      padding: 0 !important;
     }
+
+    body {
+      display: flex !important;
+    }
+
+    #sidebar {
+      height: 100% !important;
+      display: flex !important;
+      flex-direction: column !important;
+      flex-shrink: 0 !important;
+      overflow: hidden !important;
+    }
+
+    .sidebar-nav {
+      flex: 1 !important;
+      min-height: 0 !important;
+      overflow-y: auto !important;
+    }
+
+    #main-wrap {
+      flex: 1 !important;
+      min-width: 0 !important;
+      min-height: 0 !important;
+      height: 100% !important;
+      display: flex !important;
+      flex-direction: column !important;
+      overflow: hidden !important;
+    }
+
+    #top-bar {
+      flex-shrink: 0 !important;
+    }
+
+    #content-area {
+      flex: 1 !important;
+      min-height: 0 !important;
+      overflow-y: auto !important;
+      overflow-x: hidden !important;
+      -webkit-overflow-scrolling: touch !important;
+    }
+    /* ============================= */
   </style>
 </head>
 <body>
@@ -361,12 +405,13 @@
                 <th>Referral Code</th>
                 <th>Status</th>
                 <th>Joined</th>
+                <th>Last Active</th>
                 <th>Balance</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody id="users-tbody">
-              <tr><td colspan="7"><div class="empty-state">Loading...</div></td></tr>
+              <tr><td colspan="8"><div class="empty-state">Loading...</div></td></tr>
             </tbody>
           </table>
         </div>
@@ -447,6 +492,29 @@
                   <label class="form-label">Global Nagad Receiver Number</label>
                   <input class="form-control" type="tel" id="s-global-nagad" placeholder="018XXXXXXXX">
                 </div>
+              </div>
+
+              <!-- USDT Deposit Wallet Addresses Section -->
+              <h4 style="margin-top: 20px; margin-bottom: 10px; font-size: 13px; color: var(--txt); border-top: 1px solid var(--border); padding-top: 15px;">USDT Deposit Wallet Addresses</h4>
+              <div class="form-group">
+                <label class="form-label">TRC20 Wallet Address (TRON)</label>
+                <input class="form-control" type="text" id="s-usdt-trc20" placeholder="TYourTrc20Address...">
+              </div>
+              <div class="form-group">
+                <label class="form-label">BEP20 / BSC Wallet Address (Binance Smart Chain)</label>
+                <input class="form-control" type="text" id="s-usdt-bep20" placeholder="0xYourBep20Address...">
+              </div>
+              <div class="form-group">
+                <label class="form-label">ERC20 Wallet Address (Ethereum)</label>
+                <input class="form-control" type="text" id="s-usdt-erc20" placeholder="0xYourErc20Address...">
+              </div>
+              <div class="form-group">
+                <label class="form-label">SOL Wallet Address (Solana)</label>
+                <input class="form-control" type="text" id="s-usdt-sol" placeholder="YourSolanaAddress...">
+              </div>
+              <div class="form-group">
+                <label class="form-label">POLYGON / MATIC Wallet Address</label>
+                <input class="form-control" type="text" id="s-usdt-polygon" placeholder="0xYourPolygonAddress...">
               </div>
 
               <div class="form-group">
@@ -563,34 +631,6 @@
     </div>
   </div>
 
-  <!-- ═══════════════════════ REFUND CONFIRM MODAL -->
-  <div class="modal-backdrop" id="refund-modal">
-    <div class="modal">
-      <div class="modal-header">
-        <span class="modal-title">Confirm Manual Refund</span>
-        <button class="modal-close" onclick="closeModal('refund-modal')">✕</button>
-      </div>
-      <div class="modal-body">
-        <p style="font-size:13px;color:var(--txt2);margin-bottom:16px;">
-          You are about to confirm that you have manually sent <strong id="r-amount-display" style="color:var(--green)">৳0</strong> to <strong id="r-phone-display" style="color:var(--cyan)">01X</strong> via <strong id="r-method-display">bKash</strong>.<br><br>
-          This will also credit the task cashback bonus to the user's wallet <strong>exactly once</strong>.
-        </p>
-        <input type="hidden" id="r-submission-id">
-        <div class="form-group">
-          <label class="form-label">Your Refund Transaction ID (TxnID)</label>
-          <input class="form-control" type="text" id="r-txn-id" required placeholder="Enter the TxnID you sent">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Admin Note (optional)</label>
-          <input class="form-control" type="text" id="r-note" placeholder="e.g. Refunded successfully">
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-ghost" onclick="closeModal('refund-modal')">Cancel</button>
-        <button class="btn btn-green" onclick="confirmRefund()">✓ Confirm Refunded & Credit Bonus</button>
-      </div>
-    </div>
-  </div>
 
   <!-- ═══════════════════════ REJECT / NOTE MODAL -->
   <div class="modal-backdrop" id="note-modal">

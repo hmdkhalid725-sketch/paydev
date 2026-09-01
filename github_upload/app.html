@@ -13,12 +13,27 @@
 <body>
   <div id="app-container">
     <!-- MAINTENANCE OVERLAY -->
-    <div id="maintenance-overlay" class="spinner-overlay" style="background: var(--bg-primary); z-index: 99999; display: none; flex-direction: column; gap: 16px; text-align: center; padding: 24px; justify-content: center; opacity: 1; pointer-events: auto;">
-      <div style="font-size: 64px;">🛠️</div>
-      <h2 style="font-weight: 800; color: #fff; font-size: 24px;">অ্যাপ রক্ষণাবেক্ষণ চলছে</h2>
-      <p style="color: var(--text-secondary); max-width: 320px; font-size: 14.5px; line-height: 1.7; margin: 0 auto;">
-        আমাদের অ্যাপের রক্ষণাবেক্ষণের কাজ চলছে। আপনারা <strong>নির্ভয়ে থাকুন</strong>, আগামীকাল থেকে আবার নিয়মিত কাজ করতে পারবেন। ধন্যবাদ।
-      </p>
+    <div id="maintenance-overlay" class="spinner-overlay" style="background: #08090d; z-index: 99999; display: none; flex-direction: column; gap: 18px; text-align: center; padding: 32px 24px; justify-content: center; opacity: 1; pointer-events: auto; box-sizing: border-box;">
+      <div style="width: 80px; height: 80px; background: rgba(0, 229, 255, 0.1); border: 2px solid var(--accent-cyan); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto; box-shadow: 0 0 30px rgba(0, 229, 255, 0.35);">
+        <span style="font-size: 42px;">🚀</span>
+      </div>
+      
+      <div>
+        <h2 style="font-weight: 900; color: #ffffff; font-size: 22px; margin: 0 0 8px 0; letter-spacing: 0.5px;">সিস্টেম আপডেট চলছে...</h2>
+        <span style="background: rgba(0, 230, 118, 0.15); color: #00e676; border: 1px solid rgba(0, 230, 118, 0.3); font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 20px; display: inline-block;">⚡ খুব দ্রুততম সময়ে কাজ শেষ হচ্ছে</span>
+      </div>
+
+      <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; padding: 18px; max-width: 340px; margin: 0 auto;">
+        <p style="color: #e0e0e0; font-size: 13.5px; line-height: 1.7; margin: 0; font-weight: 500;">
+          সম্মানিত ব্যবহারকারী, আমাদের সিস্টেমে নতুন আপডেট ও উন্নতির কাজ চলছে। অনুগ্রহ করে কিছুক্ষণ পর আবারও আসুন। আমরা খুব দ্রুত কাজ শেষ করে পুনরায় চালু করছি। 
+          <br><br>
+          ধন্যবাদ আমাদের সাথে থাকার জন্য! ❤️
+        </p>
+      </div>
+
+      <div style="font-size: 12px; color: var(--text-muted); font-weight: 700; margin-top: 8px;">
+        DevPay Official Platform • Always Secure
+      </div>
     </div>
 
     <!-- Toast system -->
@@ -131,10 +146,9 @@
         <!-- Method & Pill Filter bar -->
         <div style="margin-bottom:16px; display:flex; flex-direction:column; gap:12px;">
           <!-- Method Selection -->
-          <div style="display: none; gap: 8px; overflow-x: auto; padding-bottom: 4px;">
-            <button class="btn-filter active" id="filter-all" onclick="setMethodFilter('all')">সব টাস্ক</button>
-            <button class="btn-filter" id="filter-bkash" onclick="setMethodFilter('bKash')">বিকাশ</button>
-            <button class="btn-filter" id="filter-nagad" onclick="setMethodFilter('Nagad')">নগদ</button>
+          <div style="display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px;">
+            <button class="btn-filter active" id="filter-nagad" onclick="setMethodFilter('Nagad')">নগদ টাস্ক</button>
+            <button class="btn-filter" id="filter-usdt" onclick="setMethodFilter('USDT')">💎 USDT (Crypto 6%)</button>
           </div>
 
           <!-- Amount Range Pills -->
@@ -231,27 +245,38 @@
             <!-- Method Selector Header -->
             <div style="padding: 16px 18px 0;">
               <p style="font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 10px;">পেমেন্ট মাধ্যম বেছে নিন</p>
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 18px;">
+              <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 18px;">
 
                 <!-- bKash Option -->
                 <div class="method-option selected" data-method="bKash"
-                  style="border-radius: 12px; border: 2px solid #e2136e; background: rgba(226,19,110,0.08); padding: 12px 14px; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: all 0.2s;" id="method-bkash-btn">
+                  style="border-radius: 12px; border: 2px solid #e2136e; background: rgba(226,19,110,0.08); padding: 10px 8px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.2s;" id="method-bkash-btn">
                   <img src="./assets/bkash-logo.png" alt="bKash"
-                    style="width: 34px; height: 34px; border-radius: 8px; object-fit: cover; border: 1px solid rgba(255,255,255,0.08);">
+                    style="width: 28px; height: 28px; border-radius: 6px; object-fit: cover; border: 1px solid rgba(255,255,255,0.08);">
                   <div>
-                    <p style="font-size: 13px; font-weight: 800; color: #fff; margin: 0;">bKash</p>
-                    <p style="font-size: 10px; color: rgba(226,19,110,0.9); margin: 0; font-weight: 600;">সেন্ড মানি</p>
+                    <p style="font-size: 12px; font-weight: 800; color: #fff; margin: 0;">bKash</p>
+                    <p style="font-size: 9.5px; color: rgba(226,19,110,0.9); margin: 0; font-weight: 600;">সেন্ড মানি</p>
                   </div>
                 </div>
 
                 <!-- Nagad Option -->
                 <div class="method-option" data-method="Nagad"
-                  style="border-radius: 12px; border: 2px solid rgba(255,255,255,0.07); background: rgba(255,255,255,0.02); padding: 12px 14px; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: all 0.2s;" id="method-nagad-btn">
+                  style="border-radius: 12px; border: 2px solid rgba(255,255,255,0.07); background: rgba(255,255,255,0.02); padding: 10px 8px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.2s;" id="method-nagad-btn">
                   <img src="./assets/nagad-logo.png" alt="Nagad"
-                    style="width: 34px; height: 34px; border-radius: 8px; object-fit: cover; border: 1px solid rgba(255,255,255,0.08);">
+                    style="width: 28px; height: 28px; border-radius: 6px; object-fit: cover; border: 1px solid rgba(255,255,255,0.08);">
                   <div>
-                    <p style="font-size: 13px; font-weight: 800; color: #fff; margin: 0;">Nagad</p>
-                    <p style="font-size: 10px; color: rgba(255,106,0,0.9); margin: 0; font-weight: 600;">সেন্ড মানি</p>
+                    <p style="font-size: 12px; font-weight: 800; color: #fff; margin: 0;">Nagad</p>
+                    <p style="font-size: 9.5px; color: rgba(255,106,0,0.9); margin: 0; font-weight: 600;">সেন্ড মানি</p>
+                  </div>
+                </div>
+
+                <!-- USDT Option -->
+                <div class="method-option" data-method="USDT"
+                  style="border-radius: 12px; border: 2px solid rgba(255,255,255,0.07); background: rgba(255,255,255,0.02); padding: 10px 8px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.2s;" id="method-usdt-btn">
+                  <img src="./assets/bep20-logo.png" alt="USDT"
+                    style="width: 28px; height: 28px; border-radius: 6px; object-fit: contain; background: rgba(0,0,0,0.3); padding: 2px; border: 1px solid rgba(255,255,255,0.08);">
+                  <div>
+                    <p style="font-size: 12px; font-weight: 800; color: #fff; margin: 0;">USDT</p>
+                    <p style="font-size: 9.5px; color: #00e676; margin: 0; font-weight: 600;">ক্রিপ্টো $</p>
                   </div>
                 </div>
 
@@ -266,7 +291,7 @@
 
               <!-- Account Number -->
               <div style="margin-bottom: 16px;">
-                <p style="font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">একাউন্ট নম্বর</p>
+                <p id="withdraw-account-label" style="font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">একাউন্ট নম্বর</p>
                 <div style="position: relative;">
                   <div style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); display: flex; align-items: center; gap: 6px; pointer-events: none;">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a0a5b5" stroke-width="2">
@@ -274,26 +299,27 @@
                     </svg>
                     <span style="width: 1px; height: 18px; background: rgba(255,255,255,0.08); display: inline-block;"></span>
                   </div>
-                  <input type="tel" id="withdraw-number" required
+                  <input type="text" id="withdraw-number" required
                     placeholder="01XXXXXXXXX"
-                    style="width: 100%; background: var(--bg-primary); border: 1.5px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 14px 14px 14px 48px; color: #fff; font-size: 16px; font-weight: 700; letter-spacing: 1.5px; font-family: monospace; outline: none; box-sizing: border-box; transition: border-color 0.2s;"
+                    style="width: 100%; background: var(--bg-primary); border: 1.5px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 14px 14px 14px 48px; color: #fff; font-size: 15px; font-weight: 700; outline: none; box-sizing: border-box; transition: border-color 0.2s;"
                     onfocus="this.style.borderColor='#00e5ff'" onblur="this.style.borderColor='rgba(255,255,255,0.08)'">
                 </div>
               </div>
 
               <!-- Amount -->
               <div style="margin-bottom: 20px;">
-                <p style="font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">উইথড্র পরিমাণ (৳)</p>
+                <p id="withdraw-amount-label" style="font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">উইথড্র পরিমাণ (৳)</p>
                 <div style="position: relative;">
                   <div style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); pointer-events: none;">
-                    <span style="font-size: 20px; font-weight: 800; color: var(--accent-green); line-height: 1;">৳</span>
+                    <span id="withdraw-currency-prefix" style="font-size: 20px; font-weight: 800; color: var(--accent-green); line-height: 1;">৳</span>
                   </div>
-                  <input type="number" id="withdraw-amount" required min="100"
+                  <input type="number" id="withdraw-amount" required min="100" step="any"
                     placeholder="0"
                     style="width: 100%; background: var(--bg-primary); border: 1.5px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 14px 14px 14px 40px; color: #fff; font-size: 22px; font-weight: 800; outline: none; box-sizing: border-box; transition: border-color 0.2s; -moz-appearance: textfield;"
                     onfocus="this.style.borderColor='var(--accent-green)'" onblur="this.style.borderColor='rgba(255,255,255,0.08)'">
                 </div>
                 <p style="font-size: 11px; color: var(--text-muted); margin-top: 6px; padding-left: 4px;">সর্বনিম্ন: <span style="color: var(--accent-green); font-weight: 700;" id="min-withdraw-label">৳100</span></p>
+                <p id="withdraw-conversion-hint" style="display:none; font-size:11px; color:var(--accent-cyan); margin-top:4px; font-weight:700;"></p>
               </div>
             </div>
 

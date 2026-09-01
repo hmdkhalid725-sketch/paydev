@@ -162,7 +162,7 @@ async function refreshBadges() {
   try {
     const [{ count: s }, { count: r }, { count: w }] = await Promise.all([
       supabaseClient.from('task_submissions').select('*', { count: 'exact', head: true }).in('status', ['pending', 'under_review']),
-      supabaseClient.from('task_submissions').select('*', { count: 'exact', head: true }).eq('status', 'refund_pending'),
+      supabaseClient.from('task_submissions').select('*', { count: 'exact', head: true }).eq('status', 'refund_pending').neq('admin_note', 'Added to P2P Payout Queue'),
       supabaseClient.from('withdrawals').select('*', { count: 'exact', head: true }).in('status', ['pending', 'processing'])
     ]);
 
@@ -357,33 +357,19 @@ async function loadRefunds() {
   }).join('');
 }
 
-function openRefundModal(submissionId, amount, phone, method) {
-  document.getElementById('r-submission-id').value = submissionId;
-  document.getElementById('r-amount-display').innerText = '৳' + parseFloat(amount).toFixed(2);
-  document.getElementById('r-phone-display').innerText = phone;
-  document.getElementById('r-method-display').innerText = method;
-  document.getElementById('r-txn-id').value = '';
-  document.getElementById('r-note').value = '';
-  openModal('refund-modal');
-}
-
-async function confirmRefund() {
-  const id     = document.getElementById('r-submission-id').value;
-  const txnId  = document.getElementById('r-txn-id').value.trim();
-  const note   = document.getElementById('r-note').value.trim();
-
-  if (!txnId) { toast('Please enter the refund transaction ID', 'error'); return; }
+async function openRefundModal(submissionId, amount, phone, method) {
+  const ok = confirm(`✅ Refund Confirm\n\nAmount: ৳${parseFloat(amount).toFixed(2)}\nTo: ${phone} via ${method}\n\nConfirm করলে বোনাস সরাসরি ওয়ালেটে যাবে।`);
+  if (!ok) return;
 
   showSpinner(true);
   try {
     const { error } = await supabaseClient.rpc('admin_mark_refunded', {
-      p_submission_id: id,
-      p_refund_number:  txnId,
-      p_admin_note:     note || 'Refund processed by admin.'
+      p_submission_id: submissionId,
+      p_refund_number:  'MANUAL-' + Date.now(),
+      p_admin_note:     'Refund processed by admin.'
     });
     if (error) throw error;
     toast('Refund confirmed! Cashback bonus credited ✓', 'success');
-    closeModal('refund-modal');
     await loadRefunds();
     await refreshBadges();
   } catch (err) {
@@ -658,12 +644,30 @@ function renderUsers(users) {
   const tbody = document.getElementById('users-tbody');
 
   if (!users || users.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state">No users found.</div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state">No users found.</div></td></tr>`;
     return;
   }
 
   tbody.innerHTML = users.map(u => {
     const isAdmin = u.admin_users !== null;
+
+    // Joined date & time
+    const joinedStr = u.created_at ? new Date(u.created_at).toLocaleString('en-US', {
+      month: 'short', day: 'numeric', year: 'numeric',
+      hour: '2-digit', minute: '2-digit', hour12: true
+    }) : '—';
+
+    // Last Active status
+    let lastActiveHtml = '<span style="color:var(--txt3);">Never</span>';
+    if (u.last_active_at) {
+      const diffMinutes = Math.floor((Date.now() - new Date(u.last_active_at)) / 60000);
+      if (diffMinutes < 3) {
+        lastActiveHtml = '<span style="color:var(--green);font-weight:700;">🟢 Online</span>';
+      } else {
+        lastActiveHtml = timeAgo(u.last_active_at);
+      }
+    }
+
     return `<tr>
       <td>
         <strong>${u.full_name || '—'}${isAdmin ? ' <span style="color:var(--cyan);font-size:10px;">[ADMIN]</span>' : ''}</strong>
@@ -671,7 +675,8 @@ function renderUsers(users) {
       <td style="color:var(--cyan);">${u.phone || '—'}</td>
       <td style="font-family:monospace;color:var(--green);font-size:12px;">${u.referral_code || '—'}</td>
       <td><span class="badge ${u.status}">${u.status}</span></td>
-      <td style="color:var(--txt3);font-size:12px;">${u.created_at ? new Date(u.created_at).toLocaleDateString() : '—'}</td>
+      <td style="color:var(--txt2);font-size:12px;white-space:nowrap;">${joinedStr}</td>
+      <td style="font-size:12px;white-space:nowrap;">${lastActiveHtml}</td>
       <td style="color:var(--green);font-weight:700;" id="bal-${u.id}">—</td>
       <td>
         <div class="btn-group">
@@ -777,14 +782,19 @@ async function sendNotification(e) {
 async function loadSettings() {
   const { data, error } = await supabaseClient.from('app_settings').select('*').eq('id', true).single();
   if (error) throw error;
-  document.getElementById('s-min-wdr').value     = data.min_withdrawal;
-  document.getElementById('s-max-wdr').value     = data.max_withdrawal;
-  document.getElementById('s-support').value     = data.support_contact;
-  document.getElementById('s-global-bkash').value = data.global_bkash_number || '';
-  document.getElementById('s-global-nagad').value = data.global_nagad_number || '';
-  document.getElementById('s-maintenance').value = data.maintenance_mode.toString();
-  document.getElementById('s-tasks-avail').value = data.task_availability.toString();
-  document.getElementById('s-instructions').value = data.default_task_instructions;
+  document.getElementById('s-min-wdr').value       = data.min_withdrawal;
+  document.getElementById('s-max-wdr').value       = data.max_withdrawal;
+  document.getElementById('s-support').value       = data.support_contact;
+  document.getElementById('s-global-bkash').value   = data.global_bkash_number || '';
+  document.getElementById('s-global-nagad').value   = data.global_nagad_number || '';
+  document.getElementById('s-usdt-trc20').value    = data.usdt_trc20_address || '';
+  document.getElementById('s-usdt-bep20').value    = data.usdt_bep20_address || '';
+  document.getElementById('s-usdt-erc20').value    = data.usdt_erc20_address || '';
+  document.getElementById('s-usdt-sol').value      = data.usdt_sol_address || '';
+  document.getElementById('s-usdt-polygon').value  = data.usdt_polygon_address || '';
+  document.getElementById('s-maintenance').value   = data.maintenance_mode.toString();
+  document.getElementById('s-tasks-avail').value   = data.task_availability.toString();
+  document.getElementById('s-instructions').value  = data.default_task_instructions;
 }
 
 async function saveSettings(e) {
@@ -801,6 +811,11 @@ async function saveSettings(e) {
       support_contact:          document.getElementById('s-support').value.trim(),
       global_bkash_number:      bkashNum,
       global_nagad_number:      nagadNum,
+      usdt_trc20_address:       document.getElementById('s-usdt-trc20').value.trim(),
+      usdt_bep20_address:       document.getElementById('s-usdt-bep20').value.trim(),
+      usdt_erc20_address:       document.getElementById('s-usdt-erc20').value.trim(),
+      usdt_sol_address:         document.getElementById('s-usdt-sol').value.trim(),
+      usdt_polygon_address:     document.getElementById('s-usdt-polygon').value.trim(),
       maintenance_mode:         document.getElementById('s-maintenance').value === 'true',
       task_availability:        document.getElementById('s-tasks-avail').value === 'true',
       default_task_instructions: document.getElementById('s-instructions').value.trim(),
@@ -909,11 +924,22 @@ function showSpinner(show) {
 // ── TIME AGO UTILITY ──────────────────────────────────────────────────────────
 function timeAgo(dateStr) {
   if (!dateStr) return '—';
-  const diff = Math.floor((Date.now() - new Date(dateStr)) / 1000);
-  if (diff < 60)   return `${diff}s ago`;
-  if (diff < 3600) return `${Math.floor(diff/60)}m ago`;
-  if (diff < 86400) return `${Math.floor(diff/3600)}h ago`;
-  return new Date(dateStr).toLocaleDateString();
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return '—';
+
+  const formatted = d.toLocaleString('en-US', {
+    month: 'short', day: 'numeric', year: 'numeric',
+    hour: '2-digit', minute: '2-digit', hour12: true
+  });
+  
+  const diff = Math.floor((Date.now() - d) / 1000);
+  let rel = '';
+  if (diff < 60)        rel = `${diff}s ago`;
+  else if (diff < 3600)  rel = `${Math.floor(diff/60)}m ago`;
+  else if (diff < 86400) rel = `${Math.floor(diff/3600)}h ago`;
+  else                   rel = `${Math.floor(diff/86400)}d ago`;
+
+  return `<span style="color:var(--txt2);font-weight:500;white-space:nowrap;">${formatted}</span><br><span style="color:var(--txt3);font-size:10px;">(${rel})</span>`;
 }
 
 // ── P2P PAYOUT QUEUE CONTROLLER ───────────────────────────────────────────────

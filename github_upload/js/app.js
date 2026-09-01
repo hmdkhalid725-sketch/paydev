@@ -37,6 +37,8 @@ async function initApp() {
     if (session) {
       await loadGlobalSettings();
       await refreshCurrentTabData('home');
+      updateLastActive(session.user.id);
+      setInterval(() => updateLastActive(session.user.id), 90000);
       listenNotifications(); // Start realtime listener
       showAnnouncementNotice(); // Show notice popup on entry
     } else {
@@ -146,6 +148,16 @@ function setupGlobalListeners() {
     uploaderBox.addEventListener('click', () => fileInput.click());
     fileInput.addEventListener('change', handleScreenshotSelect);
   }
+
+  // Backdrop click listener for task modal
+  const taskModal = document.getElementById('modal-overlay-task');
+  if (taskModal) {
+    taskModal.addEventListener('click', (e) => {
+      if (e.target === taskModal) {
+        taskModal.classList.remove('active');
+      }
+    });
+  }
 }
 
 // Clipboard copying utility
@@ -166,7 +178,7 @@ async function copyToClipboard(text, element) {
 
 // Load support details dynamically
 async function openSupportContact() {
-  window.open('https://t.me/lcmathod', '_blank');
+  window.open('https://t.me/devpaysupport', '_blank');
 }
 
 // Global UI Spinner helpers
@@ -231,6 +243,19 @@ async function loadGlobalSettings() {
     }
   } catch (err) {
     console.error("Error loading app settings:", err);
+  }
+}
+
+// Track user activity timestamp
+async function updateLastActive(userId) {
+  if (!userId || !supabaseClient) return;
+  try {
+    await supabaseClient
+      .from('profiles')
+      .update({ last_active_at: new Date().toISOString() })
+      .eq('id', userId);
+  } catch (err) {
+    console.error("Last active update error:", err);
   }
 }
 
