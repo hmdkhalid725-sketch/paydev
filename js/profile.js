@@ -14,7 +14,13 @@ function setupProfileMenuActions() {
 
   if (btnHistory) btnHistory.addEventListener('click', openSubmissionsHistoryModal);
   if (btnReferred) btnReferred.addEventListener('click', openReferredUsersModal);
-  if (btnHelp) btnHelp.addEventListener('click', () => openLegalModal('হেল্প ও সাপোর্ট চ্যানেল', getHelpContent()));
+  if (btnHelp) btnHelp.addEventListener('click', () => {
+    if (typeof toggleSupportChatModal === 'function') {
+      toggleSupportChatModal();
+    } else {
+      openLegalModal('হেল্প ও সাপোর্ট চ্যানেল', getHelpContent());
+    }
+  });
   if (btnTerms) btnTerms.addEventListener('click', () => openLegalModal('নিয়মাবলী ও নির্দেশিকা', getTermsContent()));
 }
 

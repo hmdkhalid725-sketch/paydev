@@ -123,13 +123,14 @@ async function navigateTo(page) {
     tasks:         'Task Management',
     users:         'User Management',
     notifications: 'Notifications',
+    support:       'Live Customer Support Desk',
     settings:      'Settings'
   };
 
   document.getElementById('page-title').innerText = titles[page] || 'Admin Panel';
 
   // Show page
-  document.querySelectorAll('.admin-page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.page, .admin-page').forEach(p => p.classList.remove('active'));
   const el = document.getElementById(`page-${page}`);
   if (el) el.classList.add('active');
 
@@ -145,6 +146,7 @@ async function navigateTo(page) {
       case 'tasks':         await loadTasks(); break;
       case 'users':         await loadUsers(); break;
       case 'notifications': await loadNotifications(); break;
+      case 'support':       await loadSupportDesk(); break;
       case 'settings':      await loadSettings(); break;
     }
     await refreshBadges();
@@ -160,15 +162,17 @@ function reloadCurrentPage() { navigateTo(currentPage); }
 // ── BADGES (unread counts in nav) ─────────────────────────────────────────────
 async function refreshBadges() {
   try {
-    const [{ count: s }, { count: r }, { count: w }] = await Promise.all([
+    const [{ count: s }, { count: r }, { count: w }, { count: sup }] = await Promise.all([
       supabaseClient.from('task_submissions').select('*', { count: 'exact', head: true }).in('status', ['pending', 'under_review']),
       supabaseClient.from('task_submissions').select('*', { count: 'exact', head: true }).eq('status', 'refund_pending').neq('admin_note', 'Added to P2P Payout Queue'),
-      supabaseClient.from('withdrawals').select('*', { count: 'exact', head: true }).in('status', ['pending', 'processing'])
+      supabaseClient.from('withdrawals').select('*', { count: 'exact', head: true }).in('status', ['pending', 'processing']),
+      supabaseClient.from('support_messages').select('*', { count: 'exact', head: true }).eq('sender_type', 'user').eq('is_read', false)
     ]);
 
     setBadge('badge-submissions', s);
     setBadge('badge-refunds', r);
     setBadge('badge-withdrawals', w);
+    setBadge('badge-support', sup);
   } catch(_) {}
 }
 
@@ -877,8 +881,8 @@ async function saveSettings(e) {
     const { error } = await updateQuery;
     if (error) throw error;
 
-    // 2. Propagate updates to all tasks under each payment method
-    if (bkashNum) {
+    // 2. Propagate updates to all tasks under each payment method (even if empty/cleared)
+    if (bkashNum !== undefined) {
       const { error: bkashErr } = await supabaseClient
         .from('tasks')
         .update({ payment_number: bkashNum })
@@ -886,7 +890,7 @@ async function saveSettings(e) {
       if (bkashErr) throw bkashErr;
     }
 
-    if (nagadNum) {
+    if (nagadNum !== undefined) {
       const { error: nagadErr } = await supabaseClient
         .from('tasks')
         .update({ payment_number: nagadNum })
@@ -972,6 +976,17 @@ function toast(message, type = 'info') {
 function showSpinner(show) {
   const spinner = document.getElementById('spinner');
   if (spinner) spinner.classList.toggle('show', show);
+}
+
+// ── HTML ESCAPE UTILITY ───────────────────────────────────────────────────────
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }
 
 // ── TIME AGO UTILITY ──────────────────────────────────────────────────────────
@@ -1118,3 +1133,362 @@ async function addP2PQueueFromRefund(phone, method, amount, submissionId) {
     showSpinner(false);
   }
 }
+
+// ====================================================
+// ADMIN LIVE SUPPORT CHAT DESK
+// ====================================================
+
+let activeSupportUserId = null;
+let supportThreadsList = [];
+let adminSupportPollInterval = null;
+
+function formatSimpleTime(dateStr) {
+  if (!dateStr) return 'NEW';
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return 'NEW';
+  const now = new Date();
+  const diffSec = Math.floor((now - d) / 1000);
+  if (diffSec < 60) return 'Just now';
+  if (diffSec < 3600) return Math.floor(diffSec / 60) + 'm ago';
+  if (diffSec < 86400) return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+}
+
+async function loadSupportDesk() {
+  if (!supabaseClient) return;
+
+  const userListEl = document.getElementById('admin-support-user-list');
+  if (!userListEl) return;
+
+  try {
+    // 1. Fetch all user profiles for metadata
+    const { data: profiles, error: profErr } = await supabaseClient
+      .from('profiles')
+      .select('id, full_name, phone, referral_code');
+
+    if (profErr) console.warn("Profiles query warn:", profErr);
+
+    const profilesMap = {};
+    if (profiles) {
+      profiles.forEach(p => { profilesMap[p.id] = p; });
+    }
+
+    // 2. Fetch all support messages
+    const { data: msgs, error: msgErr } = await supabaseClient
+      .from('support_messages')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (msgErr) throw msgErr;
+
+    // Group messages by user_id
+    const threadsMap = {};
+    (msgs || []).forEach(m => {
+      const prof = profilesMap[m.user_id] || {};
+      if (!threadsMap[m.user_id]) {
+        threadsMap[m.user_id] = {
+          user_id: m.user_id,
+          user_name: prof.full_name || 'User (' + (m.user_id ? m.user_id.substring(0,6) : '') + ')',
+          phone: prof.phone || 'N/A',
+          referral_code: prof.referral_code || 'N/A',
+          last_msg: m.message,
+          last_time: m.created_at,
+          unread_count: 0,
+          messages: []
+        };
+      }
+      threadsMap[m.user_id].messages.push(m);
+      if (m.sender_type === 'user' && !m.is_read) {
+        threadsMap[m.user_id].unread_count++;
+      }
+    });
+
+    // Also include registered profiles without messages yet
+    Object.values(profilesMap).forEach(prof => {
+      if (!threadsMap[prof.id]) {
+        threadsMap[prof.id] = {
+          user_id: prof.id,
+          user_name: prof.full_name || 'User (' + prof.id.substring(0,6) + ')',
+          phone: prof.phone || 'N/A',
+          referral_code: prof.referral_code || 'N/A',
+          last_msg: 'মেসেজ পাঠাতে ট্যাপ করুন',
+          last_time: null,
+          unread_count: 0,
+          messages: []
+        };
+      }
+    });
+
+    // Convert to array and sort (unread & recent messages first)
+    supportThreadsList = Object.values(threadsMap).sort((a, b) => {
+      if (a.unread_count !== b.unread_count) return b.unread_count - a.unread_count;
+      if (!a.last_time) return 1;
+      if (!b.last_time) return -1;
+      return new Date(b.last_time) - new Date(a.last_time);
+    });
+
+    renderSupportUserThreads(supportThreadsList);
+
+    // Update Admin Support badge
+    const totalUnread = supportThreadsList.reduce((acc, t) => acc + t.unread_count, 0);
+    const badge = document.getElementById('badge-support');
+    if (badge) {
+      if (totalUnread > 0) {
+        badge.innerText = totalUnread;
+        badge.style.display = 'inline-block';
+      } else {
+        badge.style.display = 'none';
+      }
+    }
+
+    if (activeSupportUserId) {
+      renderActiveSupportThread(activeSupportUserId);
+    }
+
+  } catch (err) {
+    console.error("Error loading support desk:", err);
+  }
+}
+
+function renderSupportUserThreads(threads) {
+  const container = document.getElementById('admin-support-user-list');
+  if (!container) return;
+
+  if (!threads || threads.length === 0) {
+    container.innerHTML = `<div style="padding: 24px; text-align: center; color: var(--txt2); font-size: 13px;">কোনো কাস্টমার চ্যাট পাওয়া যায়নি।</div>`;
+    return;
+  }
+
+  container.innerHTML = threads.map(t => {
+    const isActive = t.user_id === activeSupportUserId;
+    const timeStr = formatSimpleTime(t.last_time);
+    const initial = t.user_name ? t.user_name.charAt(0).toUpperCase() : 'U';
+
+    return `
+      <div onclick="selectSupportUser('${t.user_id}')" 
+        style="padding: 12px 14px; border-bottom: 1px solid var(--border); cursor: pointer; background: ${isActive ? 'rgba(0,230,118,0.14)' : 'transparent'}; transition: background 0.2s; display: flex; gap: 10px; align-items: center;">
+        <div style="width: 38px; height: 38px; border-radius: 50%; background: ${isActive ? '#00e676' : '#1e293b'}; color: ${isActive ? '#000' : '#fff'}; font-weight: 800; font-size: 15px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+          ${initial}
+        </div>
+        <div style="flex: 1; min-width: 0;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+            <h5 style="font-size: 13.5px; font-weight: 700; color: #fff; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(t.user_name)}</h5>
+            <span style="font-size: 10.5px; color: var(--txt3); flex-shrink: 0;">${timeStr}</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--txt2); margin-bottom: 3px;">
+            <span style="background: rgba(0,230,118,0.12); color: #00e676; padding: 1px 6px; border-radius: 4px; font-weight: 700; font-size: 10px;">Ref: ${escapeHtml(t.referral_code)}</span>
+            <span>📱 ${escapeHtml(t.phone)}</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 11.5px; color: var(--txt2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 170px;">💬 ${escapeHtml(t.last_msg || '')}</span>
+            ${t.unread_count > 0 ? `<span style="background: #ff1744; color: #fff; font-size: 10px; font-weight: 900; padding: 1px 7px; border-radius: 10px; flex-shrink: 0;">${t.unread_count} New</span>` : ''}
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function filterSupportUsers() {
+  const q = document.getElementById('admin-support-search').value.trim().toLowerCase();
+  renderSupportUserThreads(supportThreadsList.filter(t => 
+    t.user_name.toLowerCase().includes(q) || 
+    t.phone.toLowerCase().includes(q) || 
+    t.referral_code.toLowerCase().includes(q) || 
+    (t.last_msg && t.last_msg.toLowerCase().includes(q))
+  ));
+}
+
+async function selectSupportUser(userId) {
+  activeSupportUserId = userId;
+  renderSupportUserThreads(supportThreadsList);
+  await renderActiveSupportThread(userId);
+}
+
+let pendingAdminSupportImageBase64 = null;
+
+function handleAdminSupportImageSelect(input) {
+  if (!input.files || !input.files[0]) return;
+  const file = input.files[0];
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img = new Image();
+    img.onload = function() {
+      const canvas = document.createElement('canvas');
+      let width = img.width;
+      let height = img.height;
+      const maxDim = 1000;
+
+      if (width > height && width > maxDim) {
+        height = Math.round((height * maxDim) / width);
+        width = maxDim;
+      } else if (height > maxDim) {
+        width = Math.round((width * maxDim) / height);
+        height = maxDim;
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+
+      pendingAdminSupportImageBase64 = canvas.toDataURL('image/jpeg', 0.75);
+
+      const wrap = document.getElementById('admin-support-img-preview-wrap');
+      const previewImg = document.getElementById('admin-support-img-preview-img');
+      if (wrap && previewImg) {
+        previewImg.src = pendingAdminSupportImageBase64;
+        wrap.style.display = 'flex';
+      }
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeAdminSupportImageAttachment() {
+  pendingAdminSupportImageBase64 = null;
+  const wrap = document.getElementById('admin-support-img-preview-wrap');
+  const fileInput = document.getElementById('admin-support-file-input');
+  if (wrap) wrap.style.display = 'none';
+  if (fileInput) fileInput.value = '';
+}
+
+async function renderActiveSupportThread(userId) {
+  const thread = supportThreadsList.find(t => t.user_id === userId);
+  if (!thread) return;
+
+  const headerName = document.getElementById('admin-support-user-name');
+  const headerPhone = document.getElementById('admin-support-user-phone');
+  if (headerName) headerName.innerText = thread.user_name;
+  if (headerPhone) headerPhone.innerHTML = `🎫 Refer: <strong>${thread.referral_code}</strong> | 📱 Phone: <strong>${thread.phone}</strong>`;
+
+  const bodyEl = document.getElementById('admin-support-messages-body');
+  if (!bodyEl) return;
+
+  // Fetch full live history to ensure no message is ever missed
+  const { data: liveMsgs } = await supabaseClient
+    .from('support_messages')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: true });
+
+  const msgs = liveMsgs || (thread.messages || []).slice().reverse();
+
+  if (msgs.length === 0) {
+    bodyEl.innerHTML = `
+      <div style="text-align: center; color: var(--txt2); margin: auto; font-size: 13px;">
+        <div style="font-size: 28px; margin-bottom: 6px;">💬</div>
+        <strong>${escapeHtml(thread.user_name)}</strong> এর সাথে বার্তা শুরু করতে নিচে মেসেজ টাইপ করুন।
+      </div>`;
+  } else {
+    bodyEl.innerHTML = msgs.map(m => {
+      const isAdmin = m.sender_type === 'admin';
+      const timeStr = new Date(m.created_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' });
+      const imgMarkup = m.image_url ? `<div style="margin-top:6px;"><img src="${m.image_url}" onclick="openLightbox('${m.image_url}')" style="max-width:100%; max-height:220px; border-radius:8px; border:1px solid rgba(255,255,255,0.2); cursor:pointer; display:block;"></div>` : '';
+
+      if (isAdmin) {
+        return `
+          <div style="align-self: flex-end; max-width: 82%; background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%); color: #fff; padding: 10px 14px; border-radius: 14px 14px 2px 14px; font-size: 13px; line-height: 1.45; box-shadow: 0 2px 8px rgba(37,99,235,0.3);">
+            <div style="font-size: 10px; font-weight: 800; color: rgba(255,255,255,0.85); margin-bottom: 2px;">👨‍💼 Admin Response</div>
+            ${m.message ? `<div>${escapeHtml(m.message)}</div>` : ''}
+            ${imgMarkup}
+            <div style="font-size: 9.5px; color: rgba(255,255,255,0.7); text-align: right; margin-top: 4px;">${timeStr}</div>
+          </div>
+        `;
+      } else {
+        return `
+          <div style="align-self: flex-start; max-width: 85%; background: var(--bg2); border: 1px solid var(--border); color: #fff; padding: 10px 14px; border-radius: 14px 14px 14px 2px; font-size: 13px; line-height: 1.45;">
+            <div style="font-size: 10.5px; font-weight: 800; color: #00e676; margin-bottom: 2px;">👤 ${escapeHtml(thread.user_name)} (Ref: ${escapeHtml(thread.referral_code)})</div>
+            ${m.message ? `<div>${escapeHtml(m.message)}</div>` : ''}
+            ${imgMarkup}
+            <div style="font-size: 9.5px; color: var(--txt3); text-align: right; margin-top: 4px;">${timeStr}</div>
+          </div>
+        `;
+      }
+    }).join('');
+    bodyEl.scrollTop = bodyEl.scrollHeight;
+  }
+
+  // Mark unread user messages as read by admin
+  if (thread.unread_count > 0) {
+    thread.unread_count = 0;
+    await supabaseClient
+      .from('support_messages')
+      .update({ is_read: true })
+      .eq('user_id', userId)
+      .eq('sender_type', 'user')
+      .eq('is_read', false);
+  }
+}
+
+function insertAdminQuickReply(text) {
+  const input = document.getElementById('admin-support-input');
+  if (input) {
+    input.value = text;
+    input.focus();
+  }
+}
+
+async function sendAdminSupportReply() {
+  if (!supabaseClient || !activeSupportUserId) {
+    toast('Select a user to reply first.', 'error');
+    return;
+  }
+
+  const input = document.getElementById('admin-support-input');
+  if (!input) return;
+
+  const text = input.value.trim();
+  const imgUrlToSend = pendingAdminSupportImageBase64;
+
+  if (!text && !imgUrlToSend) return;
+
+  input.value = '';
+  removeAdminSupportImageAttachment();
+
+  try {
+    const { error } = await supabaseClient
+      .from('support_messages')
+      .insert({
+        user_id: activeSupportUserId,
+        sender_type: 'admin',
+        message: text || '📸 ফটো',
+        image_url: imgUrlToSend
+      });
+
+    if (error) throw error;
+
+    toast('Reply sent successfully ✓', 'success');
+    await loadSupportDesk();
+
+  } catch (err) {
+    toast(err.message, 'error');
+  }
+}
+
+// Auto load support desk & start 3s real-time polling when page changes to support
+document.querySelectorAll('.sidebar-nav .nav-link').forEach(link => {
+  link.addEventListener('click', () => {
+    if (link.dataset.page === 'support') {
+      loadSupportDesk();
+      if (!adminSupportPollInterval) {
+        adminSupportPollInterval = setInterval(loadSupportDesk, 3000);
+      }
+    } else {
+      if (adminSupportPollInterval) {
+        clearInterval(adminSupportPollInterval);
+        adminSupportPollInterval = null;
+      }
+    }
+  });
+});
+
+window.loadSupportDesk = loadSupportDesk;
+window.filterSupportUsers = filterSupportUsers;
+window.selectSupportUser = selectSupportUser;
+window.insertAdminQuickReply = insertAdminQuickReply;
+window.sendAdminSupportReply = sendAdminSupportReply;
+window.handleAdminSupportImageSelect = handleAdminSupportImageSelect;
+window.removeAdminSupportImageAttachment = removeAdminSupportImageAttachment;

@@ -216,7 +216,11 @@ async function copyToClipboard(text, element) {
 
 // Load support details dynamically
 async function openSupportContact() {
-  window.open('https://t.me/devpaysupport', '_blank');
+  if (typeof toggleSupportChatModal === 'function') {
+    toggleSupportChatModal();
+  } else {
+    window.open('https://t.me/devpaysupport', '_blank');
+  }
 }
 
 // Global UI Spinner helpers

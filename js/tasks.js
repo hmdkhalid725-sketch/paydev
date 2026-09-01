@@ -176,13 +176,12 @@ function renderTasks(tasks) {
 
     card.innerHTML = `
       <!-- Top row -->
-      <div style="display:flex; align-items:center; gap:12px; position:relative;">
+      <div style="display:flex; align-items:center; gap:12px;">
         <img src="${logoPath}" alt="${brandName}" style="width:42px; height:42px; object-fit:cover; border-radius:10px; border:1px solid rgba(255,255,255,0.06);">
         <div style="flex:1;">
           <h4 style="font-size:16px; font-weight:800; color:#fff; margin:0 0 2px 0;">${parseFloat(task.payment_amount).toFixed(2)} BDT</h4>
-          <span style="font-size:12px; color:var(--text-secondary); text-transform:lowercase;">${brandName}</span>
+          <span style="font-size:12px; color:var(--text-secondary); text-transform:lowercase;">${brandName} ক্যাশব্যাক টাস্ক</span>
         </div>
-        <span style="font-size:12px; color:var(--text-muted); font-family:monospace; position:absolute; right:0; top:4px;">${maskedNum}</span>
       </div>
 
       <!-- Stats and Button Row -->
@@ -238,16 +237,9 @@ async function startTask(taskId) {
     ? 'linear-gradient(135deg, #e2136e 0%, #b30b54 100%)'
     : 'linear-gradient(135deg, #ff6a00 0%, #ec1c24 100%)';
 
-  // Show loading indicator first
-  content.innerHTML = `
-    <div style="padding: 40px 20px; text-align: center; color: var(--text-secondary);">
-      <div style="margin: 0 auto 12px auto; border: 3px solid rgba(255,255,255,0.05); border-top: 3px solid ${brandColor}; border-radius: 50%; width: 28px; height: 28px; animation: spin 0.8s linear infinite;"></div>
-      পেমেন্ট নম্বর লোড হচ্ছে...
-    </div>
-  `;
   modal.classList.add('active');
 
-  let receiverNumber = task.payment_number;
+  let receiverNumber = task.payment_number || '';
   let p2pQueueId = null;
   let lockTimeRemaining = 0;
   let userPhone = '';
@@ -285,6 +277,15 @@ async function startTask(taskId) {
       </div>
     </div>
 
+    <!-- Active Number Allocated Success Alert (Initially Hidden) -->
+    <div id="number-allocated-success-alert" style="background:rgba(0,230,118,0.08); border:1px solid rgba(0,230,118,0.35); border-radius:12px; padding:12px 14px; margin-bottom:14px; display:none; align-items:center; gap:10px; box-shadow:0 4px 15px rgba(0,230,118,0.15);">
+      <span style="font-size:20px; color:#00e676;">✅</span>
+      <div>
+        <p style="font-size:13px; font-weight:800; color:#00e676; margin:0 0 2px 0;">পার্সোনাল ${brandName} নম্বর সফলভাবে সংযোগ হয়েছে</p>
+        <p style="font-size:11px; color:var(--text-secondary); margin:0;">নিচের পার্সোনাল নম্বরে ৳${parseFloat(task.payment_amount).toFixed(0)} সেন্ড মানি (Send Money) করুন।</p>
+      </div>
+    </div>
+
     ${p2pQueueId ? `
       <!-- P2P Lock Timer Alert -->
       <div id="p2p-timer-alert" style="background: rgba(0, 229, 255, 0.08); border: 1px solid rgba(0, 229, 255, 0.25); border-radius: 10px; padding: 12px; margin-bottom: 14px; display: flex; align-items: center; gap: 10px;">
@@ -297,29 +298,48 @@ async function startTask(taskId) {
     ` : ''}
 
     <!-- ─── Step 1: Info ─── -->
-    <div style="background:rgba(255,255,255,0.03); border:1px solid var(--border-color); border-radius:12px; padding:16px; margin-bottom:14px;">
-      <p style="font-size:11px;color:var(--text-muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px;font-weight:700;">ধাপ ১ — পেমেন্ট করুন</p>
+    <div style="background:rgba(255,255,255,0.03); border:1px solid var(--border-color); border-radius:14px; padding:16px; margin-bottom:14px; box-shadow:0 4px 20px rgba(0,0,0,0.2);">
+      <p style="font-size:11px;color:var(--text-muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px;font-weight:700;">ধাপ ১ — সেন্ড মানি করুন (Send Money)</p>
 
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-        <div>
-          <p style="font-size:11px;color:var(--text-secondary);">প্রাপকের ${brandName} নম্বর</p>
-          <p style="font-size:22px;font-weight:800;color:#fff;letter-spacing:1px;font-family:monospace;">${receiverNumber}</p>
+      <!-- Receiver Number Dynamic Scanner Box (4-Second Futuristic Animation) -->
+      <div id="number-box-container" style="background:rgba(0,0,0,0.45); border:1.5px dashed ${brandColor}; border-radius:12px; padding:16px; margin-bottom:14px; transition:all 0.3s ease; box-shadow:inset 0 2px 10px rgba(0,0,0,0.5);">
+        <div id="number-searching-state" style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div style="position:relative; width:28px; height:28px; flex-shrink:0;">
+              <div style="position:absolute; width:28px; height:28px; border-radius:50%; border:2px solid ${brandColor}; animation:pulseGlow 1s ease-in-out infinite;"></div>
+              <div style="position:absolute; width:20px; height:20px; left:2px; top:2px; border:2.5px solid transparent; border-top-color:#00b0ff; border-right-color:${brandColor}; border-radius:50%; animation:spin 0.7s linear infinite;"></div>
+            </div>
+            <div>
+              <p style="font-size:13px; font-weight:800; color:#fff; margin:0 0 2px 0; letter-spacing:0.2px;">🔍 পার্সোনাল ${brandName} নম্বর খোঁজা হচ্ছে...</p>
+              <p style="font-size:10.5px; color:var(--text-secondary); margin:0;">পিয়ার-টু-পিয়ার সিকিউর নেটওয়ার্ক স্ক্যানিং</p>
+            </div>
+          </div>
+          <span style="font-size:11.5px; font-weight:900; color:var(--accent-cyan); background:rgba(0,229,255,0.12); border:1px solid rgba(0,229,255,0.3); border-radius:8px; padding:4px 9px; white-space:nowrap;">
+            ⏱️ <span id="scanning-timer-num" style="font-size:13px;">4</span>s স্ক্যানিং...
+          </span>
         </div>
-        <button id="copy-num-btn" type="button" onclick="copyToClipboard('${receiverNumber}', this)" data-number="${receiverNumber}"
-          style="background:${brandColor}18;color:${brandColor};border:1px solid ${brandColor}40;padding:8px 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;transition:all 0.2s;">
-          কপি নম্বর
-        </button>
+
+        <div id="number-found-state" style="display:none; justify-content:space-between; align-items:center;">
+          <div>
+            <p style="font-size:11px;color:var(--text-secondary);margin:0;font-weight:600;">প্রাপকের ${brandName} পার্সোনাল নম্বর (সেন্ড মানি)</p>
+            <p style="font-size:22px;font-weight:900;color:#fff;letter-spacing:1.2px;font-family:monospace;margin:3px 0 0 0;">${receiverNumber || '01XXXXXXXXX'}</p>
+          </div>
+          <button id="copy-num-btn" type="button" onclick="copyToClipboard('${receiverNumber || '01XXXXXXXXX'}', this)" data-number="${receiverNumber || '01XXXXXXXXX'}"
+            style="background:${brandColor}22;color:${brandColor};border:1.5px solid ${brandColor}50;padding:9px 15px;border-radius:10px;font-size:12.5px;font-weight:800;cursor:pointer;transition:all 0.2s;box-shadow:0 3px 10px ${brandColor}20;">
+            কপি নম্বর
+          </button>
+        </div>
       </div>
 
       <div style="height:1px;background:var(--border-color);margin:12px 0;"></div>
 
       <div style="display:flex; justify-content:space-between; align-items:center;">
         <div>
-          <p style="font-size:11px;color:var(--text-secondary);">পাঠানোর পরিমাণ</p>
-          <p style="font-size:24px;font-weight:800;color:${brandColor};">৳${parseFloat(task.payment_amount).toFixed(0)}</p>
+          <p style="font-size:11px;color:var(--text-secondary);margin:0 0 2px 0;">পাঠানোর সেন্ড মানি পরিমাণ</p>
+          <p style="font-size:24px;font-weight:900;color:${brandColor};margin:0;">৳${parseFloat(task.payment_amount).toFixed(0)}</p>
         </div>
         <button id="copy-amt-btn" type="button" onclick="copyToClipboard('${task.payment_amount}', this)"
-          style="background:${brandColor}18;color:${brandColor};border:1px solid ${brandColor}40;padding:8px 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;transition:all 0.2s;">
+          style="background:${brandColor}22;color:${brandColor};border:1.5px solid ${brandColor}50;padding:9px 15px;border-radius:10px;font-size:12.5px;font-weight:800;cursor:pointer;transition:all 0.2s;">
           কপি পরিমাণ
         </button>
       </div>
@@ -329,7 +349,7 @@ async function startTask(taskId) {
     <div style="background:rgba(255,145,0,0.05); border:1px solid rgba(255,145,0,0.12); border-radius:10px; padding:12px; margin-bottom:14px; display:flex; gap:10px; align-items:flex-start;">
       <span style="font-size:16px;line-height:1;">📋</span>
       <p style="font-size:12.5px;color:var(--text-secondary);line-height:1.5;">
-        ${task.instructions || `${brandName} অ্যাপ খুলে সেন্ড মানি (Send Money) করুন। টাকা পাঠানো সম্পন্ন হলে ট্রানজেকশন আইডি (TrxID) কপি করে নিচের বক্সে বসান।`}
+        ${task.instructions || `${brandName} অ্যাপ খুলে উপরে প্রদত্ত পার্সোনাল নম্বরে সেন্ড মানি (Send Money) করুন। টাকা পাঠানো সম্পন্ন হলে ট্রানজেকশন আইডি (TrxID) কপি করে নিচের বক্সে বসান।`}
       </p>
     </div>
 
@@ -350,9 +370,9 @@ async function startTask(taskId) {
       <div class="form-group" style="margin-bottom:14px;">
         <label class="form-label" style="color:var(--text-secondary);font-size:12px;font-weight:600;margin-bottom:6px;display:block;">আপনার ${brandName} নম্বর (রিফান্ড পাওয়ার জন্য)</label>
         <div style="position:relative;">
-          <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:15px;">📱</span>
-          <input class="form-control" type="tel" id="submit-sender-phone" required placeholder="01XXXXXXXXX" value="${userPhone}"
-            style="background:var(--bg-primary); padding-left:42px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); height:48px; font-size:15px; color:#fff; font-weight:700;">
+          <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:15px;">📞</span>
+          <input class="form-control" type="tel" id="submit-account" required placeholder="01XXXXXXXXX" value="${userPhone}"
+            style="background:var(--bg-primary); padding-left:42px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); height:46px; font-size:15px; color:#fff;">
         </div>
         <p style="font-size:11px;color:var(--text-muted);margin-top:5px;line-height:1.4;">ভেরিফিকেশনের পর টাকা সরাসরি এই নম্বরে ফেরত (Refund) পাঠানো হবে।</p>
       </div>
@@ -382,6 +402,27 @@ async function startTask(taskId) {
       </button>
     </div>
   `;
+  // 4-second animated countdown scanner for personal send money number assignment
+  let scanSecs = 4;
+  const scanTimerEl = document.getElementById('scanning-timer-num');
+  const scanInterval = setInterval(() => {
+    scanSecs--;
+    if (scanTimerEl) scanTimerEl.innerText = scanSecs;
+    if (scanSecs <= 0) {
+      clearInterval(scanInterval);
+      const sState = document.getElementById('number-searching-state');
+      const fState = document.getElementById('number-found-state');
+      const box = document.getElementById('number-box-container');
+      const succAlert = document.getElementById('number-allocated-success-alert');
+      if (sState) sState.style.display = 'none';
+      if (fState) fState.style.display = 'flex';
+      if (succAlert) succAlert.style.display = 'flex';
+      if (box) {
+        box.style.border = `1.5px solid ${brandColor}60`;
+        box.style.background = 'rgba(255,255,255,0.03)';
+      }
+    }
+  }, 1000);
 
   let timerInterval = null;
   if (p2pQueueId && lockTimeRemaining > 0) {

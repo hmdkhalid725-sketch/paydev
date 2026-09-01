@@ -95,7 +95,7 @@
             <svg viewBox="0 0 24 24"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
             <span>ওয়ালেট</span>
           </div>
-          <div class="action-btn-circle" id="action-support">
+          <div class="action-btn-circle" id="action-support" onclick="toggleSupportChatModal()">
             <svg viewBox="0 0 24 24"><path d="M20.01 15.38c-1.23 0-2.42-.2-3.53-.56a.977.977 0 00-1.01.24l-2.2 2.2a15.045 15.045 0 01-6.59-6.59l2.2-2.21a.96.96 0 00.25-1A11.36 11.36 0 018.82 4c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1 0 9.39 7.61 17 17 17 .55 0 1-.45 1-1v-3.58c0-.57-.45-1.04-.99-1.04z"/></svg>
             <span>সাপোর্ট</span>
           </div>
@@ -424,6 +424,65 @@
       </div>
     </div>
 
+    <!-- FLOATING LIVE SUPPORT BUTTON -->
+    <div id="floating-support-btn" onclick="toggleSupportChatModal()" 
+      style="position: absolute; bottom: 76px; right: 18px; z-index: 850; width: 52px; height: 52px; border-radius: 50%; background: linear-gradient(135deg, #00e676 0%, #00b0ff 100%); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 20px rgba(0,230,118,0.5); cursor: pointer; transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
+      <span style="font-size: 26px; line-height: 1;">💬</span>
+      <span id="support-unread-badge" style="display: none; position: absolute; top: -2px; right: -2px; background: #ff1744; color: #fff; font-size: 10px; font-weight: 900; width: 20px; height: 20px; border-radius: 50%; border: 2px solid #000; align-items: center; justify-content: center;">0</span>
+    </div>
+
+    <!-- LIVE SUPPORT CHAT MODAL (EXACTLY MATCHING TASK DETAILS BOTTOM SHEET) -->
+    <div id="modal-live-support" class="modal-overlay">
+      <div class="bottom-sheet" style="padding: 0; display: flex; flex-direction: column; height: 75vh; max-height: 540px; overflow: hidden; border-top-left-radius: 20px; border-top-right-radius: 20px; background: #12161f;">
+        <!-- Chat Header -->
+        <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.08); flex-shrink: 0;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="position: relative; width: 36px; height: 36px; border-radius: 50%; background: rgba(0,230,118,0.15); border: 1.5px solid #00e676; display: flex; align-items: center; justify-content: center;">
+              <span style="font-size: 18px;">🎧</span>
+              <span style="position: absolute; bottom: 0; right: 0; width: 9px; height: 9px; border-radius: 50%; background: #00e676; border: 1.5px solid #12161f;"></span>
+            </div>
+            <div>
+              <h4 style="font-size: 15px; font-weight: 800; color: #fff; margin: 0 0 2px 0;">লাইভ হেল্পডেস্ক ও সাপোর্ট</h4>
+              <p style="font-size: 10.5px; color: #00e676; margin: 0; font-weight: 700;">🟢 এডমিন অনলাইন (২৪/৭)</p>
+            </div>
+          </div>
+          <button type="button" onclick="toggleSupportChatModal()" style="background: rgba(255,255,255,0.08); border: none; color: #94a3b8; width: 32px; height: 32px; border-radius: 50%; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center;">✕</button>
+        </div>
+
+        <!-- Chat Messages Container -->
+        <div id="support-chat-messages" style="flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; background: rgba(0,0,0,0.25);">
+          <div style="text-align: center; color: var(--text-muted); font-size: 11px; margin: 10px 0;">
+            🔒 লাইভ চ্যাট এনক্রিপ্টেড ও সরাসরি এডমিনের সাথে কানেক্টেড
+          </div>
+        </div>
+
+        <!-- Chat Input Footer -->
+        <!-- Image Attachment Preview Zone -->
+        <div id="support-image-preview-wrap" style="display:none; padding: 8px 12px; background: rgba(0,0,0,0.4); border-top: 1px solid rgba(255,255,255,0.08); align-items: center; justify-content: space-between;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <img id="support-image-preview-img" src="" style="width: 42px; height: 42px; border-radius: 6px; object-fit: cover; border: 1.5px solid #00e676;">
+            <span style="font-size: 11.5px; color: #00e676; font-weight: 700;">📸 ছবি যুক্ত হয়েছে</span>
+          </div>
+          <button type="button" onclick="removeSupportImageAttachment()" style="background: rgba(255,61,0,0.2); color: #ff5252; border: 1px solid rgba(255,61,0,0.4); border-radius: 50%; width: 24px; height: 24px; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center;">✕</button>
+        </div>
+
+        <div style="padding: 10px 12px; background: #1e293b; border-top: 1px solid rgba(255,255,255,0.08); display: flex; gap: 6px; align-items: center; flex-shrink: 0;">
+          <input type="file" id="support-file-input" accept="image/*" style="display:none;" onchange="handleSupportImageSelect(this)">
+          <button type="button" onclick="document.getElementById('support-file-input').click()"
+            style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #fff; padding: 10px 12px; border-radius: 12px; font-size: 15px; cursor: pointer;" title="ছবি/স্ক্রিনশট যুক্ত করুন">
+            📷
+          </button>
+          <input type="text" id="support-msg-input" placeholder="মেসেজ লিখুন..." 
+            onkeypress="if(event.key === 'Enter') sendSupportMessage()"
+            style="flex: 1; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.12); color: #fff; padding: 10px 14px; border-radius: 12px; font-size: 13.5px; outline: none;">
+          <button type="button" id="support-msg-send-btn" onclick="sendSupportMessage()"
+            style="background: linear-gradient(135deg, #00e676 0%, #00b0ff 100%); color: #000; border: none; padding: 10px 16px; border-radius: 12px; font-weight: 800; font-size: 13px; cursor: pointer; white-space: nowrap; box-shadow: 0 3px 10px rgba(0,230,118,0.3);">
+            পাঠান 🚀
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- BOTTOM NAVIGATION -->
     <nav class="bottom-nav">
       <div class="nav-item active" data-tab="home">
@@ -459,6 +518,7 @@
   <script src="./js/tasks.js"></script>
   <script src="./js/profile.js"></script>
   <script src="./js/wallet.js"></script>
+  <script src="./js/support.js"></script>
 
   <script>
     // Register PWA service worker
