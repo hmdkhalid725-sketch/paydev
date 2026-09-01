@@ -242,8 +242,9 @@ body {
 }
 
 /* Pages */
-.admin-page { display: none; }
-.admin-page.active { display: block; animation: fadein 0.25s ease; }
+.admin-page { display: none !important; }
+.admin-page.active { display: block !important; animation: fadein 0.25s ease; }
+#page-support.active { display: flex !important; flex-direction: column; height: calc(100vh - 110px); min-height: 480px; animation: fadein 0.25s ease; }
 
 @keyframes fadein {
   from { opacity: 0; transform: translateY(6px); }
