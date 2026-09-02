@@ -1,534 +1,146 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="bn">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard - DevPay</title>
-  <link rel="stylesheet" href="./css/global.css">
-  <link rel="stylesheet" href="./css/app.css">
-  <link rel="manifest" href="./manifest.json">
-  <meta name="theme-color" content="#08090D">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Major System Update</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{min-height:100%;background:#07090d}
+body{font-family:"Noto Sans Bengali","Segoe UI",Arial,sans-serif;display:flex;justify-content:center;color:#fff}
+.page{
+  width:100%;max-width:480px;min-height:100vh;position:relative;
+  overflow:hidden;background:
+  radial-gradient(circle at 50% 18%,rgba(75,120,255,.16),transparent 30%),
+  radial-gradient(circle at 15% 80%,rgba(0,220,180,.08),transparent 28%),
+  #07090d;
+  display:flex;align-items:center;justify-content:center;padding:28px 22px;
+}
+.grid{
+  position:absolute;inset:0;opacity:.18;
+  background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),
+                   linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);
+  background-size:38px 38px;
+  mask-image:linear-gradient(to bottom,black,transparent 85%);
+}
+.orb{position:absolute;border-radius:50%;filter:blur(2px);opacity:.45}
+.o1{width:7px;height:7px;background:#56c8ff;top:20%;left:13%;animation:float1 5s infinite}
+.o2{width:5px;height:5px;background:#7dffcf;top:32%;right:14%;animation:float2 6s infinite}
+.o3{width:4px;height:4px;background:#fff;bottom:25%;left:20%;animation:float2 7s infinite}
+@keyframes float1{50%{transform:translate(18px,-20px);opacity:.9}100%{transform:translate(0,0)}}
+@keyframes float2{50%{transform:translate(-14px,18px);opacity:.35}100%{transform:translate(0,0)}}
+
+.wrap{width:100%;max-width:410px;position:relative;z-index:2;text-align:center}
+.badge{
+  display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:30px;
+  border:1px solid rgba(104,160,255,.25);background:rgba(70,110,220,.08);
+  color:#9fc2ff;font-size:10px;font-weight:800;letter-spacing:1.8px;
+  animation:badgeGlow 2.4s infinite;
+}
+.badge i{width:7px;height:7px;border-radius:50%;background:#65b9ff;box-shadow:0 0 13px #65b9ff}
+@keyframes badgeGlow{50%{box-shadow:0 0 25px rgba(70,130,255,.1)}}
+
+.visual{width:150px;height:150px;margin:28px auto 25px;position:relative;display:grid;place-items:center}
+.ring{position:absolute;border-radius:50%;border:1px solid rgba(100,160,255,.2)}
+.r1{inset:0;animation:spin 9s linear infinite}
+.r2{inset:14px;border-style:dashed;border-color:rgba(100,230,190,.25);animation:spinReverse 7s linear infinite}
+.r3{inset:29px;border-color:rgba(100,160,255,.12)}
+.core{
+  width:72px;height:72px;border-radius:23px;display:grid;place-items:center;
+  background:linear-gradient(145deg,#162033,#0e151e);
+  border:1px solid rgba(120,180,255,.28);
+  box-shadow:0 0 45px rgba(65,145,255,.18),inset 0 0 25px rgba(255,255,255,.025);
+}
+.core span{font-size:35px;animation:gear 4s linear infinite;filter:drop-shadow(0 0 10px rgba(100,180,255,.5))}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes spinReverse{to{transform:rotate(-360deg)}}
+@keyframes gear{to{transform:rotate(360deg)}}
+
+h1{font-size:35px;line-height:1.18;letter-spacing:-1px;margin-bottom:15px}
+h1 span{display:block}
+.highlight{background:linear-gradient(90deg,#fff,#8fc4ff);-webkit-background-clip:text;color:transparent}
+.desc{color:#8d98a8;font-size:13px;line-height:1.85;max-width:380px;margin:auto}
+
+.panel{
+  margin-top:25px;border:1px solid rgba(255,255,255,.09);border-radius:22px;
+  background:rgba(15,19,27,.82);backdrop-filter:blur(15px);
+  padding:19px;text-align:left;box-shadow:0 25px 70px rgba(0,0,0,.3);
+}
+.panel-title{display:flex;align-items:center;gap:10px;margin-bottom:17px}
+.panel-icon{width:35px;height:35px;border-radius:11px;background:rgba(80,150,255,.1);display:grid;place-items:center;color:#72b7ff}
+.panel-title b{font-size:14px}.panel-title small{display:block;color:#697586;font-size:9px;margin-top:2px}
+.live{margin-left:auto;font-size:9px;color:#64e6bd;font-weight:800}
+.progress{height:5px;border-radius:10px;background:#1b222c;overflow:hidden}
+.progress i{display:block;height:100%;width:72%;border-radius:10px;background:linear-gradient(90deg,#4b8cff,#60e2c0);animation:progress 2.5s ease-in-out infinite alternate}
+@keyframes progress{from{width:45%}to{width:86%}}
+.rows{margin-top:8px}
+.row{display:flex;align-items:center;gap:11px;padding:11px 0;border-bottom:1px solid rgba(255,255,255,.045)}
+.row:last-child{border-bottom:0}
+.tick{width:25px;height:25px;border-radius:8px;background:rgba(100,220,185,.08);color:#68e0bc;display:grid;place-items:center;font-size:12px}
+.row b{font-size:11px}.row small{display:block;color:#687484;font-size:9px;margin-top:2px}
+.wait{margin-top:21px;color:#697585;font-size:10px}
+.wait strong{display:block;color:#dce4ee;font-size:13px;margin-top:5px}
+.users{margin-top:26px;padding-top:21px;border-top:1px solid rgba(255,255,255,.08)}
+.user-number{font-size:31px;font-weight:850;letter-spacing:-1px}
+.user-label{font-size:11px;color:#737f8e;margin-top:1px}
+.footer{margin-top:20px;color:#4f5a68;font-size:9px}
+@media(max-width:380px){h1{font-size:30px}.visual{width:130px;height:130px}.core{width:65px;height:65px}}
+</style>
 </head>
 <body>
-  <div id="app-container">
-    <!-- MAINTENANCE OVERLAY -->
-    <div id="maintenance-overlay" class="spinner-overlay" style="background: #08090d; z-index: 99999; display: none; flex-direction: column; gap: 18px; text-align: center; padding: 32px 24px; justify-content: center; opacity: 1; pointer-events: auto; box-sizing: border-box;">
-      <div style="width: 80px; height: 80px; background: rgba(0, 229, 255, 0.1); border: 2px solid var(--accent-cyan); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto; box-shadow: 0 0 30px rgba(0, 229, 255, 0.35);">
-        <span style="font-size: 42px;">🚀</span>
-      </div>
-      
-      <div>
-        <h2 style="font-weight: 900; color: #ffffff; font-size: 22px; margin: 0 0 8px 0; letter-spacing: 0.5px;">সিস্টেম আপডেট চলছে...</h2>
-        <span style="background: rgba(0, 230, 118, 0.15); color: #00e676; border: 1px solid rgba(0, 230, 118, 0.3); font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 20px; display: inline-block;">⚡ খুব দ্রুততম সময়ে কাজ শেষ হচ্ছে</span>
-      </div>
+<div class="page">
+  <div class="grid"></div>
+  <i class="orb o1"></i><i class="orb o2"></i><i class="orb o3"></i>
 
-      <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; padding: 18px; max-width: 340px; margin: 0 auto;">
-        <p style="color: #e0e0e0; font-size: 13.5px; line-height: 1.7; margin: 0; font-weight: 500;">
-          সম্মানিত ব্যবহারকারী, আমাদের সিস্টেমে নতুন আপডেট ও উন্নতির কাজ চলছে। অনুগ্রহ করে কিছুক্ষণ পর আবারও আসুন। আমরা খুব দ্রুত কাজ শেষ করে পুনরায় চালু করছি। 
-          <br><br>
-          ধন্যবাদ আমাদের সাথে থাকার জন্য! ❤️
-        </p>
-      </div>
+  <main class="wrap">
+    <div class="badge"><i></i> MAJOR SYSTEM UPDATE</div>
 
-      <div style="font-size: 12px; color: var(--text-muted); font-weight: 700; margin-top: 8px;">
-        DevPay Official Platform • Always Secure
-      </div>
+    <div class="visual">
+      <div class="ring r1"></div>
+      <div class="ring r2"></div>
+      <div class="ring r3"></div>
+      <div class="core"><span>⚙</span></div>
     </div>
 
-    <!-- Toast system -->
-    <div id="toast-container"></div>
+    <h1>
+      <span>We’re Making</span>
+      <span class="highlight">Something Better</span>
+    </h1>
 
-    <!-- Spinner overlay -->
-    <div id="spinner-overlay" class="spinner-overlay">
-      <div class="spinner"></div>
+    <p class="desc">
+      আমাদের সাইটে বর্তমানে একটি বড় ধরনের সিস্টেম আপডেট চলছে।
+      আরও দ্রুত, নিরাপদ ও উন্নত সেবা দেওয়ার জন্য গুরুত্বপূর্ণ
+      পরিবর্তন করা হচ্ছে।
+    </p>
+
+    <section class="panel">
+      <div class="panel-title">
+        <div class="panel-icon">↻</div>
+        <div><b>System Upgrade</b><small>Major infrastructure maintenance</small></div>
+        <div class="live">● IN PROGRESS</div>
+      </div>
+
+      <div class="progress"><i></i></div>
+
+      <div class="rows">
+        <div class="row"><div class="tick">✓</div><div><b>Core System Update</b><small>System infrastructure is being upgraded</small></div></div>
+        <div class="row"><div class="tick">✓</div><div><b>Security Improvements</b><small>Improving reliability and protection</small></div></div>
+        <div class="row"><div class="tick">✓</div><div><b>Performance Optimization</b><small>Faster and smoother service</small></div></div>
+      </div>
+    </section>
+
+    <div class="wait">
+      অনুগ্রহ করে কিছুক্ষণ অপেক্ষা করুন
+      <strong>সিস্টেম আপডেট সম্পন্ন হলে সাইট আবার চালু হবে</strong>
     </div>
 
-    <!-- HEADER -->
-    <header class="app-header glass">
-      <div class="user-profile-badge" id="header-profile-btn">
-        <div class="avatar-small" id="header-avatar">U</div>
-        <div>
-          <p class="user-welcome-text">স্বাগতম,</p>
-          <h4 class="user-name-text" id="header-username">ব্যবহারকারী</h4>
-        </div>
-      </div>
-      <div class="header-actions">
-        <button class="icon-btn" id="bell-btn" aria-label="বিজ্ঞপ্তি">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
-          </svg>
-          <div class="badge-dot hidden" id="notification-badge-dot"></div>
-        </button>
-      </div>
-    </header>
-
-    <!-- MAIN SPA WRAPPER -->
-    <main class="app-main">
-      
-      <!-- 1. HOME TAB -->
-      <section id="tab-home" class="tab-content active">
-        <!-- Balance Card -->
-        <div class="premium-balance-card">
-          <p class="balance-title">মোট ব্যালেন্স</p>
-          <h1 class="balance-amount-big" id="home-balance">৳০.০০</h1>
-          
-          <div class="balance-stats-grid">
-            <div>
-              <p class="stat-label">উপার্জিত বোনাস</p>
-              <h4 class="stat-val gradient-text" id="home-bonus">৳০.০০</h4>
-            </div>
-            <div>
-              <p class="stat-label">সম্পন্ন টাস্ক</p>
-              <h4 class="stat-val" id="home-tasks-completed">০</h4>
-            </div>
-          </div>
-        </div>
-
-        <!-- Quick actions -->
-        <div class="quick-actions-row">
-          <div class="action-btn-circle" id="action-tasks">
-            <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10H7v-2h10v2zm0-4H7V7h10v2zm0 8H7v-2h10v2z"/></svg>
-            <span>সকল টাস্ক</span>
-          </div>
-          <div class="action-btn-circle" id="action-wallet">
-            <svg viewBox="0 0 24 24"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
-            <span>ওয়ালেট</span>
-          </div>
-          <div class="action-btn-circle" id="action-support">
-            <svg viewBox="0 0 24 24"><path d="M20.01 15.38c-1.23 0-2.42-.2-3.53-.56a.977.977 0 00-1.01.24l-2.2 2.2a15.045 15.045 0 01-6.59-6.59l2.2-2.21a.96.96 0 00.25-1A11.36 11.36 0 018.82 4c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1 0 9.39 7.61 17 17 17 .55 0 1-.45 1-1v-3.58c0-.57-.45-1.04-.99-1.04z"/></svg>
-            <span>সাপোর্ট</span>
-          </div>
-        </div>
-
-
-        <!-- Announcement box -->
-        <div class="announcement-box">
-          <svg class="announcement-icon" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
-          <div class="announcement-text">
-            <h4>গুরুত্বপূর্ণ নির্দেশনা</h4>
-            <p>সক্রিয় প্রাপক নম্বরে সবসময় টাকা পাঠান। ভেরিফিকেশন ম্যানুয়ালি <strong>১ থেকে ১০ মিনিটের</strong> মধ্যে সম্পন্ন হয়।</p>
-          </div>
-        </div>
-
-        <!-- Task History & Live Progress -->
-        <!-- Task History & Live Progress -->
-        <div class="section-title-row" style="margin-top: 24px; margin-bottom: 12px;">
-          <h3 class="section-title" style="margin-bottom: 0;">টাস্ক হিস্ট্রি ও লাইভ প্রগ্রেস</h3>
-        </div>
-        <div class="timeline-list" id="home-task-history-list" style="display: flex; flex-direction: column; gap: 12px;">
-          <!-- Active countdowns & history list here -->
-          <div class="empty-state">
-            <p class="empty-state-text" style="color: var(--text-muted); font-size: 13px;">এখনও কোনো টাস্ক হিস্ট্রি নেই</p>
-          </div>
-        </div>
-      </section>
-
-      <!-- 2. TASKS TAB -->
-      <section id="tab-tasks" class="tab-content">
-        <!-- Header Row -->
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-          <h3 class="section-title" style="margin-bottom:0; font-size:22px; font-weight:800;">পেমেন্ট টাস্ক</h3>
-          <button onclick="switchTab('home')" style="background:none; border:none; color:var(--accent-cyan); font-size:13px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:4px;">
-            🕒 পেমেন্ট রেকর্ড
-          </button>
-        </div>
-
-        <!-- Info Card -->
-        <div class="glass" style="padding:14px; border-radius:12px; margin-bottom:16px; display:flex; gap:12px; align-items:center; border:1px solid rgba(0,229,255,0.1); background:rgba(0,229,255,0.02);">
-          <span style="font-size:24px;">🛡️</span>
-          <div>
-            <h4 style="font-size:13px; font-weight:700; color:#fff; margin:0 0 2px 0;">প্রতিটি পেমেন্টে নিশ্চিত ক্যাশব্যাক</h4>
-            <p style="font-size:11px; color:var(--text-secondary); margin:0;">অ্যামাউন্ট রেঞ্জ সিলেক্ট করুন, টাস্ক রিভিউ করুন এবং পেমেন্ট সম্পন্ন করে ক্লেইম করুন।</p>
-          </div>
-        </div>
-
-        <!-- Method & Pill Filter bar -->
-        <div style="margin-bottom:16px; display:flex; flex-direction:column; gap:12px;">
-          <!-- Method Selection -->
-          <div style="display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px;">
-            <button class="btn-filter active" id="filter-bkash" onclick="setMethodFilter('bKash')">বিকাশ টাস্ক</button>
-            <button class="btn-filter" id="filter-nagad" onclick="setMethodFilter('Nagad')">নগদ টাস্ক</button>
-            <button class="btn-filter" id="filter-usdt" onclick="setMethodFilter('USDT')">💎 USDT (Crypto 6%)</button>
-            <button class="btn-filter" id="filter-all" onclick="setMethodFilter('all')">সকল টাস্ক</button>
-          </div>
-
-          <!-- Amount Range Pills -->
-          <div style="display:flex; gap:8px; overflow-x:auto; padding-bottom:4px;" id="pills-container">
-            <button class="btn-pill active" id="pill-all" onclick="setPillFilter(0, 999999, 'pill-all')">সব পরিমাণ</button>
-            <button class="btn-pill" id="pill-1" onclick="setPillFilter(100, 199, 'pill-1')">100 - 199</button>
-            <button class="btn-pill" id="pill-2" onclick="setPillFilter(200, 1000, 'pill-2')">200 - 1K</button>
-            <button class="btn-pill" id="pill-3" onclick="setPillFilter(1000, 4000, 'pill-3')">1K - 4K</button>
-            <button class="btn-pill" id="pill-4" onclick="setPillFilter(4000, 10000, 'pill-4')">4K - 10K</button>
-            <button class="btn-pill" id="pill-5" onclick="setPillFilter(10000, 25000, 'pill-5')">10K - 25K</button>
-          </div>
-        </div>
-
-        <div class="task-card-list" id="tasks-list-container">
-          <!-- Loading state -->
-          <div class="skeleton" style="height: 140px; margin-bottom: 16px;"></div>
-        </div>
-      </section>
-
-
-      <!-- 3. PROFILE TAB -->
-      <section id="tab-profile" class="tab-content">
-        <div class="profile-card">
-          <div class="avatar-large" id="profile-avatar">U</div>
-          <h3 class="profile-name" id="profile-fullname">ব্যবহারকারী</h3>
-          <p class="profile-details" id="profile-phone">+8801XXXXXXXXX</p>
-
-          <div style="margin-top: 16px; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 8px; border-top: 1px solid var(--border-color); padding-top: 16px;">
-            <p style="font-size: 11px; text-transform: uppercase; color: var(--text-secondary); letter-spacing: 0.5px;">আমার রেফারেল কোড</p>
-            <div style="display: flex; align-items: center; gap: 10px;">
-              <span id="profile-ref-code" style="font-size: 16px; font-weight: 800; color: var(--accent-green); letter-spacing: 1px;">XXXXXX</span>
-              <button class="btn-copy" id="profile-ref-copy">কোড কপি করুন</button>
-            </div>
-            <button class="btn-secondary" id="profile-ref-link-copy" style="padding: 10px 16px; font-size: 13px; border-radius: var(--radius-sm); margin-top: 4px; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" style="fill: var(--accent-cyan)"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></svg>
-              <span>ইনভাইট লিংক কপি করুন</span>
-            </button>
-          </div>
-        </div>
-
-        <div class="menu-list">
-          <div class="menu-item" id="menu-task-history">
-            <div class="menu-item-info">
-              <svg viewBox="0 0 24 24"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
-              <span>আমার টাস্ক সাবমিশন হিস্ট্রি</span>
-            </div>
-            <svg class="menu-item-arrow" viewBox="0 0 24 24"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg>
-          </div>
-
-          <div class="menu-item" id="menu-referred-users">
-            <div class="menu-item-info">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="stroke: var(--accent-green); fill: none;"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
-              <span>আমার টিম ও রেফারেল</span>
-            </div>
-            <svg class="menu-item-arrow" viewBox="0 0 24 24"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg>
-          </div>
-
-          <div class="menu-item" id="menu-help">
-            <div class="menu-item-info">
-              <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 16h-2v-2h2v2zm1.07-7.75l-.9.92C12.45 11.9 12 12.5 12 14h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H7c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.04-.42 1.99-1.07 2.75z"/></svg>
-              <span>হেল্প ও সাপোর্ট চ্যানেল</span>
-            </div>
-            <svg class="menu-item-arrow" viewBox="0 0 24 24"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg>
-          </div>
-
-          <div class="menu-item" id="menu-terms">
-            <div class="menu-item-info">
-              <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
-              <span>নিয়মাবলী ও নির্দেশিকা</span>
-            </div>
-            <svg class="menu-item-arrow" viewBox="0 0 24 24"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg>
-          </div>
-        </div>
-
-        <button onclick="logoutUser()" class="btn-secondary" style="color: var(--accent-red); border-color: rgba(255,61,0,0.15); background-color: rgba(255,61,0,0.02); width: 100%; padding: 14px; border-radius: 12px; font-weight: 700; margin-top: 18px; cursor: pointer;">লগআউট</button>
-      </section>
-
-      <!-- 4. WALLET TAB -->
-      <section id="tab-wallet" class="tab-content">
-        <!-- Balance stats -->
-        <div class="premium-balance-card">
-          <p class="balance-title">Withdrawable Reward Wallet</p>
-          <h1 class="balance-amount-big" id="wallet-balance">৳0.00</h1>
-          <p style="font-size: 12px; color: var(--text-secondary);">Min withdrawal: ৳100.00</p>
-        </div>
-
-        <!-- Withdraw form — Premium Redesign -->
-        <h3 class="section-title" style="margin-bottom: 14px; font-size: 15px; letter-spacing: 0.3px;">
-          💸 উইথড্র রিকোয়েস্ট
-        </h3>
-
-        <div style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 18px; overflow: hidden; margin-bottom: 24px; box-shadow: 0 8px 32px rgba(0,0,0,0.3);">
-          <form id="withdrawal-form">
-
-            <!-- Method Selector Header -->
-            <div style="padding: 16px 18px 0;">
-              <p style="font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 10px;">পেমেন্ট মাধ্যম বেছে নিন</p>
-              <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 18px;">
-
-                <!-- bKash Option -->
-                <div class="method-option selected" data-method="bKash" onclick="selectWithdrawMethod('bKash')"
-                  style="border-radius: 12px; border: 2px solid #e2136e; background: rgba(226,19,110,0.08); padding: 10px 8px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.2s;" id="method-bkash-btn">
-                  <img src="./assets/bkash-logo.png" alt="bKash"
-                    style="width: 28px; height: 28px; border-radius: 6px; object-fit: cover; border: 1px solid rgba(255,255,255,0.08); pointer-events: none;">
-                  <div style="pointer-events: none;">
-                    <p style="font-size: 12px; font-weight: 800; color: #fff; margin: 0;">bKash</p>
-                    <p style="font-size: 9.5px; color: rgba(226,19,110,0.9); margin: 0; font-weight: 600;">সেন্ড মানি</p>
-                  </div>
-                </div>
-
-                <!-- Nagad Option -->
-                <div class="method-option" data-method="Nagad" onclick="selectWithdrawMethod('Nagad')"
-                  style="border-radius: 12px; border: 2px solid rgba(255,255,255,0.07); background: rgba(255,255,255,0.02); padding: 10px 8px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.2s;" id="method-nagad-btn">
-                  <img src="./assets/nagad-logo.png" alt="Nagad"
-                    style="width: 28px; height: 28px; border-radius: 6px; object-fit: cover; border: 1px solid rgba(255,255,255,0.08); pointer-events: none;">
-                  <div style="pointer-events: none;">
-                    <p style="font-size: 12px; font-weight: 800; color: #fff; margin: 0;">Nagad</p>
-                    <p style="font-size: 9.5px; color: rgba(255,106,0,0.9); margin: 0; font-weight: 600;">সেন্ড মানি</p>
-                  </div>
-                </div>
-
-                <!-- USDT Option -->
-                <div class="method-option" data-method="USDT" onclick="selectWithdrawMethod('USDT')"
-                  style="border-radius: 12px; border: 2px solid rgba(255,255,255,0.07); background: rgba(255,255,255,0.02); padding: 10px 8px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.2s;" id="method-usdt-btn">
-                  <img src="./assets/bep20-logo.png" alt="USDT"
-                    style="width: 28px; height: 28px; border-radius: 6px; object-fit: contain; background: rgba(0,0,0,0.3); padding: 2px; border: 1px solid rgba(255,255,255,0.08); pointer-events: none;">
-                  <div style="pointer-events: none;">
-                    <p style="font-size: 12px; font-weight: 800; color: #fff; margin: 0;">USDT</p>
-                    <p style="font-size: 9.5px; color: #00e676; margin: 0; font-weight: 600;">ক্রিপ্টো $</p>
-                  </div>
-                </div>
-
-              </div>
-            </div>
-
-            <!-- Divider -->
-            <div style="height: 1px; background: var(--border-color);"></div>
-
-            <!-- Inputs -->
-            <div style="padding: 18px 18px 0;">
-
-              <!-- Account Number -->
-              <div style="margin-bottom: 16px;">
-                <p id="withdraw-account-label" style="font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">একাউন্ট নম্বর</p>
-                <div style="position: relative;">
-                  <div style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); display: flex; align-items: center; gap: 6px; pointer-events: none;">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a0a5b5" stroke-width="2">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
-                    </svg>
-                    <span style="width: 1px; height: 18px; background: rgba(255,255,255,0.08); display: inline-block;"></span>
-                  </div>
-                  <input type="text" id="withdraw-number" required
-                    placeholder="01XXXXXXXXX"
-                    style="width: 100%; background: var(--bg-primary); border: 1.5px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 14px 14px 14px 48px; color: #fff; font-size: 15px; font-weight: 700; outline: none; box-sizing: border-box; transition: border-color 0.2s;"
-                    onfocus="this.style.borderColor='#00e5ff'" onblur="this.style.borderColor='rgba(255,255,255,0.08)'">
-                </div>
-              </div>
-
-              <!-- Amount -->
-              <div style="margin-bottom: 20px;">
-                <p id="withdraw-amount-label" style="font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">উইথড্র পরিমাণ (৳)</p>
-                <div style="position: relative;">
-                  <div style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); pointer-events: none;">
-                    <span id="withdraw-currency-prefix" style="font-size: 20px; font-weight: 800; color: var(--accent-green); line-height: 1;">৳</span>
-                  </div>
-                  <input type="number" id="withdraw-amount" required min="100" step="any"
-                    placeholder="0"
-                    style="width: 100%; background: var(--bg-primary); border: 1.5px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 14px 14px 14px 40px; color: #fff; font-size: 22px; font-weight: 800; outline: none; box-sizing: border-box; transition: border-color 0.2s; -moz-appearance: textfield;"
-                    onfocus="this.style.borderColor='var(--accent-green)'" onblur="this.style.borderColor='rgba(255,255,255,0.08)'">
-                </div>
-                <p style="font-size: 11px; color: var(--text-muted); margin-top: 6px; padding-left: 4px;">সর্বনিম্ন: <span style="color: var(--accent-green); font-weight: 700;" id="min-withdraw-label">৳100</span></p>
-                <p id="withdraw-conversion-hint" style="display:none; font-size:11px; color:var(--accent-cyan); margin-top:4px; font-weight:700;"></p>
-              </div>
-            </div>
-
-            <!-- Submit Button -->
-            <div style="padding: 0 18px 18px;">
-              <button type="submit"
-                style="width: 100%; background: linear-gradient(135deg, #00e676 0%, #00b0ff 100%); color: #000; font-size: 15px; font-weight: 800; border: none; border-radius: 14px; padding: 16px; cursor: pointer; letter-spacing: 0.5px; box-shadow: 0 6px 20px rgba(0,230,118,0.3); transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
-                </svg>
-                উইথড্র রিকোয়েস্ট করুন
-              </button>
-            </div>
-
-          </form>
-        </div>
-
-        <!-- Ledger -->
-        <h3 class="section-title" style="margin-bottom: 16px;">Wallet Transactions Ledger</h3>
-        <div class="timeline-list" id="wallet-transactions-list">
-          <div class="empty-state">
-            <p class="empty-state-text">No transaction logs</p>
-          </div>
-        </div>
-      </section>
-
-    </main>
-
-    <!-- NOTIFICATION DRAWER -->
-    <div id="notifications-drawer" class="notifications-drawer">
-      <div class="drawer-header">
-        <button class="icon-btn" id="notifications-close-btn">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-          </svg>
-        </button>
-        <h3 class="drawer-title">Notifications</h3>
-      </div>
-      <div class="drawer-body" id="notifications-list">
-        <!-- List dynamic -->
-      </div>
+    <div class="users">
+      <div class="user-number">14K+</div>
+      <div class="user-label">Users on the platform</div>
     </div>
 
-    <!-- START TASK BOTTOM SHEET -->
-    <div id="modal-overlay-task" class="modal-overlay">
-      <div class="bottom-sheet">
-        <div class="sheet-handle"></div>
-        <h3 class="sheet-title" id="modal-task-title">Task Details</h3>
-        
-        <div class="task-detail-container" id="modal-task-details-content">
-          <!-- Populated dynamically -->
-        </div>
-      </div>
-    </div>
-
-
-
-    <!-- HELP & POLICIES MODAL -->
-    <div id="modal-overlay-legal" class="modal-overlay">
-      <div class="bottom-sheet">
-        <div class="sheet-handle"></div>
-        <h3 class="sheet-title" id="legal-title">Policy & Guidelines</h3>
-        <div id="legal-content" style="font-size: 14px; color: var(--text-secondary); line-height: 1.6; display: flex; flex-direction: column; gap: 16px; margin-bottom: 24px;">
-          <!-- Content populated dynamically -->
-        </div>
-        <button class="btn-primary" id="btn-close-legal">I Understand</button>
-      </div>
-    </div>
-
-    <!-- NOTICE MODAL (POPUP ANNOUNCEMENT) -->
-    <div id="modal-overlay-notice" class="modal-overlay">
-      <div class="bottom-sheet" style="border-radius: var(--radius-lg); padding: 24px; text-align: center; max-width: 440px; margin: auto auto 20px auto; width: calc(100% - 32px);">
-        <div class="sheet-handle"></div>
-        <div style="font-size: 32px; margin-bottom: 12px;">📢</div>
-        <h3 class="sheet-title" style="margin-bottom: 14px; font-weight: 800; font-size: 18px; color: #fff;">গুরুত্বপূর্ণ অ্যাপ নোটিশ</h3>
-        
-        <div style="font-size: 13.5px; color: var(--text-secondary); line-height: 1.6; text-align: left; margin-bottom: 20px; display: flex; flex-direction: column; gap: 12px;">
-          <div style="display: flex; gap: 10px; align-items: flex-start;">
-            <span style="font-size: 18px; line-height: 1;">🛡️</span>
-            <p>আমাদের অ্যাপে কাজ করার জন্য কোনো <strong>বিকাশ বা নগদ পিন (PIN) দিতে হয় না</strong>। পিন চাওয়া হলে তা প্রতারণা।</p>
-          </div>
-          <div style="display: flex; gap: 10px; align-items: flex-start;">
-            <span style="font-size: 18px; line-height: 1;">🚫</span>
-            <p>আমাদের এখানে পেমেন্ট বা রিফান্ডের জন্য কোনো <strong>৩য় পক্ষের অ্যাপ (3rd-party App) ব্যবহার করতে হয় না</strong>।</p>
-          </div>
-          <div style="display: flex; gap: 10px; align-items: flex-start;">
-            <span style="font-size: 18px; line-height: 1;">⚡</span>
-            <p>টাস্ক সম্পন্ন করার পর মাত্র <strong>১ থেকে ১০ মিনিটের মধ্যে</strong> আপনার টাকা রিফান্ড করা হয়।</p>
-          </div>
-          <div style="display: flex; gap: 10px; align-items: flex-start;">
-            <span style="font-size: 18px; line-height: 1;">💡</span>
-            <p>সর্বদা সঠিক ট্রানজেকশন আইডি (TrxID) দিয়ে সাবমিট করবেন। ফেক TrxID দিলে অ্যাকাউন্ট ব্লক করা হবে।</p>
-          </div>
-        </div>
-
-        <div style="display: flex; gap: 10px; flex-direction: column;">
-          <button class="btn-primary" id="btn-close-notice" style="width: 100%; padding: 12px; border-radius: 12px; font-weight: 800;">বন্ধ করুন (<span id="notice-timer">5</span>s)</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- FLOATING LIVE SUPPORT BUTTON -->
-    <div id="floating-support-btn" onclick="toggleSupportChatModal()" 
-      style="position: absolute; bottom: 76px; right: 18px; z-index: 850; width: 52px; height: 52px; border-radius: 50%; background: linear-gradient(135deg, #00e676 0%, #00b0ff 100%); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 20px rgba(0,230,118,0.5); cursor: pointer; transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
-      <span style="font-size: 26px; line-height: 1;">💬</span>
-      <span id="support-unread-badge" style="display: none; position: absolute; top: -2px; right: -2px; background: #ff1744; color: #fff; font-size: 10px; font-weight: 900; width: 20px; height: 20px; border-radius: 50%; border: 2px solid #000; align-items: center; justify-content: center;">0</span>
-    </div>
-
-    <!-- LIVE SUPPORT CHAT MODAL (EXACTLY MATCHING TASK DETAILS BOTTOM SHEET) -->
-    <div id="modal-live-support" class="modal-overlay">
-      <div class="bottom-sheet" style="padding: 0; display: flex; flex-direction: column; height: 75vh; max-height: 540px; overflow: hidden; border-top-left-radius: 20px; border-top-right-radius: 20px; background: #12161f;">
-        <!-- Chat Header -->
-        <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.08); flex-shrink: 0;">
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <div style="position: relative; width: 36px; height: 36px; border-radius: 50%; background: rgba(0,230,118,0.15); border: 1.5px solid #00e676; display: flex; align-items: center; justify-content: center;">
-              <span style="font-size: 18px;">🎧</span>
-              <span style="position: absolute; bottom: 0; right: 0; width: 9px; height: 9px; border-radius: 50%; background: #00e676; border: 1.5px solid #12161f;"></span>
-            </div>
-            <div>
-              <h4 style="font-size: 15px; font-weight: 800; color: #fff; margin: 0 0 2px 0;">লাইভ হেল্পডেস্ক ও সাপোর্ট</h4>
-              <p style="font-size: 10.5px; color: #00e676; margin: 0; font-weight: 700;">🟢 এডমিন অনলাইন (২৪/৭)</p>
-            </div>
-          </div>
-          <button type="button" onclick="closeSupportChatModal()" style="background: rgba(255,255,255,0.08); border: none; color: #94a3b8; width: 32px; height: 32px; border-radius: 50%; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center;">✕</button>
-        </div>
-
-        <!-- Chat Messages Container -->
-        <div id="support-chat-messages" style="flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; background: rgba(0,0,0,0.25);">
-          <div style="text-align: center; color: var(--text-muted); font-size: 11px; margin: 10px 0;">
-            🔒 লাইভ চ্যাট এনক্রিপ্টেড ও সরাসরি এডমিনের সাথে কানেক্টেড
-          </div>
-        </div>
-
-        <!-- Chat Input Footer -->
-        <!-- Image Attachment Preview Zone -->
-        <div id="support-image-preview-wrap" style="display:none; padding: 8px 12px; background: rgba(0,0,0,0.4); border-top: 1px solid rgba(255,255,255,0.08); align-items: center; justify-content: space-between;">
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <img id="support-image-preview-img" src="" style="width: 42px; height: 42px; border-radius: 6px; object-fit: cover; border: 1.5px solid #00e676;">
-            <span style="font-size: 11.5px; color: #00e676; font-weight: 700;">📸 ছবি যুক্ত হয়েছে</span>
-          </div>
-          <button type="button" onclick="removeSupportImageAttachment()" style="background: rgba(255,61,0,0.2); color: #ff5252; border: 1px solid rgba(255,61,0,0.4); border-radius: 50%; width: 24px; height: 24px; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center;">✕</button>
-        </div>
-
-        <div style="padding: 10px 12px; background: #1e293b; border-top: 1px solid rgba(255,255,255,0.08); display: flex; gap: 6px; align-items: center; flex-shrink: 0;">
-          <input type="file" id="support-file-input" accept="image/*" style="display:none;" onchange="handleSupportImageSelect(this)">
-          <button type="button" onclick="document.getElementById('support-file-input').click()"
-            style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #fff; padding: 10px 12px; border-radius: 12px; font-size: 15px; cursor: pointer;" title="ছবি/স্ক্রিনশট যুক্ত করুন">
-            📷
-          </button>
-          <input type="text" id="support-msg-input" placeholder="মেসেজ লিখুন..." 
-            onkeypress="if(event.key === 'Enter') sendSupportMessage()"
-            style="flex: 1; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.12); color: #fff; padding: 10px 14px; border-radius: 12px; font-size: 13.5px; outline: none;">
-          <button type="button" id="support-msg-send-btn" onclick="sendSupportMessage()"
-            style="background: linear-gradient(135deg, #00e676 0%, #00b0ff 100%); color: #000; border: none; padding: 10px 16px; border-radius: 12px; font-weight: 800; font-size: 13px; cursor: pointer; white-space: nowrap; box-shadow: 0 3px 10px rgba(0,230,118,0.3);">
-            পাঠান 🚀
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- BOTTOM NAVIGATION -->
-    <nav class="bottom-nav">
-      <div class="nav-item active" data-tab="home">
-        <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
-        <span>হোম</span>
-      </div>
-      <div class="nav-item" data-tab="tasks">
-        <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10H7v-2h10v2zm0-4H7V7h10v2zm0 8H7v-2h10v2z"/></svg>
-        <span>টাস্ক</span>
-      </div>
-      <div class="nav-item" data-tab="wallet">
-        <svg viewBox="0 0 24 24"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2-.9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
-        <span>ওয়ালেট</span>
-      </div>
-      <div class="nav-item" data-tab="profile">
-        <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-        <span>প্রোফাইল</span>
-      </div>
-    </nav>
-
-  </div>
-
-  <!-- CDN scripts -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="./js/supabase.js"></script>
-  <script src="./js/auth.js"></script>
-  <script src="./js/pwa-install.js"></script>
-  <script src="./js/notifications.js"></script>
-  
-  <!-- App JS Tab Modules -->
-  <script src="./js/app.js"></script>
-  <script src="./js/home.js"></script>
-  <script src="./js/tasks.js"></script>
-  <script src="./js/profile.js"></script>
-  <script src="./js/wallet.js"></script>
-  <script src="./js/support.js"></script>
-
-  <script>
-    // Register PWA service worker
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./service-worker.js')
-          .then((reg) => console.log('Service Worker registered successfully', reg.scope))
-          .catch((err) => console.error('Service Worker registration failed', err));
-      });
-    }
-  </script>
+    <div class="footer">Thank you for your patience & support.</div>
+  </main>
+</div>
 </body>
 </html>
