@@ -1,129 +1,146 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="bn">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>DevPay - Earn & Withdraw</title>
-  <link rel="stylesheet" href="./css/global.css">
-  <link rel="stylesheet" href="./css/auth.css">
-  <link rel="manifest" href="./manifest.json">
-  <meta name="theme-color" content="#08090D">
-  <!-- Google Fonts Inter -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <style>
-    .landing-wrapper {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      padding: 32px 24px;
-      overflow-y: auto;
-      text-align: center;
-    }
-    .landing-hero {
-      margin-top: 40px;
-    }
-    .landing-title {
-      font-size: 32px;
-      font-weight: 800;
-      line-height: 1.2;
-      margin-bottom: 16px;
-    }
-    .landing-description {
-      font-size: 15px;
-      color: var(--text-secondary);
-      margin-bottom: 32px;
-    }
-    .trust-badge-container {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-      margin-bottom: 40px;
-      text-align: left;
-    }
-    .trust-badge {
-      background-color: var(--card-bg);
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius-md);
-      padding: 16px;
-      display: flex;
-      gap: 16px;
-      align-items: center;
-    }
-    .trust-badge-icon {
-      color: var(--accent-green);
-      flex-shrink: 0;
-    }
-    .trust-badge-title {
-      font-weight: 700;
-      font-size: 14px;
-      margin-bottom: 4px;
-    }
-    .trust-badge-desc {
-      font-size: 12px;
-      color: var(--text-secondary);
-    }
-    .landing-actions {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Major System Update</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{min-height:100%;background:#07090d}
+body{font-family:"Noto Sans Bengali","Segoe UI",Arial,sans-serif;display:flex;justify-content:center;color:#fff}
+.page{
+  width:100%;max-width:480px;min-height:100vh;position:relative;
+  overflow:hidden;background:
+  radial-gradient(circle at 50% 18%,rgba(75,120,255,.16),transparent 30%),
+  radial-gradient(circle at 15% 80%,rgba(0,220,180,.08),transparent 28%),
+  #07090d;
+  display:flex;align-items:center;justify-content:center;padding:28px 22px;
+}
+.grid{
+  position:absolute;inset:0;opacity:.18;
+  background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),
+                   linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);
+  background-size:38px 38px;
+  mask-image:linear-gradient(to bottom,black,transparent 85%);
+}
+.orb{position:absolute;border-radius:50%;filter:blur(2px);opacity:.45}
+.o1{width:7px;height:7px;background:#56c8ff;top:20%;left:13%;animation:float1 5s infinite}
+.o2{width:5px;height:5px;background:#7dffcf;top:32%;right:14%;animation:float2 6s infinite}
+.o3{width:4px;height:4px;background:#fff;bottom:25%;left:20%;animation:float2 7s infinite}
+@keyframes float1{50%{transform:translate(18px,-20px);opacity:.9}100%{transform:translate(0,0)}}
+@keyframes float2{50%{transform:translate(-14px,18px);opacity:.35}100%{transform:translate(0,0)}}
+
+.wrap{width:100%;max-width:410px;position:relative;z-index:2;text-align:center}
+.badge{
+  display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:30px;
+  border:1px solid rgba(104,160,255,.25);background:rgba(70,110,220,.08);
+  color:#9fc2ff;font-size:10px;font-weight:800;letter-spacing:1.8px;
+  animation:badgeGlow 2.4s infinite;
+}
+.badge i{width:7px;height:7px;border-radius:50%;background:#65b9ff;box-shadow:0 0 13px #65b9ff}
+@keyframes badgeGlow{50%{box-shadow:0 0 25px rgba(70,130,255,.1)}}
+
+.visual{width:150px;height:150px;margin:28px auto 25px;position:relative;display:grid;place-items:center}
+.ring{position:absolute;border-radius:50%;border:1px solid rgba(100,160,255,.2)}
+.r1{inset:0;animation:spin 9s linear infinite}
+.r2{inset:14px;border-style:dashed;border-color:rgba(100,230,190,.25);animation:spinReverse 7s linear infinite}
+.r3{inset:29px;border-color:rgba(100,160,255,.12)}
+.core{
+  width:72px;height:72px;border-radius:23px;display:grid;place-items:center;
+  background:linear-gradient(145deg,#162033,#0e151e);
+  border:1px solid rgba(120,180,255,.28);
+  box-shadow:0 0 45px rgba(65,145,255,.18),inset 0 0 25px rgba(255,255,255,.025);
+}
+.core span{font-size:35px;animation:gear 4s linear infinite;filter:drop-shadow(0 0 10px rgba(100,180,255,.5))}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes spinReverse{to{transform:rotate(-360deg)}}
+@keyframes gear{to{transform:rotate(360deg)}}
+
+h1{font-size:35px;line-height:1.18;letter-spacing:-1px;margin-bottom:15px}
+h1 span{display:block}
+.highlight{background:linear-gradient(90deg,#fff,#8fc4ff);-webkit-background-clip:text;color:transparent}
+.desc{color:#8d98a8;font-size:13px;line-height:1.85;max-width:380px;margin:auto}
+
+.panel{
+  margin-top:25px;border:1px solid rgba(255,255,255,.09);border-radius:22px;
+  background:rgba(15,19,27,.82);backdrop-filter:blur(15px);
+  padding:19px;text-align:left;box-shadow:0 25px 70px rgba(0,0,0,.3);
+}
+.panel-title{display:flex;align-items:center;gap:10px;margin-bottom:17px}
+.panel-icon{width:35px;height:35px;border-radius:11px;background:rgba(80,150,255,.1);display:grid;place-items:center;color:#72b7ff}
+.panel-title b{font-size:14px}.panel-title small{display:block;color:#697586;font-size:9px;margin-top:2px}
+.live{margin-left:auto;font-size:9px;color:#64e6bd;font-weight:800}
+.progress{height:5px;border-radius:10px;background:#1b222c;overflow:hidden}
+.progress i{display:block;height:100%;width:72%;border-radius:10px;background:linear-gradient(90deg,#4b8cff,#60e2c0);animation:progress 2.5s ease-in-out infinite alternate}
+@keyframes progress{from{width:45%}to{width:86%}}
+.rows{margin-top:8px}
+.row{display:flex;align-items:center;gap:11px;padding:11px 0;border-bottom:1px solid rgba(255,255,255,.045)}
+.row:last-child{border-bottom:0}
+.tick{width:25px;height:25px;border-radius:8px;background:rgba(100,220,185,.08);color:#68e0bc;display:grid;place-items:center;font-size:12px}
+.row b{font-size:11px}.row small{display:block;color:#687484;font-size:9px;margin-top:2px}
+.wait{margin-top:21px;color:#697585;font-size:10px}
+.wait strong{display:block;color:#dce4ee;font-size:13px;margin-top:5px}
+.users{margin-top:26px;padding-top:21px;border-top:1px solid rgba(255,255,255,.08)}
+.user-number{font-size:31px;font-weight:850;letter-spacing:-1px}
+.user-label{font-size:11px;color:#737f8e;margin-top:1px}
+.footer{margin-top:20px;color:#4f5a68;font-size:9px}
+@media(max-width:380px){h1{font-size:30px}.visual{width:130px;height:130px}.core{width:65px;height:65px}}
+</style>
 </head>
 <body>
-  <div id="app-container">
-    <div class="landing-wrapper">
-      <div class="landing-hero">
-        <h1 class="landing-title">Earn Cashback with <span class="gradient-text">DevPay</span>.</h1>
-        <p class="landing-description">The safest premium rewards and DevPay platform in Bangladesh. Start earning bonuses today.</p>
-      </div>
+<div class="page">
+  <div class="grid"></div>
+  <i class="orb o1"></i><i class="orb o2"></i><i class="orb o3"></i>
 
-      <div class="trust-badge-container">
-        <div class="trust-badge">
-          <svg class="trust-badge-icon" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
-          </svg>
-          <div>
-            <h4 class="trust-badge-title">100% Secured Manual Verification</h4>
-            <p class="trust-badge-desc">Every transaction is individually verified manually by administrators to guarantee security.</p>
-          </div>
-        </div>
+  <main class="wrap">
+    <div class="badge"><i></i> MAJOR SYSTEM UPDATE</div>
 
-        <div class="trust-badge">
-          <svg class="trust-badge-icon" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-          </svg>
-          <div>
-            <h4 class="trust-badge-title">Quick Refund Timings</h4>
-            <p class="trust-badge-desc">Payments are returned in 10-30 minutes to your original sending number before bonus release.</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="landing-actions">
-        <button onclick="window.location.href='./login.html'" class="btn-primary">Login to Account</button>
-        <button onclick="window.location.href='./register.html'" class="btn-secondary">Create New Account</button>
-      </div>
+    <div class="visual">
+      <div class="ring r1"></div>
+      <div class="ring r2"></div>
+      <div class="ring r3"></div>
+      <div class="core"><span>⚙</span></div>
     </div>
-  </div>
 
-  <!-- Supabase & Auth Checker -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="./js/supabase.js"></script>
-  <script src="./js/auth.js"></script>
+    <h1>
+      <span>We’re Making</span>
+      <span class="highlight">Something Better</span>
+    </h1>
 
-  <!-- PWA Shared Installer -->
-  <script src="./js/pwa-install.js"></script>
+    <p class="desc">
+      আমাদের সাইটে বর্তমানে একটি বড় ধরনের সিস্টেম আপডেট চলছে।
+      আরও দ্রুত, নিরাপদ ও উন্নত সেবা দেওয়ার জন্য গুরুত্বপূর্ণ
+      পরিবর্তন করা হচ্ছে।
+    </p>
 
-  <script>
-    // Register PWA service worker
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./service-worker.js')
-          .then((reg) => console.log('Service Worker registered successfully', reg.scope))
-          .catch((err) => console.error('Service Worker registration failed', err));
-      });
-    }
-  </script>
+    <section class="panel">
+      <div class="panel-title">
+        <div class="panel-icon">↻</div>
+        <div><b>System Upgrade</b><small>Major infrastructure maintenance</small></div>
+        <div class="live">● IN PROGRESS</div>
+      </div>
+
+      <div class="progress"><i></i></div>
+
+      <div class="rows">
+        <div class="row"><div class="tick">✓</div><div><b>Core System Update</b><small>System infrastructure is being upgraded</small></div></div>
+        <div class="row"><div class="tick">✓</div><div><b>Security Improvements</b><small>Improving reliability and protection</small></div></div>
+        <div class="row"><div class="tick">✓</div><div><b>Performance Optimization</b><small>Faster and smoother service</small></div></div>
+      </div>
+    </section>
+
+    <div class="wait">
+      অনুগ্রহ করে কিছুক্ষণ অপেক্ষা করুন
+      <strong>সিস্টেম আপডেট সম্পন্ন হলে সাইট আবার চালু হবে</strong>
+    </div>
+
+    <div class="users">
+      <div class="user-number">14K+</div>
+      <div class="user-label">Users on the platform</div>
+    </div>
+
+    <div class="footer">Thank you for your patience & support.</div>
+  </main>
+</div>
 </body>
 </html>
