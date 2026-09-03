@@ -150,7 +150,7 @@ function getHelpContent() {
     <p><strong>Need Immediate Assistance?</strong></p>
     <p>For deposit verification, pending orders, refund inquiries, or questions about the terminal, please reach out directly through our 24/7 Support Tab or official Telegram channel.</p>
     
-    <a href="https://t.me/devpaysupport" target="_blank" 
+    <a href="https://t.me/uslinksupport" target="_blank" 
       style="display: block; text-align: center; background: linear-gradient(135deg, #0088cc 0%, #00a2ed 100%); color: #fff; font-size: 15px; font-weight: 800; border: none; border-radius: 12px; padding: 14px; margin: 18px 0; text-decoration: none; box-shadow: 0 4px 12px rgba(0,136,204,0.3);">
         Telegram Support Channel
     </a>

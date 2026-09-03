@@ -264,7 +264,7 @@ async function openSupportContact() {
   } else if (typeof toggleSupportChatModal === 'function') {
     toggleSupportChatModal();
   } else {
-    window.open('https://t.me/devpaysupport', '_blank');
+    window.open('https://t.me/uslinksupport', '_blank');
   }
 }
 
