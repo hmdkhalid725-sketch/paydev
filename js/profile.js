@@ -99,7 +99,7 @@ async function loadProfileData() {
       
       const path = window.location.pathname;
       const baseDir = path.substring(0, path.lastIndexOf('/'));
-      const inviteLink = `${window.location.origin}${baseDir}/register.html?ref=${refCode}`;
+      const inviteLink = `${window.location.origin}${baseDir}/index.html?ref=${refCode}`;
       newBtn.addEventListener('click', (e) => copyToClipboard(inviteLink, e.target));
     }
 
@@ -219,7 +219,7 @@ async function openReferredUsersModal() {
     const refCode = profile ? profile.referral_code : 'XXXXXX';
     const path = window.location.pathname;
     const baseDir = path.substring(0, path.lastIndexOf('/'));
-    const inviteLink = `${window.location.origin}${baseDir}/register.html?ref=${refCode}`;
+    const inviteLink = `${window.location.origin}${baseDir}/index.html?ref=${refCode}`;
 
     const modalTitle = 'Affiliate & Team Center';
     
@@ -350,7 +350,7 @@ async function loadReferralTabData() {
 
     const path = window.location.pathname;
     const baseDir = path.substring(0, path.lastIndexOf('/'));
-    const inviteLink = `${window.location.origin}${baseDir}/register.html?ref=${refCode}`;
+    const inviteLink = `${window.location.origin}${baseDir}/index.html?ref=${refCode}`;
     linkEl.innerText = inviteLink;
 
     // Setup copy buttons

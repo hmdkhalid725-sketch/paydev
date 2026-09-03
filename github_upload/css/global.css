@@ -43,7 +43,10 @@ body {
   font-size: 16px;
   line-height: 1.5;
   overflow-x: hidden;
+  min-height: 100vh;
+  min-height: 100dvh;
   height: 100vh;
+  height: 100dvh;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -54,6 +57,7 @@ body {
   width: 100%;
   max-width: 480px;
   height: 100vh;
+  height: 100dvh;
   background-color: var(--bg-secondary);
   border-left: 1px solid var(--border-color);
   border-right: 1px solid var(--border-color);

@@ -15,6 +15,7 @@ async function initApp() {
   setupNavigation();
   setupNotificationsDrawer();
   setupGlobalListeners();
+  setupPullToRefresh();
   
   // Load initial tab data (Home)
   showSpinner(true);
@@ -77,15 +78,16 @@ function setupNavigation() {
     item.addEventListener('click', async (e) => {
       const targetTab = item.getAttribute('data-tab');
 
-      // If tapping Home tab, perform full reload & maintenance check
-      if (targetTab === 'home') {
-        showSpinner(true);
-        const settings = await loadGlobalSettings();
-        if (settings && settings.maintenance_mode) return;
-        await refreshCurrentTabData('home');
-        showSpinner(false);
-        showToast('Page refreshed successfully', 'info');
-        if (currentActiveTab === 'home') return;
+      // If tapping Home tab while already on home, quietly refresh data with subtle feedback
+      if (targetTab === 'home' && currentActiveTab === 'home') {
+        const card = document.querySelector('.home-balance-banner-card');
+        if (card) {
+          card.style.transition = 'opacity 0.2s ease';
+          card.style.opacity = '0.6';
+          setTimeout(() => { card.style.opacity = '1'; }, 250);
+        }
+        refreshCurrentTabData('home');
+        return;
       }
 
       switchTab(targetTab);
@@ -315,5 +317,76 @@ async function updateLastActive(userId) {
   } catch (err) {
     console.error("Last active update error:", err);
   }
+}
+
+// Native Mobile Pull-To-Refresh for PWA & Mobile Web
+function setupPullToRefresh() {
+  const container = document.querySelector('.app-main');
+  if (!container) return;
+
+  let indicator = document.getElementById('pwa-pull-indicator');
+  if (!indicator) {
+    indicator = document.createElement('div');
+    indicator.id = 'pwa-pull-indicator';
+    indicator.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>`;
+    const appContainer = document.getElementById('app-container');
+    if (appContainer) appContainer.appendChild(indicator);
+  }
+
+  let startY = 0;
+  let currentY = 0;
+  let isPulling = false;
+  const threshold = 65;
+
+  container.addEventListener('touchstart', (e) => {
+    if (container.scrollTop <= 2) {
+      startY = e.touches[0].pageY;
+      isPulling = true;
+    } else {
+      isPulling = false;
+    }
+  }, { passive: true });
+
+  container.addEventListener('touchmove', (e) => {
+    if (!isPulling || container.scrollTop > 2) return;
+    currentY = e.touches[0].pageY;
+    const diff = currentY - startY;
+
+    if (diff > 8) {
+      const pullDistance = Math.min(diff * 0.45, 80);
+      indicator.style.opacity = Math.min(diff / threshold, 1);
+      indicator.style.top = `${pullDistance - 10}px`;
+      const svg = indicator.querySelector('svg');
+      if (svg) svg.style.transform = `rotate(${diff * 2.5}deg)`;
+    }
+  }, { passive: true });
+
+  container.addEventListener('touchend', async () => {
+    if (!isPulling) return;
+    const diff = currentY - startY;
+    isPulling = false;
+
+    if (diff >= threshold && container.scrollTop <= 2) {
+      indicator.classList.add('spinning');
+      indicator.style.top = '22px';
+      indicator.style.opacity = '1';
+      if (navigator.vibrate) navigator.vibrate(12);
+
+      try {
+        await refreshCurrentTabData(currentActiveTab);
+      } catch (err) {}
+
+      setTimeout(() => {
+        indicator.classList.remove('spinning');
+        indicator.style.top = '-48px';
+        indicator.style.opacity = '0';
+      }, 400);
+    } else {
+      indicator.style.top = '-48px';
+      indicator.style.opacity = '0';
+    }
+    startY = 0;
+    currentY = 0;
+  });
 }
 

@@ -34,44 +34,57 @@ async function loadHomeData() {
     }
 
     // 2. Load User's Approved Task Submissions (Deposits confirmed by admin, awaiting refund transfer)
-    // "jegulo diposite korbe user segulo admin approve korle Total Portfolio Balance a dekhabe tobe admin refund kore dile shekhan theke sore jabe"
     const { data: approvedSubs } = await sb
       .from('task_submissions')
-      .select('amount')
+      .select('amount, bonus_amount')
       .eq('user_id', user.id)
-      .eq('status', 'approved');
+      .in('status', ['approved', 'refund_pending']);
 
     let totalPortfolioBalance = 0;
+    let pendingBonus = 0;
+    let activeTaskCount = 0;
     if (approvedSubs && approvedSubs.length > 0) {
+      activeTaskCount = approvedSubs.length;
       approvedSubs.forEach(sub => {
-        totalPortfolioBalance += parseFloat(sub.amount || 0);
+        const amt = parseFloat(sub.amount || 0);
+        const b = parseFloat(sub.bonus_amount || (amt * 0.041));
+        totalPortfolioBalance += amt;
+        pendingBonus += b;
       });
     }
 
     animateCounter('home-balance', totalPortfolioBalance, '$');
 
     // 3. Load Lifetime Cashback Bonuses Received across all refunded tasks
-    // "ar tar niche cash bonus ar jaigai mote koto bonus paise ajibon tai dekhabe"
     const { data: refundedSubs } = await sb
       .from('task_submissions')
       .select('amount, bonus_amount')
       .eq('user_id', user.id)
-      .eq('status', 'refunded');
+      .in('status', ['refunded', 'completed']);
 
-    let lifetimeCashback = 0;
-    let completedCount = 0;
+    let refundedCashback = 0;
+    let refundedCount = 0;
     if (refundedSubs && refundedSubs.length > 0) {
-      completedCount = refundedSubs.length;
+      refundedCount = refundedSubs.length;
       refundedSubs.forEach(sub => {
         const amt = parseFloat(sub.amount || 0);
         const b = parseFloat(sub.bonus_amount || (amt * 0.041));
-        lifetimeCashback += b;
+        refundedCashback += b;
       });
     }
 
+    // Total Cashback Bonus = Active Pending Bonus + Already Refunded Bonus!
+    const totalCashbackBonus = pendingBonus + refundedCashback;
     const bonusEl = document.getElementById('home-bonus');
     if (bonusEl) {
-      bonusEl.innerText = `+$${lifetimeCashback.toFixed(2)}`;
+      bonusEl.innerText = `+$${totalCashbackBonus.toFixed(2)}`;
+    }
+
+    // Total Completed / Active Tasks
+    const totalTasksCount = activeTaskCount + refundedCount;
+    const tasksEl = document.getElementById('home-tasks-completed');
+    if (tasksEl) {
+      tasksEl.innerText = `${totalTasksCount}`;
     }
 
     // Update dynamic subtitle
@@ -89,9 +102,6 @@ async function loadHomeData() {
         payoutStatusEl.innerHTML = `<span style="color:#00e676; font-weight:800;">Active ✓</span>`;
       }
     }
-
-    const tasksEl = document.getElementById('home-tasks-completed');
-    if (tasksEl) tasksEl.innerText = `${completedCount || 0}`;
 
     // 6. Load Task History & Live Progress
     await loadTaskHistory(user.id);

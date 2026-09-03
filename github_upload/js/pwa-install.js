@@ -58,6 +58,7 @@ window.addEventListener('appinstalled', () => {
 function triggerPwaInstallFromApp() {
   const promptEvt = window.deferredPrompt || deferredPrompt;
 
+  // 1. If native on-screen prompt is ready -> Launch 1-tap dialog directly!
   if (promptEvt) {
     promptEvt.prompt();
     promptEvt.userChoice.then(({ outcome }) => {
@@ -75,18 +76,44 @@ function triggerPwaInstallFromApp() {
     return;
   }
 
-  // If already running standalone
+  // 2. If already running standalone inside the app
   if (isAppRunningStandalone()) {
     if (typeof showToast === 'function') {
-      showToast('App is already installed on your Home Screen! ✓', 'success');
+      showToast('US-Link app is already installed on your device! ✓', 'success');
     }
     applyPwaVisibilityRules();
     return;
   }
 
-  // Clean toast
-  if (typeof showToast === 'function') {
-    showToast('Installing US-Link to your Home Screen...', 'info');
+  // 3. If iOS Safari
+  const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  if (isIos) {
+    if (typeof showToast === 'function') {
+      showToast("To add on iPhone: Tap Safari Share icon -> 'Add to Home Screen'", 'info');
+    }
+    return;
+  }
+
+  // 4. Direct Fallback: Trigger direct download so user never needs to touch browser settings!
+  try {
+    const appUrl = `${window.location.origin}${window.location.pathname}?mode=pwa`;
+    const launcherHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>US Link Terminal</title><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta http-equiv="refresh" content="0; url=${appUrl}"></head><body style="background:#08090d;color:#fff;display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;text-align:center;"><div><h3>Opening US-Link Web3 Terminal...</h3><p style="color:#94a3b8;font-size:12px;">Loading native interface</p></div><script>window.location.replace('${appUrl}');<\/script></body></html>`;
+    const blob = new Blob([launcherHtml], { type: 'text/html' });
+    const downloadUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = downloadUrl;
+    a.download = 'US-Link-Web3-App.html';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(downloadUrl);
+    if (typeof showToast === 'function') {
+      showToast('US-Link App downloading directly to device... ✓', 'success');
+    }
+  } catch (e) {
+    if (typeof showToast === 'function') {
+      showToast('Installing US-Link app directly...', 'info');
+    }
   }
 }
 
