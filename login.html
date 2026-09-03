@@ -194,8 +194,19 @@
 
       let detectedCode = null;
 
-      // Bangladesh: 01 (017, 018, 019, 013, 014, 015, 016) or +880 or 880
-      if (clean.startsWith('01') || clean.startsWith('+880') || digits.startsWith('880')) {
+      // Bangladesh: 01... (017, 018, 019, 013, 014, 015, 016), 17..., 18..., 19..., 13..., 14..., 15..., 16..., +880, 880
+      if (
+        clean.startsWith('01') ||
+        clean.startsWith('17') ||
+        clean.startsWith('18') ||
+        clean.startsWith('19') ||
+        clean.startsWith('13') ||
+        clean.startsWith('14') ||
+        clean.startsWith('15') ||
+        clean.startsWith('16') ||
+        clean.startsWith('+880') ||
+        digits.startsWith('880')
+      ) {
         detectedCode = '+880';
       }
       // UK: +44 or 44
@@ -218,8 +229,11 @@
       else if (clean.startsWith('+92') || (digits.startsWith('92') && digits.length >= 3)) {
         detectedCode = '+92';
       }
-      // USA / Canada: starts with +1, or 12... 1...
-      else if (clean.startsWith('+1') || clean.startsWith('1')) {
+      // USA / Canada (+1): starts with +1, or starts with 1 where second character is NOT 7 (and not BD operator)
+      else if (
+        clean.startsWith('+1') ||
+        (clean.startsWith('1') && !clean.startsWith('17') && !clean.startsWith('18') && !clean.startsWith('19') && !clean.startsWith('13') && !clean.startsWith('14') && !clean.startsWith('15') && !clean.startsWith('16'))
+      ) {
         detectedCode = '+1';
       }
 

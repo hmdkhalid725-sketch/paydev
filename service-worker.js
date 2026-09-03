@@ -1,4 +1,4 @@
-const CACHE_NAME = 'DevPay-v2';
+const CACHE_NAME = 'USLink-v3';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
