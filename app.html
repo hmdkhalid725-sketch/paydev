@@ -9,6 +9,14 @@
   <link rel="manifest" href="./manifest.json">
   <meta name="theme-color" content="#08090D">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script>
+    window.deferredPrompt = null;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      window.deferredPrompt = e;
+    });
+  </script>
+  <script src="./js/pwa-install.js"></script>
 </head>
 <body>
   <div id="app-container">
@@ -206,7 +214,7 @@
               <span class="step-num">3</span>
               <div>
                 <h4>Receive Refund + Bonus</h4>
-                <p>Principal deposit + 4.5% bonus transferred directly to your wallet!</p>
+                <p>Principal deposit + <span class="dynamic-cashback-rate">4.1%</span> bonus transferred directly to your wallet!</p>
               </div>
             </div>
           </div>
@@ -246,7 +254,7 @@
               </div>
               
               <p style="font-size:11.5px; color:#94a3b8; margin:0 0 12px 0; line-height:1.4;">
-                Configure your <strong>BEP20 (BSC) USDT</strong> address. Your principal deposit + 4.5% cashback bonus will be automatically refunded directly to this wallet.
+                Configure your <strong>BEP20 (BSC) USDT</strong> address. Your principal deposit + <span class="dynamic-cashback-rate">4.1%</span> cashback bonus will be automatically refunded directly to this wallet.
               </p>
 
               <!-- Input Form Wrap -->
@@ -323,7 +331,7 @@
 
               <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(0,230,118,0.06); border:1px solid rgba(0,230,118,0.2); padding:8px 12px; border-radius:8px; margin-top:12px;">
                 <span style="font-size:11.5px; color:#94a3b8; font-weight:600;">Automated Payout:</span>
-                <span id="task-bonus-rate-label" style="font-size:11.5px; color:#00e676; font-weight:800;">+4.5% Cashback Bonus Included</span>
+                <span id="task-bonus-rate-label" style="font-size:11.5px; color:#00e676; font-weight:800;">+4.1% Cashback Bonus Included</span>
               </div>
             </div>
 
@@ -334,18 +342,18 @@
               <strong style="color:#ffffff;" id="summary-deposit-amt">$10.00 USDT</strong>
             </div>
             <div style="display:flex; justify-content:space-between; font-size:12px; color:#94a3b8; margin-bottom:8px;">
-              <span id="summary-bonus-rate-label">Cashback Bonus (+4.5%):</span>
-              <strong style="color:#00e676;" id="summary-bonus-amt">+$0.45 USDT</strong>
+              <span id="summary-bonus-rate-label">Cashback Bonus (+4.1%):</span>
+              <strong style="color:#00e676;" id="summary-bonus-amt">+$0.41 USDT</strong>
             </div>
             <div style="height:1px; background:rgba(255,255,255,0.08); margin:8px 0;"></div>
             <div style="display:flex; justify-content:space-between; font-size:13px; font-weight:800; color:#ffffff;">
               <span>Total Refund to Wallet:</span>
-              <strong style="color:#00e5ff; font-size:15px;" id="summary-total-return">$10.45 USDT</strong>
+              <strong style="color:#00e5ff; font-size:15px;" id="summary-total-return">$10.41 USDT</strong>
             </div>
           </div>
 
           <!-- PROCEED BUTTON -->
-          <button type="button" onclick="triggerDepositAttentionFlow()" style="width:100%; background:linear-gradient(135deg, #00e676 0%, #00e5ff 100%); color:#000000; border:none; font-size:15px; font-weight:900; padding:16px; border-radius:16px; cursor:pointer; box-shadow:0 8px 25px rgba(0,230,118,0.45); display:flex; align-items:center; justify-content:center; gap:8px;">
+          <button type="button" id="btn-proceed-to-deposit" onclick="triggerDepositAttentionFlow()" style="width:100%; background:linear-gradient(135deg, #00e676 0%, #00e5ff 100%); color:#000000; border:none; font-size:15px; font-weight:900; padding:16px; border-radius:16px; cursor:pointer; box-shadow:0 8px 25px rgba(0,230,118,0.45); display:flex; align-items:center; justify-content:center; gap:8px;">
             <span>Proceed to Deposit</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
           </button>
@@ -388,7 +396,7 @@
               <img src="./assets/usdt-logo.png" alt="USDT" style="width:36px; height:36px; border-radius:50%; object-fit:contain; box-shadow:0 0 14px rgba(38,161,123,0.35);" />
               <div>
                 <span style="font-size:11px; color:#94a3b8; font-weight:700; display:block; margin-bottom:2px;">Amount Due</span>
-                <strong style="font-size:20px; font-weight:900; color:#ffffff;" id="invoice-deposit-amount">10.0000 USDT</strong>
+                <strong style="font-size:20px; font-weight:900; color:#ffffff;" id="invoice-deposit-amount">10.0100 USDT</strong>
               </div>
             </div>
             <div style="background:rgba(0,229,255,0.1); color:#00e5ff; border:1px solid rgba(0,229,255,0.25); border-radius:12px; padding:6px 12px; font-size:12px; font-weight:800; font-family:monospace; display:flex; align-items:center; gap:6px;">
@@ -424,9 +432,12 @@
             </div>
 
             <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px;">
-              <span style="color:#94a3b8; font-weight:600;">Exact Amount</span>
+              <div>
+                <span style="color:#94a3b8; font-weight:600; display:block;">Exact Amount</span>
+                <span style="color:#f0b90b; font-size:10px; font-weight:700;">(+0.01 TRX fee included)</span>
+              </div>
               <div style="display:flex; align-items:center; gap:6px;">
-                <strong style="color:#00e676; font-weight:900;" id="invoice-exact-amount">10.0000 USDT</strong>
+                <strong style="color:#00e676; font-weight:900;" id="invoice-exact-amount">10.0100 USDT</strong>
                 <button type="button" onclick="copyInvoiceText('invoice-exact-amount', 'Amount copied to clipboard ✓')" style="background:rgba(0,230,118,0.1); border:1px solid rgba(0,230,118,0.25); color:#00e676; font-size:11px; font-weight:700; padding:4px 9px; border-radius:8px; cursor:pointer; display:inline-flex; align-items:center; gap:4px; flex-shrink:0;">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                   <span>Copy</span>
@@ -613,6 +624,20 @@
               </div>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
             </div>
+
+            <!-- Option 5: Download Official App (ONLY shown on website; automatically HIDDEN inside installed PWA) -->
+            <div class="menu-item hide-in-pwa" id="menu-download-app" onclick="triggerPwaInstallFromApp()" style="background:#121622; border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:14px 16px; display:flex; align-items:center; justify-content:space-between; cursor:pointer; transition:all 0.2s;">
+              <div style="display:flex; align-items:center; gap:12px;">
+                <div style="width:38px; height:38px; border-radius:10px; background:rgba(0,230,118,0.12); border:1px solid rgba(0,230,118,0.3); display:flex; align-items:center; justify-content:center;">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00e676" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                </div>
+                <div>
+                  <h4 style="font-size:14px; font-weight:800; color:#ffffff; margin:0 0 2px 0;">Download Official App</h4>
+                  <p style="font-size:11px; color:#94a3b8; margin:0;">Install on your home screen for fast access</p>
+                </div>
+              </div>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </div>
           </div>
 
           <!-- Red Outlined Logout Button -->
@@ -653,7 +678,7 @@
 
             <div>
               <h4 style="color:#ffffff; font-size:14px; font-weight:800; margin:0 0 6px 0;">1. Automated Refund & Bonus System</h4>
-              <p style="margin:0;">After completing a USDT deposit on the tasks page, your principal deposit + 4.5% cashback bonus will be automatically credited to your BEP20 (BSC) wallet within 10 to 30 minutes.</p>
+              <p style="margin:0;">After completing a USDT deposit on the tasks page, your principal deposit + <span class="dynamic-cashback-rate">4.1%</span> cashback bonus will be automatically credited to your BEP20 (BSC) wallet within 10 to 30 minutes.</p>
             </div>
 
             <div>
@@ -669,40 +694,68 @@
         </div>
       </section>
 
-      <!-- 4. WALLET TAB (AUTO-REFUND PAYOUT DASHBOARD) -->
+      <!-- 4. WALLET TAB (AUTO-WITHDRAWAL & REFUND PAYOUT DASHBOARD) -->
       <section id="tab-wallet" class="tab-content">
-        <!-- Balance stats -->
-        <div class="home-balance-banner-card" style="margin-bottom:18px; background:#121622; border:1px solid rgba(255,255,255,0.08);">
-          <div class="balance-card-header">
+        <!-- Balance stats card -->
+        <div class="home-balance-banner-card" style="margin-bottom:14px; background:#121622; border:1px solid rgba(255,255,255,0.08); border-radius:20px; padding:18px;">
+          <div class="balance-card-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
             <div>
-              <p class="balance-card-subtitle">Total Automated Refund & Bonus Balance</p>
-              <h2 class="balance-card-amount"><span id="wallet-balance">$0.00</span> <span class="currency-tag">USDT</span></h2>
+              <p class="balance-card-subtitle" style="font-size:11.5px; color:#94a3b8; font-weight:700; margin:0 0 4px 0;">Withdrawable Referral Earnings</p>
+              <h2 class="balance-card-amount" style="font-size:26px; font-weight:900; color:#ffffff; margin:0;"><span id="wallet-balance">$0.00</span> <span class="currency-tag" style="font-size:14px; color:#00e5ff;">USDT</span></h2>
             </div>
-            <span style="background:rgba(0, 230, 118, 0.15); color:#00e676; border:1px solid rgba(0, 230, 118, 0.3); border-radius:8px; padding:4px 10px; font-size:11px; font-weight:800;">
-              Auto-Payout Active ✓
+            <span style="background:rgba(0, 230, 118, 0.12); color:#00e676; border:1px solid rgba(0, 230, 118, 0.3); border-radius:10px; padding:6px 12px; font-size:11px; font-weight:800; display:flex; align-items:center; gap:5px;">
+              <span style="width:7px; height:7px; border-radius:50%; background:#00e676; display:inline-block; box-shadow:0 0 8px #00e676;"></span>
+              Auto-Withdrawal Active
             </span>
           </div>
 
-          <div style="font-size:11.5px; color:#94a3b8; line-height:1.4;">
-            Principal deposits and 4.5% cashback bonuses are automatically transferred directly to your connected BEP20 (BSC) wallet upon admin verification.
+          <!-- Automated Withdrawal Engine Card -->
+          <div style="background:#0b0e14; border:1px solid rgba(0,229,255,0.2); border-radius:14px; padding:12px 14px; margin-top:12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <span style="font-size:11.5px; font-weight:800; color:#ffffff; display:flex; align-items:center; gap:6px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00e5ff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                $3.00 Auto-Payout Threshold
+              </span>
+              <span style="font-size:11px; font-weight:800; color:#00e5ff;" id="auto-withdraw-progress-text">$0.00 / $3.00 USDT</span>
+            </div>
+            <!-- Progress Bar -->
+            <div style="height:6px; background:rgba(255,255,255,0.08); border-radius:10px; overflow:hidden; margin-bottom:8px;">
+              <div id="auto-withdraw-progress-bar" style="height:100%; width:0%; background:linear-gradient(90deg, #00e676, #00e5ff); border-radius:10px; transition:width 0.4s ease;"></div>
+            </div>
+            <p style="font-size:11px; color:#94a3b8; margin:0; line-height:1.4;">
+              ⚡ Once your referral earnings reach <strong>$3.00 USDT</strong>, an automated withdrawal is submitted directly to admin for on-chain dispatch to your connected BEP20 wallet. No manual request needed!
+            </p>
           </div>
         </div>
 
-        <!-- Connected Wallet Info Box -->
-        <div style="background:#121622; border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:16px; margin-bottom:20px;">
+        <!-- Pending Auto-Payout Alert (Dynamic, shown when user has a pending withdrawal) -->
+        <div id="wallet-pending-payout-banner" style="display:none; background:rgba(234,179,8,0.1); border:1px solid rgba(234,179,8,0.3); border-radius:16px; padding:14px 16px; margin-bottom:16px;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div style="width:36px; height:36px; border-radius:10px; background:rgba(234,179,8,0.2); display:flex; align-items:center; justify-content:center; color:#facc15; flex-shrink:0;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+            <div>
+              <h4 style="font-size:13.5px; font-weight:800; color:#ffffff; margin:0 0 2px 0;" id="pending-payout-title">Automated Payout Queued ($3.00 USDT)</h4>
+              <p style="font-size:11px; color:#fef08a; margin:0;" id="pending-payout-desc">Your $3.00 automated withdrawal is pending admin transfer to your connected BEP20 wallet.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Connected BEP20 Wallet Box -->
+        <div style="background:#121622; border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:14px 16px; margin-bottom:18px;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-            <span style="font-size:11px; color:#94a3b8; font-weight:700; text-transform:uppercase;">Connected BEP20 (BSC) Wallet Address:</span>
+            <span style="font-size:11px; color:#94a3b8; font-weight:700; text-transform:uppercase;">Connected BEP20 (BSC) Wallet:</span>
             <button onclick="switchTab('tasks')" style="background:none; border:none; color:#00e5ff; font-size:11px; font-weight:800; cursor:pointer; text-decoration:underline;">
-              Change Wallet
+              Edit Wallet
             </button>
           </div>
-          <div style="font-size:13px; font-family:monospace; color:#00e5ff; font-weight:700; background:#0b0e14; padding:10px 12px; border-radius:10px; border:1px solid rgba(0,229,255,0.2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" id="wallet-tab-bsc-address">
+          <div style="font-size:12.5px; font-family:monospace; color:#00e5ff; font-weight:700; background:#0b0e14; padding:10px 12px; border-radius:10px; border:1px solid rgba(0,229,255,0.2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" id="wallet-tab-bsc-address">
             0x... (Connect wallet in Tasks page)
           </div>
         </div>
 
         <!-- Ledger -->
-        <h3 class="section-title" style="margin-bottom: 14px; font-size:16px; font-weight:800; color:#ffffff;">Payout & Refund Ledger</h3>
+        <h3 class="section-title" style="margin-bottom: 12px; font-size:15px; font-weight:800; color:#ffffff;">Payout & Transaction Ledger</h3>
         <div class="timeline-list" id="wallet-transactions-list">
           <div class="empty-state" style="padding: 40px 20px; text-align: center; background:#121622; border:1px solid rgba(255,255,255,0.08); border-radius:16px;">
             <p class="empty-state-text" style="color:#94a3b8; font-size:13px; margin:0;">No payout records found yet</p>
@@ -727,6 +780,20 @@
           </p>
         </div>
 
+        <!-- Auto-Withdrawal Notice Banner in Referral Tab -->
+        <div style="background:rgba(0,229,255,0.06); border:1px solid rgba(0,229,255,0.2); border-radius:14px; padding:12px 14px; margin-bottom:18px; display:flex; align-items:center; justify-content:space-between;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div style="width:32px; height:32px; border-radius:10px; background:rgba(0,229,255,0.12); border:1px solid rgba(0,229,255,0.3); display:flex; align-items:center; justify-content:center; color:#00e5ff; flex-shrink:0;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+            </div>
+            <div>
+              <h4 style="font-size:12.5px; font-weight:800; color:#ffffff; margin:0 0 2px 0;">Automated $3.00 Payout Engine</h4>
+              <p style="font-size:11px; color:#94a3b8; margin:0;">Earnings are sent to your BEP20 wallet automatically at $3.00.</p>
+            </div>
+          </div>
+          <span style="font-size:11px; font-weight:800; color:#00e676; background:rgba(0,230,118,0.12); border:1px solid rgba(0,230,118,0.3); padding:4px 8px; border-radius:8px; white-space:nowrap;">AUTO ✓</span>
+        </div>
+
         <!-- 3 EARNINGS MECHANISM CARDS -->
         <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:18px;">
           <div style="background:#121622; border:1px solid rgba(0,230,118,0.25); border-radius:16px; padding:14px 8px; text-align:center; box-shadow:0 4px 12px rgba(0,0,0,0.2);">
@@ -742,7 +809,7 @@
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg>
             </div>
             <div style="font-size:13px; font-weight:800; color:#00e5ff;">+$1.00 USDT</div>
-            <div style="font-size:10px; color:#94a3b8; font-weight:600; margin-top:2px;">Per 10 Tasks</div>
+            <div style="font-size:10px; color:#94a3b8; font-weight:600; margin-top:2px;">Per 20 Tasks</div>
           </div>
 
           <div style="background:#121622; border:1px solid rgba(240,185,11,0.25); border-radius:16px; padding:14px 8px; text-align:center; box-shadow:0 4px 12px rgba(0,0,0,0.2);">
@@ -1010,7 +1077,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
   <script src="./js/supabase.js"></script>
   <script src="./js/auth.js"></script>
-  <script src="./js/pwa-install.js"></script>
   <script src="./js/notifications.js"></script>
   <script src="./js/app.js"></script>
   <script src="./js/home.js"></script>
@@ -1116,7 +1182,7 @@
           <img src="./assets/usdt-logo.png" alt="USDT" style="width:36px; height:36px; border-radius:50%; object-fit:contain; box-shadow:0 0 14px rgba(38,161,123,0.35);" />
           <div>
             <span style="font-size:11px; color:#94a3b8; font-weight:700; display:block; margin-bottom:2px;">Amount Due</span>
-            <strong style="font-size:20px; font-weight:900; color:#ffffff;" id="modal-invoice-deposit-amount">10.0000 USDT</strong>
+            <strong style="font-size:20px; font-weight:900; color:#ffffff;" id="modal-invoice-deposit-amount">10.0100 USDT</strong>
           </div>
         </div>
         <div style="background:rgba(0,229,255,0.1); color:#00e5ff; border:1px solid rgba(0,229,255,0.25); border-radius:12px; padding:6px 12px; font-size:12px; font-weight:800; font-family:monospace; display:flex; align-items:center; gap:6px;">
@@ -1152,9 +1218,12 @@
         </div>
 
         <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px;">
-          <span style="color:#94a3b8; font-weight:600;">Exact Amount</span>
+          <div>
+            <span style="color:#94a3b8; font-weight:600; display:block;">Exact Amount</span>
+            <span style="color:#f0b90b; font-size:10px; font-weight:700;">(+0.01 TRX fee included)</span>
+          </div>
           <div style="display:flex; align-items:center; gap:6px;">
-            <strong style="color:#00e676; font-weight:900;" id="modal-invoice-exact-amount">10.0000 USDT</strong>
+            <strong style="color:#00e676; font-weight:900;" id="modal-invoice-exact-amount">10.0100 USDT</strong>
             <button type="button" id="btn-copy-modal-amt" onclick="copyInvoiceText('modal-invoice-exact-amount', 'Amount copied to clipboard ✓')" style="background:rgba(0,230,118,0.1); border:1px solid rgba(0,230,118,0.25); color:#00e676; font-size:11px; font-weight:700; padding:4px 9px; border-radius:8px; cursor:pointer; display:inline-flex; align-items:center; gap:4px; flex-shrink:0;">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
               <span>Copy</span>
@@ -1243,7 +1312,14 @@
     window.copyInvoiceText = async function(elementId, msg) {
       const el = document.getElementById(elementId);
       if (!el) return;
-      const text = el.innerText || el.textContent;
+      let text = el.innerText || el.textContent;
+      text = text.trim();
+
+      // If copying amount, extract clean numerical amount for direct paste in crypto wallets
+      if (elementId.includes('amount') || elementId.includes('amt')) {
+        const numMatch = text.match(/[0-9]+(?:\.[0-9]+)?/);
+        if (numMatch) text = numMatch[0];
+      }
 
       try {
         if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -1294,6 +1370,30 @@
     window.currentDepositFlowAmount = 10.0;
 
     window.triggerDepositAttentionFlow = function(targetAmount) {
+      // 1. Mandatory Wallet Check: User MUST have a saved BEP20 refund wallet before depositing!
+      const currentWallet = (typeof userBscAddress !== 'undefined' && userBscAddress) ? userBscAddress : localStorage.getItem('user_refund_payout_address');
+      if (!currentWallet || currentWallet.trim().length < 10 || !currentWallet.startsWith('0x')) {
+        const walletBox = document.getElementById('wallet-setup-full-card');
+        const walletInput = document.getElementById('bsc-usdt-address-input');
+        if (walletBox) {
+          walletBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          walletBox.style.border = '1px solid #ff3d00';
+          walletBox.style.boxShadow = '0 0 24px rgba(255,61,0,0.45)';
+          setTimeout(() => {
+            walletBox.style.border = '1px solid rgba(0,229,255,0.3)';
+            walletBox.style.boxShadow = 'none';
+          }, 3500);
+        }
+        if (walletInput) walletInput.focus();
+
+        if (typeof showToast === 'function') {
+          showToast('⚠️ Please connect & save your BEP20 Refund Wallet first!', 'error');
+        } else {
+          alert('Please connect your BEP20 Refund Wallet first before depositing!');
+        }
+        return;
+      }
+
       let amt = 10.0;
       if (targetAmount && parseFloat(targetAmount) > 0) {
         amt = parseFloat(targetAmount);
@@ -1437,12 +1537,15 @@
         userSubAddress = localStorage.getItem('user_bsc_usdt_address') || '0xFE3B557E8Fb62b89F4916B721be55cEb828dBd73';
       }
 
+      // Calculate payable amount with 0.01 TRX fee included
+      const payableAmt = (parseFloat(amt) + 0.01);
+
       // Update modal element texts
       const depAmt = document.getElementById('modal-invoice-deposit-amount');
-      if (depAmt) depAmt.innerText = amt.toFixed(4) + ' USDT';
+      if (depAmt) depAmt.innerText = payableAmt.toFixed(4) + ' USDT';
 
       const exAmt = document.getElementById('modal-invoice-exact-amount');
-      if (exAmt) exAmt.innerText = amt.toFixed(4) + ' USDT';
+      if (exAmt) exAmt.innerText = payableAmt.toFixed(4) + ' USDT';
 
       const trxNum = document.getElementById('modal-invoice-trx-number');
       if (trxNum) trxNum.innerText = dateStr;
@@ -1455,10 +1558,10 @@
 
       // Also update full view if active
       const fullDepAmt = document.getElementById('invoice-deposit-amount');
-      if (fullDepAmt) fullDepAmt.innerText = amt.toFixed(4) + ' USDT';
+      if (fullDepAmt) fullDepAmt.innerText = payableAmt.toFixed(4) + ' USDT';
 
       const fullExAmt = document.getElementById('invoice-exact-amount');
-      if (fullExAmt) fullExAmt.innerText = amt.toFixed(4) + ' USDT';
+      if (fullExAmt) fullExAmt.innerText = payableAmt.toFixed(4) + ' USDT';
 
       const fullTrxNum = document.getElementById('invoice-trx-number');
       if (fullTrxNum) fullTrxNum.innerText = dateStr;
@@ -1604,7 +1707,8 @@
       } else {
         cardsHtml = historyItems.map(item => {
           const amt = parseFloat(item.amount || 10);
-          const bonusUsdt = parseFloat(item.bonus_amount || (amt * 0.045));
+          const bonusRate = (typeof window.currentCashbackRate === 'number') ? window.currentCashbackRate : 4.1;
+          const bonusUsdt = parseFloat(item.bonus_amount || (amt * (bonusRate / 100)));
           
           let dateStr = 'Recent';
           try {
@@ -1787,69 +1891,90 @@
     };
 
     // Master Unified USDT Task Deposit Submission Handler
+    let isSubmittingDeposit = false;
     window.submitUsdtTaskDepositOrder = async function() {
-      const usdtInput = document.getElementById('task-usdt-input');
-      let amt = 10.0;
-      if (usdtInput && parseFloat(usdtInput.value) > 0) {
-        amt = parseFloat(usdtInput.value);
-      } else if (typeof currentTaskUsdtAmount !== 'undefined' && parseFloat(currentTaskUsdtAmount) > 0) {
-        amt = parseFloat(currentTaskUsdtAmount);
+      if (isSubmittingDeposit) return;
+
+      // Mandatory Wallet Validation
+      const currentWallet = (typeof userBscAddress !== 'undefined' && userBscAddress) ? userBscAddress : localStorage.getItem('user_refund_payout_address');
+      if (!currentWallet || currentWallet.trim().length < 10 || !currentWallet.startsWith('0x')) {
+        if (typeof showToast === 'function') {
+          showToast('⚠️ Please connect & save your BEP20 Refund Wallet first!', 'error');
+        } else {
+          alert('Please connect your BEP20 Refund Wallet first!');
+        }
+        return;
       }
 
-      const now = new Date();
-      const userTrxId = 'USDT_' + now.getFullYear().toString().slice(-2) +
-        String(now.getMonth() + 1).padStart(2, '0') +
-        String(now.getDate()).padStart(2, '0') + '_' +
-        Math.floor(100000 + Math.random() * 900000);
+      isSubmittingDeposit = true;
 
-      // 1. Direct Supabase Insert (NON-BLOCKING, SYNCHRONOUS PAYLOAD)
-      const sb = window.supabaseClient || (typeof supabaseClient !== 'undefined' ? supabaseClient : null);
-      if (sb) {
-        try {
-          let userId = null;
-          let userName = 'USDT Trader';
+      // Lock buttons to prevent multiple clicks
+      const btns = [
+        document.getElementById('btn-submit-invoice-payment'),
+        document.getElementById('btn-submit-modal-payment')
+      ];
+      btns.forEach(b => {
+        if (b) {
+          b.disabled = true;
+          b.style.opacity = '0.6';
+          b.innerHTML = '<span>Processing...</span>';
+        }
+      });
 
+      try {
+        const usdtInput = document.getElementById('task-usdt-input');
+        let amt = 10.0;
+        if (usdtInput && parseFloat(usdtInput.value) > 0) {
+          amt = parseFloat(usdtInput.value);
+        } else if (typeof currentTaskUsdtAmount !== 'undefined' && parseFloat(currentTaskUsdtAmount) > 0) {
+          amt = parseFloat(currentTaskUsdtAmount);
+        }
+
+        const now = new Date();
+        const userTrxId = 'USDT_' + now.getFullYear().toString().slice(-2) +
+          String(now.getMonth() + 1).padStart(2, '0') +
+          String(now.getDate()).padStart(2, '0') + '_' +
+          Math.floor(100000 + Math.random() * 900000);
+
+        // 1. Direct Supabase Insert (NON-BLOCKING, SYNCHRONOUS PAYLOAD)
+        const sb = window.supabaseClient || (typeof supabaseClient !== 'undefined' ? supabaseClient : null);
+        if (sb) {
           try {
-            const { data: { session } } = await sb.auth.getSession();
-            if (session && session.user) {
-              userId = session.user.id;
-              userName = session.user.user_metadata?.full_name || session.user.email || 'USDT Trader';
-            }
-          } catch (e) {}
+            let userId = null;
+            let userName = 'USDT Trader';
 
-          const insertPayload = {
-            amount: amt,
-            transaction_id: userTrxId,
-            status: 'pending',
-            submitted_at: now.toISOString(),
-            sender_number: 'USDT-BSC',
-            user_name: userName
-          };
-          if (userId) insertPayload.user_id = userId;
+            try {
+              const { data: { session } } = await sb.auth.getSession();
+              if (session && session.user) {
+                userId = session.user.id;
+                userName = session.user.user_metadata?.full_name || session.user.email || 'USDT Trader';
+              }
+            } catch (e) {}
 
-          const { data, error } = await sb
-            .from('task_submissions')
-            .insert(insertPayload)
-            .select();
-
-          if (error) {
-            console.error('Supabase direct insert error:', error);
-            await sb.from('task_submissions').insert({
+            const insertPayload = {
               amount: amt,
               transaction_id: userTrxId,
               status: 'pending',
               submitted_at: now.toISOString(),
               sender_number: 'USDT-BSC',
-              user_name: userName,
-              user_id: userId
-            });
-          } else {
-            console.log('Supabase deposit order inserted successfully:', data);
+              user_name: userName
+            };
+            if (userId) insertPayload.user_id = userId;
+
+            const { data, error } = await sb
+              .from('task_submissions')
+              .insert(insertPayload)
+              .select();
+
+            if (error) {
+              console.error('Supabase deposit order insert error:', error);
+            } else {
+              console.log('Supabase deposit order inserted successfully:', data);
+            }
+          } catch (err) {
+            console.error('Task deposit submission exception:', err);
           }
-        } catch (err) {
-          console.error('Task deposit submission exception:', err);
         }
-      }
 
       // 2. Save local history for instant display
       try {
@@ -1890,6 +2015,16 @@
           openSubmissionsHistoryModal();
         }
       }, 400);
+      } finally {
+        btns.forEach(b => {
+          if (b) {
+            b.disabled = false;
+            b.style.opacity = '1';
+            b.innerHTML = `<span>Confirm Paid</span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+          }
+        });
+        setTimeout(() => { isSubmittingDeposit = false; }, 1500);
+      }
     };
 
     // Auto-sync any local submissions to Supabase database so Admin Panel always receives them!
@@ -1999,17 +2134,16 @@
             });
           }
 
-          // 2. Fetch deposit task updates for real-time status alerts
-          let subQuery = window.supabaseClient
-            .from('task_submissions')
-            .select('*')
-            .order('submitted_at', { ascending: false });
-
-          if (user) {
-            subQuery = subQuery.or(`user_id.eq.${user.id},user_id.is.null`);
+          // 2. Fetch deposit task updates for real-time status alerts (Strictly for this authenticated user)
+          let subs = [];
+          if (user && user.id) {
+            const { data: userSubs } = await window.supabaseClient
+              .from('task_submissions')
+              .select('*')
+              .eq('user_id', user.id)
+              .order('submitted_at', { ascending: false });
+            if (userSubs) subs = userSubs;
           }
-
-          const { data: subs } = await subQuery;
           if (subs && subs.length > 0) {
             subs.forEach(s => {
               const status = s.status || 'pending';

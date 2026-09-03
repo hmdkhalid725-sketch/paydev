@@ -21,8 +21,10 @@ async function loadHomeData() {
       if (profile.usdt_address) {
         localStorage.setItem('user_deposit_sub_address', profile.usdt_address);
       }
-      if (profile.wallet_address) {
-        localStorage.setItem('user_refund_payout_address', profile.wallet_address);
+      if (profile.wallet_address && profile.wallet_address.trim().length > 5) {
+        localStorage.setItem('user_refund_payout_address', profile.wallet_address.trim());
+      } else {
+        localStorage.removeItem('user_refund_payout_address');
       }
       const usernameEl = document.getElementById('header-username');
       if (usernameEl) usernameEl.innerText = profile.full_name || 'USDT Trader';
@@ -31,73 +33,62 @@ async function loadHomeData() {
       if (avatarEl) avatarEl.innerText = initial;
     }
 
-    // 2. Load User's Approved Task Submissions (in 30-minute processing countdown)
-    // NOTE: Tasks with 'pending' status (unapproved by admin) are strictly NOT counted until admin confirms USDT arrived!
+    // 2. Load User's Approved Task Submissions (Deposits confirmed by admin, awaiting refund transfer)
+    // "jegulo diposite korbe user segulo admin approve korle Total Portfolio Balance a dekhabe tobe admin refund kore dile shekhan theke sore jabe"
     const { data: approvedSubs } = await sb
       .from('task_submissions')
-      .select('*')
+      .select('amount')
       .eq('user_id', user.id)
-      .in('status', ['approved', 'refund_pending']);
+      .eq('status', 'approved');
 
-    let pendingPrincipal = 0;
-    let pendingBonus = 0;
+    let totalPortfolioBalance = 0;
     if (approvedSubs && approvedSubs.length > 0) {
       approvedSubs.forEach(sub => {
-        const amt = parseFloat(sub.amount || 0);
-        const b = parseFloat(sub.bonus_amount || (amt * 0.045));
-        pendingPrincipal += amt;
-        pendingBonus += b;
+        totalPortfolioBalance += parseFloat(sub.amount || 0);
       });
     }
-    const pendingRefundTotal = pendingPrincipal + pendingBonus;
 
-    // 3. Load Referral / Cashback Bonus Balance from wallet_transactions
-    let totalBonusEarned = 0;
-    try {
-      const { data: bonusData } = await sb
-        .from('wallet_transactions')
-        .select('amount')
-        .eq('user_id', user.id)
-        .eq('type', 'bonus');
+    animateCounter('home-balance', totalPortfolioBalance, '$');
 
-      if (bonusData && bonusData.length > 0) {
-        totalBonusEarned = bonusData.reduce((sum, item) => sum + parseFloat(item.amount || 0), 0);
-      }
-    } catch (e) {}
+    // 3. Load Lifetime Cashback Bonuses Received across all refunded tasks
+    // "ar tar niche cash bonus ar jaigai mote koto bonus paise ajibon tai dekhabe"
+    const { data: refundedSubs } = await sb
+      .from('task_submissions')
+      .select('amount, bonus_amount')
+      .eq('user_id', user.id)
+      .eq('status', 'refunded');
 
-    // 4. Combined Total Active Balance (Approved Processing Refunds + Referral/Bonus Balance)
-    const totalDisplayBalance = pendingRefundTotal + totalBonusEarned;
-    animateCounter('home-balance', totalDisplayBalance, '$');
+    let lifetimeCashback = 0;
+    let completedCount = 0;
+    if (refundedSubs && refundedSubs.length > 0) {
+      completedCount = refundedSubs.length;
+      refundedSubs.forEach(sub => {
+        const amt = parseFloat(sub.amount || 0);
+        const b = parseFloat(sub.bonus_amount || (amt * 0.041));
+        lifetimeCashback += b;
+      });
+    }
 
-    // Update the bonus box (shows real cashback + referral bonus, not duplicate of balance!)
     const bonusEl = document.getElementById('home-bonus');
     if (bonusEl) {
-      const allBonus = pendingBonus + totalBonusEarned;
-      bonusEl.innerText = `+$${allBonus.toFixed(2)}`;
+      bonusEl.innerText = `+$${lifetimeCashback.toFixed(2)}`;
     }
 
     // Update dynamic subtitle
     const subtitleEl = document.querySelector('.balance-card-subtitle');
     if (subtitleEl) {
-      subtitleEl.innerText = pendingRefundTotal > 0 ? 'Processing Refund Balance' : 'Total Portfolio Balance';
+      subtitleEl.innerText = totalPortfolioBalance > 0 ? 'Active Portfolio (Awaiting Refund)' : 'Total Portfolio Balance';
     }
 
     // Update Payout Status indicator cleanly without emojis
     const payoutStatusEl = document.getElementById('home-payout-status');
     if (payoutStatusEl) {
-      if (pendingRefundTotal > 0) {
+      if (totalPortfolioBalance > 0) {
         payoutStatusEl.innerHTML = `<span style="color:#00e5ff; font-weight:800; display:inline-flex; align-items:center; gap:5px;"><span style="width:6px; height:6px; border-radius:50%; background:#00e5ff; box-shadow:0 0 6px #00e5ff;"></span>Processing</span>`;
       } else {
         payoutStatusEl.innerHTML = `<span style="color:#00e676; font-weight:800;">Active ✓</span>`;
       }
     }
-
-    // 5. Load Completed / Refunded Tasks Count
-    const { count: completedCount } = await sb
-      .from('task_submissions')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', user.id)
-      .eq('status', 'refunded');
 
     const tasksEl = document.getElementById('home-tasks-completed');
     if (tasksEl) tasksEl.innerText = `${completedCount || 0}`;
@@ -151,7 +142,7 @@ async function loadTaskHistory(userId) {
       const isUsdt  = true;
       let logoPath = './assets/usdt-logo.png';
 
-      const usdtBonusAmt = parseFloat(sub.amount) * 0.045;
+      const usdtBonusAmt = parseFloat(sub.amount) * 0.041;
       const bonusDisplay = `+$${usdtBonusAmt.toFixed(2)} USDT`;
       const amountDisplay = `$${parseFloat(sub.amount || 0).toFixed(2)} USDT`;
       const titleDisplay = task.title && task.title !== 'Task' ? task.title : 'USDT (BEP20) Deposit Task';

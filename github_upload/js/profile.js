@@ -166,7 +166,7 @@ function getTermsContent() {
     <ul style="padding-left: 18px; display: flex; flex-direction: column; gap: 8px;">
       <li>Deposits must be transferred via BEP20 (Binance Smart Chain) to the generated address.</li>
       <li>Each deposit order is verified on-chain. Please ensure exact amounts and correct transaction hashes.</li>
-      <li>Principal deposits and 4.5% cashback bonuses are automatically transferred to your connected BEP20 wallet.</li>
+      <li>Principal deposits and 4.1% cashback bonuses are automatically transferred to your connected BEP20 wallet.</li>
       <li>Verifications and automated payouts are processed swiftly upon on-chain blockchain confirmation.</li>
       <li>Minimum automated withdrawal threshold is $3.00 USDT.</li>
       <li>Any fraudulent activity or fake transaction IDs will result in permanent account suspension.</li>
@@ -333,6 +333,11 @@ async function loadReferralTabData() {
     const { data: { user } } = await supabaseClient.auth.getUser();
     if (!user) return;
 
+    // Trigger automated withdrawal evaluation if balance >= $3.00
+    try {
+      await supabaseClient.rpc('check_and_trigger_auto_withdrawal', { p_user_id: user.id });
+    } catch (e) {}
+
     // Fetch user profile for ref code
     const { data: profile } = await supabaseClient
       .from('profiles')
@@ -378,7 +383,7 @@ async function loadReferralTabData() {
       .from('wallet_transactions')
       .select('amount')
       .eq('user_id', user.id)
-      .like('description', 'Referral commission%');
+      .eq('type', 'bonus');
 
     const totalCount = referredUsers ? referredUsers.length : 0;
     const totalBonus = bonusTx ? bonusTx.reduce((sum, t) => sum + parseFloat(t.amount || 0), 0) : 0;

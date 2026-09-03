@@ -3,21 +3,66 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>US Link — Official Web3 USDT Terminal</title>
+  <title>US-Link — Official Web3 USDT Terminal</title>
+
+  <!-- Instant Gatekeeper: Logged-in users or installed app users MUST NEVER see index.html! -->
+  <script>
+    (function() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
+                           window.navigator.standalone === true ||
+                           document.referrer.includes('android-app://') ||
+                           urlParams.get('mode') === 'pwa' ||
+                           sessionStorage.getItem('is_pwa_session') === 'true' ||
+                           localStorage.getItem('app_installed_mode') === 'true';
+
+      // 1. Check if user has an active Supabase session in localStorage
+      let hasLoggedInSession = false;
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.includes('-auth-token')) {
+          try {
+            const val = JSON.parse(localStorage.getItem(key));
+            if (val && (val.user || val.access_token)) {
+              hasLoggedInSession = true;
+              break;
+            }
+          } catch(e) {}
+        }
+      }
+
+      // If user is already logged in, redirect immediately to app.html!
+      if (hasLoggedInSession) {
+        window.location.replace('./app.html');
+        return;
+      }
+
+      // If running inside installed app, bypass landing and go straight to register!
+      if (isStandalone) {
+        sessionStorage.setItem('is_pwa_session', 'true');
+        const refCode = urlParams.get('ref') || urlParams.get('referrer') || localStorage.getItem('referred_by_code');
+        const target = refCode ? './register.html?ref=' + encodeURIComponent(refCode) : './register.html';
+        window.location.replace(target);
+        return;
+      }
+    })();
+  </script>
+
   <link rel="stylesheet" href="./css/global.css">
   <link rel="manifest" href="./manifest.json">
-  <meta name="theme-color" content="#08090D">
+  <meta name="theme-color" content="#07090e">
   <link rel="icon" href="./assets/uslink-logo.svg" type="image/svg+xml">
-  <!-- Google Fonts Inter -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <!-- Google Fonts: Inter & Outfit for Web3 luxury typography -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Outfit:wght@600;700;800;900&display=swap" rel="stylesheet">
   
   <style>
     :root {
-      --bg-dark: #08090d;
-      --card-bg: #11151f;
+      --bg-dark: #07090e;
+      --card-bg: rgba(18, 22, 34, 0.75);
       --card-border: rgba(255, 255, 255, 0.08);
       --accent-green: #00e676;
       --accent-cyan: #00e5ff;
+      --accent-purple: #8b5cf6;
       --text-muted: #94a3b8;
     }
 
@@ -37,26 +82,57 @@
       align-items: center;
       overflow-x: hidden;
       position: relative;
+      background-image: 
+        radial-gradient(rgba(0, 229, 255, 0.06) 1.5px, transparent 1.5px),
+        radial-gradient(rgba(0, 230, 118, 0.04) 1.5px, transparent 1.5px);
+      background-size: 32px 32px, 64px 64px;
+      background-position: 0 0, 16px 16px;
     }
 
-    /* Ambient background glow */
-    .bg-glow {
+    /* Ambient animated floating light spheres */
+    .orb-glow-1 {
+      position: fixed;
+      width: 380px;
+      height: 380px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(0, 230, 118, 0.16) 0%, rgba(0, 229, 255, 0.08) 45%, transparent 70%);
+      top: -80px;
+      left: 50%;
+      transform: translateX(-50%);
+      filter: blur(40px);
+      pointer-events: none;
+      z-index: 0;
+      animation: floatOrb1 8s ease-in-out infinite alternate;
+    }
+
+    .orb-glow-2 {
       position: fixed;
       width: 320px;
       height: 320px;
       border-radius: 50%;
-      background: radial-gradient(circle, rgba(0, 230, 118, 0.12) 0%, rgba(0, 229, 255, 0.05) 50%, transparent 70%);
-      top: -60px;
-      left: 50%;
-      transform: translateX(-50%);
+      background: radial-gradient(circle, rgba(139, 92, 246, 0.14) 0%, rgba(0, 229, 255, 0.06) 50%, transparent 70%);
+      top: 360px;
+      right: -80px;
+      filter: blur(50px);
       pointer-events: none;
       z-index: 0;
+      animation: floatOrb2 10s ease-in-out infinite alternate;
+    }
+
+    @keyframes floatOrb1 {
+      0% { transform: translateX(-50%) translateY(0) scale(1); }
+      100% { transform: translateX(-45%) translateY(40px) scale(1.12); }
+    }
+
+    @keyframes floatOrb2 {
+      0% { transform: translateY(0) scale(1); }
+      100% { transform: translateY(-50px) scale(1.15); }
     }
 
     .landing-container {
       width: 100%;
-      max-width: 440px;
-      padding: 24px 20px 40px 20px;
+      max-width: 480px;
+      padding: 20px 18px 50px 18px;
       display: flex;
       flex-direction: column;
       min-height: 100vh;
@@ -69,94 +145,148 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 28px;
+      margin-bottom: 24px;
+      background: rgba(14, 18, 28, 0.65);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-radius: 20px;
+      padding: 10px 14px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
     }
 
     .brand-logo-wrap {
       display: flex;
       align-items: center;
       gap: 10px;
+      text-decoration: none;
     }
 
     .brand-logo-img {
-      width: 38px;
-      height: 38px;
-      border-radius: 12px;
-      filter: drop-shadow(0 0 10px rgba(0, 230, 118, 0.4));
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      filter: drop-shadow(0 0 12px rgba(0, 230, 118, 0.45));
+    }
+
+    .brand-info {
+      display: flex;
+      flex-direction: column;
     }
 
     .brand-name {
-      font-size: 18px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 17px;
       font-weight: 900;
-      letter-spacing: 0.3px;
-      background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      letter-spacing: 0.2px;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 5px;
     }
 
-    .top-login-btn {
+    .brand-verified-tick {
+      width: 15px;
+      height: 15px;
+      background: #00e676;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #000000;
+      font-size: 9.5px;
+      font-weight: 900;
+    }
+
+    .brand-tag {
+      font-size: 9.5px;
+      color: var(--accent-cyan);
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-header-signin {
       background: rgba(255, 255, 255, 0.06);
       border: 1px solid rgba(255, 255, 255, 0.12);
       color: #ffffff;
-      font-size: 12.5px;
-      font-weight: 800;
-      padding: 7px 16px;
-      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 7px 14px;
+      border-radius: 12px;
       text-decoration: none;
       transition: all 0.2s ease;
     }
 
-    .top-login-btn:hover {
+    .btn-header-signin:hover {
       background: rgba(255, 255, 255, 0.12);
-      border-color: rgba(255, 255, 255, 0.25);
+    }
+
+    .btn-header-start {
+      background: linear-gradient(135deg, #00e676 0%, #00e5ff 100%);
+      color: #000000;
+      font-size: 12px;
+      font-weight: 800;
+      padding: 7px 14px;
+      border-radius: 12px;
+      text-decoration: none;
+      box-shadow: 0 4px 14px rgba(0, 230, 118, 0.35);
+      transition: all 0.2s ease;
     }
 
     /* Hero Section */
     .hero-section {
       text-align: center;
-      margin-bottom: 30px;
+      margin-bottom: 22px;
     }
 
     .hero-badge {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
-      background: rgba(0, 230, 118, 0.1);
-      border: 1px solid rgba(0, 230, 118, 0.28);
-      color: var(--accent-green);
+      gap: 7px;
+      background: rgba(0, 229, 255, 0.08);
+      border: 1px solid rgba(0, 229, 255, 0.25);
+      color: #00e5ff;
       font-size: 11px;
       font-weight: 800;
-      padding: 5px 14px;
+      padding: 6px 14px;
       border-radius: 30px;
-      margin-bottom: 18px;
-      letter-spacing: 0.3px;
+      margin-bottom: 16px;
+      box-shadow: 0 0 16px rgba(0, 229, 255, 0.15);
     }
 
     .hero-badge span.pulse-dot {
       width: 7px;
       height: 7px;
       border-radius: 50%;
-      background: var(--accent-green);
-      box-shadow: 0 0 8px var(--accent-green);
-      animation: pulse 1.5s infinite;
+      background: #00e676;
+      box-shadow: 0 0 8px #00e676;
+      animation: pulse 1.6s infinite;
     }
 
     @keyframes pulse {
       0%, 100% { transform: scale(1); opacity: 1; }
-      50% { transform: scale(1.3); opacity: 0.5; }
+      50% { transform: scale(1.4); opacity: 0.5; }
     }
 
     .hero-title {
-      font-size: 28px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 30px;
       font-weight: 900;
-      line-height: 1.25;
+      line-height: 1.2;
       margin-bottom: 12px;
       color: #ffffff;
-      letter-spacing: -0.3px;
+      letter-spacing: -0.5px;
     }
 
     .hero-title .gradient-text {
-      background: linear-gradient(135deg, #00e676 0%, #00e5ff 100%);
+      background: linear-gradient(135deg, #00e676 0%, #00e5ff 60%, #8b5cf6 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
@@ -165,172 +295,325 @@
       font-size: 13px;
       color: var(--text-muted);
       line-height: 1.55;
-      max-width: 360px;
-      margin: 0 auto 26px auto;
+      max-width: 400px;
+      margin: 0 auto;
     }
 
-    /* App Preview Card */
-    .app-preview-card {
-      background: linear-gradient(180deg, #131724 0%, #0b0e14 100%);
-      border: 1px solid rgba(0, 229, 255, 0.25);
-      border-radius: 24px;
-      padding: 20px;
-      margin-bottom: 26px;
-      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
-      position: relative;
-      overflow: hidden;
+    /* Referral Banner */
+    #referral-detected-banner {
+      display: none;
+      background: rgba(0, 230, 118, 0.08);
+      border: 1px solid rgba(0, 230, 118, 0.3);
+      border-radius: 14px;
+      padding: 11px 14px;
+      margin-bottom: 20px;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      box-shadow: 0 4px 16px rgba(0, 230, 118, 0.12);
     }
 
-    .preview-header {
+    /* 3-Metric Protocol Ribbon */
+    .metric-ribbon {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 22px;
+    }
+
+    .metric-card {
+      background: rgba(17, 22, 34, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-radius: 16px;
+      padding: 12px 8px;
+      text-align: center;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+    }
+
+    .metric-value {
+      font-family: 'Outfit', sans-serif;
+      font-size: 16.5px;
+      font-weight: 900;
+      color: #ffffff;
+      line-height: 1.2;
+    }
+
+    .metric-label {
+      font-size: 10px;
+      color: #94a3b8;
+      font-weight: 700;
+      margin-top: 3px;
+    }
+
+    /* Live Payout Stream Ticker */
+    .live-stream-ticker {
+      background: rgba(14, 18, 28, 0.85);
+      border: 1px solid rgba(0, 229, 255, 0.22);
+      border-radius: 14px;
+      padding: 10px 14px;
+      margin-bottom: 22px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 16px;
-      padding-bottom: 12px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-    }
-
-    .preview-token {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .preview-token img {
-      width: 34px;
-      height: 34px;
-      border-radius: 50%;
-    }
-
-    .preview-stats {
-      text-align: right;
-    }
-
-    .preview-stats-val {
-      font-size: 15px;
-      font-weight: 900;
-      color: #ffffff;
-      font-family: monospace;
-    }
-
-    .preview-stats-rate {
-      font-size: 11px;
-      color: var(--accent-green);
-      font-weight: 800;
-    }
-
-    .preview-features-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-
-    .feature-chip {
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      border-radius: 12px;
-      padding: 10px;
-      text-align: left;
-    }
-
-    .feature-chip-title {
       font-size: 11.5px;
-      font-weight: 800;
-      color: #ffffff;
-      margin-bottom: 2px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    }
+
+    .ticker-left {
       display: flex;
       align-items: center;
-      gap: 5px;
+      gap: 8px;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
     }
 
-    .feature-chip-desc {
+    .ticker-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #00e676;
+      box-shadow: 0 0 8px #00e676;
+      flex-shrink: 0;
+    }
+
+    .ticker-text {
+      color: #e2e8f0;
+      font-weight: 600;
+      font-family: monospace;
+      font-size: 11px;
+    }
+
+    .ticker-tag {
+      background: rgba(0, 230, 118, 0.12);
+      color: #00e676;
+      border: 1px solid rgba(0, 230, 118, 0.3);
+      border-radius: 6px;
+      padding: 2px 7px;
       font-size: 10px;
-      color: var(--text-muted);
-      line-height: 1.35;
+      font-weight: 800;
+      white-space: nowrap;
+      flex-shrink: 0;
     }
 
-    /* Big Hero Download Button */
-    .download-action-box {
+    /* Main Action Hub */
+    .action-hub {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
       margin-bottom: 24px;
     }
 
-    .btn-download-hero {
+    .btn-launch-web {
       width: 100%;
       background: linear-gradient(135deg, #00e676 0%, #00e5ff 100%);
       color: #000000;
       border: none;
-      padding: 18px 22px;
+      padding: 16px 20px;
       border-radius: 18px;
-      font-size: 16px;
+      font-size: 15.5px;
       font-weight: 900;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 12px;
-      box-shadow: 0 10px 30px rgba(0, 230, 118, 0.45);
-      transition: all 0.25s ease;
-      position: relative;
+      gap: 10px;
+      box-shadow: 0 8px 25px rgba(0, 230, 118, 0.45);
+      text-decoration: none;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    .btn-download-hero:hover {
+    .btn-launch-web:hover {
       transform: translateY(-2px);
-      box-shadow: 0 14px 36px rgba(0, 230, 118, 0.55);
+      box-shadow: 0 12px 30px rgba(0, 230, 118, 0.55);
     }
 
-    .btn-download-hero:active {
-      transform: scale(0.98);
+    .btn-install-pwa {
+      width: 100%;
+      background: rgba(18, 22, 34, 0.85);
+      border: 1px solid rgba(0, 229, 255, 0.3);
+      color: #ffffff;
+      padding: 14px 18px;
+      border-radius: 16px;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+      transition: all 0.2s ease;
     }
 
-    .btn-download-hero svg {
-      flex-shrink: 0;
+    .btn-install-pwa:hover {
+      border-color: #00e5ff;
+      background: rgba(24, 30, 46, 0.95);
     }
 
-    .download-subtext {
-      text-align: center;
-      font-size: 11px;
-      color: var(--text-muted);
-      margin-top: 10px;
+    .pwa-left-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .pwa-icon-box {
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
+      background: rgba(0, 229, 255, 0.12);
+      border: 1px solid rgba(0, 229, 255, 0.3);
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
+      color: #00e5ff;
     }
 
-    /* Referral Code Applied Alert */
-    #referral-detected-banner {
-      display: none;
-      background: rgba(0, 229, 255, 0.08);
-      border: 1px solid rgba(0, 229, 255, 0.25);
-      border-radius: 14px;
-      padding: 10px 14px;
-      margin-bottom: 20px;
+    .pwa-sub-badge {
+      font-size: 10px;
+      font-weight: 800;
+      color: #00e676;
+      background: rgba(0, 230, 118, 0.12);
+      border: 1px solid rgba(0, 230, 118, 0.25);
+      padding: 4px 8px;
+      border-radius: 8px;
+    }
+
+    .device-support-row {
+      display: flex;
       align-items: center;
-      justify-content: space-between;
-      font-size: 11.5px;
+      justify-content: center;
+      gap: 12px;
+      font-size: 11px;
+      color: #64748b;
+      font-weight: 700;
     }
 
-    /* Manual / Web Fallback */
-    .web-fallback-link {
-      text-align: center;
-      margin-top: 8px;
+    /* 3 Feature Showcase Cards */
+    .features-container {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
       margin-bottom: 26px;
     }
 
-    .web-fallback-link a {
+    .feature-card {
+      background: rgba(18, 22, 34, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-radius: 18px;
+      padding: 16px;
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+      transition: transform 0.2s ease;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(0, 229, 255, 0.25);
+    }
+
+    .feature-card-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .feature-card-title {
+      font-size: 14px;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 4px;
+    }
+
+    .feature-card-desc {
+      font-size: 11.5px;
+      color: #94a3b8;
+      line-height: 1.45;
+    }
+
+    /* Network Trust Badges */
+    .network-strip {
+      background: rgba(14, 18, 28, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 16px;
+      padding: 14px;
+      text-align: center;
+      margin-bottom: 26px;
+    }
+
+    .network-strip-label {
+      font-size: 10.5px;
       color: #64748b;
-      font-size: 12px;
-      text-decoration: underline;
-      cursor: pointer;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 10px;
+    }
+
+    .network-logos {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+    }
+
+    .network-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11.5px;
+      font-weight: 800;
+      color: #cbd5e1;
+    }
+
+    .network-item img {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+    }
+
+    /* Footer */
+    .landing-footer {
+      text-align: center;
+      padding-top: 10px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .footer-copy {
+      font-size: 11px;
+      color: #64748b;
+      margin-bottom: 6px;
+    }
+
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 14px;
+      font-size: 11px;
+    }
+
+    .footer-links a {
+      color: #94a3b8;
+      text-decoration: none;
       font-weight: 600;
       transition: color 0.2s;
     }
 
-    .web-fallback-link a:hover {
-      color: #94a3b8;
+    .footer-links a:hover {
+      color: #00e5ff;
     }
 
-    /* iOS Installation Guide Modal */
+    /* iOS Modal */
     #ios-guide-modal {
       display: none;
       position: fixed;
@@ -393,117 +676,184 @@
   </style>
 </head>
 <body>
-  <div class="bg-glow"></div>
+  <!-- Ambient glow backdrop -->
+  <div class="orb-glow-1"></div>
+  <div class="orb-glow-2"></div>
 
   <div class="landing-container">
     
     <!-- Top Navigation -->
     <div class="top-bar">
-      <div class="brand-logo-wrap">
+      <a href="./index.html" class="brand-logo-wrap">
         <img src="./assets/uslink-logo.svg" alt="US Link" class="brand-logo-img">
-        <span class="brand-name">US Link</span>
+        <div class="brand-info">
+          <span class="brand-name">US-Link <span class="brand-verified-tick">✓</span></span>
+          <span class="brand-tag">Official Web3 Terminal</span>
+        </div>
+      </a>
+      <div class="header-actions">
+        <a href="./login.html" class="btn-header-signin">Sign In</a>
+        <a href="./register.html" id="header-get-started-btn" class="btn-header-start">Get Started</a>
       </div>
-      <a href="./login.html" class="top-login-btn">Sign In</a>
     </div>
 
     <!-- Referral Notification Banner (If opened with ?ref=...) -->
     <div id="referral-detected-banner">
       <div style="display:flex; align-items:center; gap:8px;">
-        <span style="color:var(--accent-green); font-size:14px;">🎁</span>
+        <span style="font-size:15px;">🎁</span>
         <span>Invitation Code: <strong id="detected-ref-code" style="color:#00e5ff; font-family:monospace;"></strong></span>
       </div>
-      <span style="color:var(--accent-green); font-weight:800; font-size:11px;">Saved ✓</span>
+      <span style="color:#00e676; font-weight:800; font-size:11px;">Bonus Active ✓</span>
     </div>
 
     <!-- Hero Content -->
     <div class="hero-section">
       <div class="hero-badge">
         <span class="pulse-dot"></span>
-        <span>OFFICIAL WEB3 APP RELEASE</span>
+        <span>BSC BEP20 Protocol • Automated Payout Engine</span>
       </div>
       <h1 class="hero-title">
-        The Institutional <span class="gradient-text">USDT Web3</span> Terminal
+        Next-Gen <span class="gradient-text">USDT Terminal</span> & Automated Cashback
       </h1>
       <p class="hero-subtitle">
-        Download the official US Link application for instant BEP20 Binance Smart Chain deposits, automated refunds, and VIP daily cashbacks.
+        Deposit via Binance Smart Chain with 100% automated principal refunds and instant cashbacks transferred directly to your BEP20 wallet.
       </p>
     </div>
 
-    <!-- App Preview Feature Card -->
-    <div class="app-preview-card">
-      <div class="preview-header">
-        <div class="preview-token">
-          <img src="./assets/usdt-logo.png" alt="USDT">
-          <div>
-            <h4 style="font-size:14px; font-weight:800; margin:0 0 2px 0;">USDT • BEP20</h4>
-            <span style="font-size:10.5px; color:#94a3b8;">Binance Smart Chain</span>
-          </div>
-        </div>
-        <div class="preview-stats">
-          <div class="preview-stats-val">100% Safe</div>
-          <span class="preview-stats-rate">Auto Payout Active ✓</span>
-        </div>
+    <!-- 3-Metric Protocol Ribbon -->
+    <div class="metric-ribbon">
+      <div class="metric-card">
+        <div class="metric-value" style="color:#00e676;">$248,500+</div>
+        <div class="metric-label">Refunds Dispatched</div>
       </div>
-
-      <div class="preview-features-grid">
-        <div class="feature-chip">
-          <div class="feature-chip-title">
-            <span style="color:#00e676;">⚡</span>
-            <span>Fast Execution</span>
-          </div>
-          <p class="feature-chip-desc">Instant node transfer detection under 2 minutes.</p>
-        </div>
-
-        <div class="feature-chip">
-          <div class="feature-chip-title">
-            <span style="color:#00e5ff;">🔐</span>
-            <span>Dedicated Wallets</span>
-          </div>
-          <p class="feature-chip-desc">Unique private key encrypted for every trader.</p>
-        </div>
-
-        <div class="feature-chip">
-          <div class="feature-chip-title">
-            <span style="color:#eab308;">⏱️</span>
-            <span>30m Live Tracker</span>
-          </div>
-          <p class="feature-chip-desc">Live countdown from deposit received to payout.</p>
-        </div>
-
-        <div class="feature-chip">
-          <div class="feature-chip-title">
-            <span style="color:#a855f7;">🎁</span>
-            <span>Daily Cashbacks</span>
-          </div>
-          <p class="feature-chip-desc">Earn lifetime rewards on completed orders.</p>
-        </div>
+      <div class="metric-card">
+        <div class="metric-value" style="color:#00e5ff;">$3.00 Auto</div>
+        <div class="metric-label">Auto-Payout Limit</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-value" style="color:#f0b90b;">100% Safe</div>
+        <div class="metric-label">BEP20 Protection</div>
       </div>
     </div>
 
-    <!-- Big Hero Download Action Box -->
-    <div class="download-action-box">
-      <button type="button" class="btn-download-hero" id="btn-hero-pwa-download" onclick="triggerPwaAppInstall()">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-          <polyline points="7 10 12 15 17 10"></polyline>
-          <line x1="12" y1="15" x2="12" y2="3"></line>
+    <!-- Live Payout Stream Ticker -->
+    <div class="live-stream-ticker">
+      <div class="ticker-left">
+        <span class="ticker-dot"></span>
+        <span class="ticker-text" id="live-stream-ticker-msg">0x71C...24b received $52.05 USDT • 34s ago</span>
+      </div>
+      <span class="ticker-tag">LIVE NODE</span>
+    </div>
+
+    <!-- Main Action Hub -->
+    <div class="action-hub">
+      <!-- 1. Primary High-Impact Launch Web App Button -->
+      <a href="./register.html" id="btn-hero-launch-app" class="btn-launch-web">
+        <span>Launch Web App</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+          <polyline points="12 5 19 12 12 19"></polyline>
         </svg>
-        <span>Download Official App</span>
+      </a>
+
+      <!-- 2. Install Official App Button (PWA) -->
+      <button type="button" class="btn-install-pwa" id="btn-hero-pwa-download" onclick="triggerPwaAppInstall()">
+        <div class="pwa-left-info">
+          <div class="pwa-icon-box">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+          </div>
+          <div style="text-align:left;">
+            <span style="display:block; font-size:13px; font-weight:800; color:#ffffff;">Download Official App</span>
+            <span style="display:block; font-size:10px; color:#94a3b8;">Install for fast home screen access</span>
+          </div>
+        </div>
+        <span class="pwa-sub-badge">INSTALL 📲</span>
       </button>
 
-      <div class="download-subtext">
-        <span>⚡ 1-Tap PWA Install</span>
+      <div class="device-support-row">
+        <span>Android</span>
         <span>•</span>
-        <span>🛡️ Android / iOS / Desktop</span>
+        <span>iOS Safari</span>
         <span>•</span>
-        <span>v2.4.0</span>
+        <span>Desktop Chrome</span>
       </div>
     </div>
 
-    <!-- Discreet Web Fallback (If user cannot install or tests from desktop) -->
-    <div class="web-fallback-link">
-      <a href="./register.html">Already installed? Proceed to Web Terminal →</a>
+    <!-- 3 Core Feature Showcase Cards -->
+    <div class="features-container">
+      <!-- Feature 1: Sub-Wallets & Refunds -->
+      <div class="feature-card">
+        <div class="feature-card-icon" style="background:rgba(0, 230, 118, 0.12); border:1px solid rgba(0, 230, 118, 0.3); color:#00e676;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+          </svg>
+        </div>
+        <div>
+          <h3 class="feature-card-title">100% Principal Refund Protection</h3>
+          <p class="feature-card-desc">Every task deposit is secured on-chain and refunded automatically back to your connected BEP20 wallet upon verification.</p>
+        </div>
+      </div>
+
+      <!-- Feature 2: Automated $3.00 Payout -->
+      <div class="feature-card">
+        <div class="feature-card-icon" style="background:rgba(0, 229, 255, 0.12); border:1px solid rgba(0, 229, 255, 0.3); color:#00e5ff;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+          </svg>
+        </div>
+        <div>
+          <h3 class="feature-card-title">Automated $3.00 Payout Engine</h3>
+          <p class="feature-card-desc">No manual withdrawal requests required. As soon as your referral balance hits $3.00, funds are automatically dispatched.</p>
+        </div>
+      </div>
+
+      <!-- Feature 3: Lifetime Partner Commission -->
+      <div class="feature-card">
+        <div class="feature-card-icon" style="background:rgba(139, 92, 246, 0.12); border:1px solid rgba(139, 92, 246, 0.3); color:#a78bfa;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+          </svg>
+        </div>
+        <div>
+          <h3 class="feature-card-title">Lifetime Partner Commissions</h3>
+          <p class="feature-card-desc">Earn 1% instant commission on every team deposit plus an extra $1.00 USDT bonus for every 20 completed partner orders.</p>
+        </div>
+      </div>
     </div>
+
+    <!-- Network Ecosystem Strip -->
+    <div class="network-strip">
+      <div class="network-strip-label">Secured & Powered By</div>
+      <div class="network-logos">
+        <div class="network-item">
+          <img src="./assets/bsc-logo.png" alt="BSC">
+          <span>BNB Chain</span>
+        </div>
+        <div class="network-item">
+          <img src="./assets/usdt-logo.png" alt="USDT">
+          <span>USDT (BEP20)</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="landing-footer">
+      <p class="footer-copy">© 2026 US-Link Protocol. All rights reserved.</p>
+      <div class="footer-links">
+        <a href="./login.html">Sign In</a>
+        <span>•</span>
+        <a href="./register.html">Register</a>
+        <span>•</span>
+        <a href="https://t.me/devpaysupport" target="_blank">24/7 Support</a>
+      </div>
+    </footer>
 
   </div>
 
@@ -513,7 +863,7 @@
       <div style="width:48px; height:48px; border-radius:14px; background:rgba(0,229,255,0.1); border:1px solid rgba(0,229,255,0.3); display:flex; align-items:center; justify-content:center; margin:0 auto 14px auto; color:#00e5ff;">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
       </div>
-      <h3 style="font-size:17px; font-weight:900; margin:0 0 6px 0;">Install US Link on iOS</h3>
+      <h3 style="font-size:17px; font-weight:900; margin:0 0 6px 0;">Install US-Link on iOS</h3>
       <p style="font-size:12px; color:#94a3b8; margin:0 0 18px 0;">Follow these 2 quick steps in Safari to add to your Home Screen:</p>
 
       <div class="ios-step">
@@ -552,6 +902,16 @@
             codeEl.innerText = cleanCode;
             banner.style.display = 'flex';
           }
+
+          // Update launch and get started anchors with ref query parameter
+          const launchAnchor = document.getElementById('btn-hero-launch-app');
+          if (launchAnchor) {
+            launchAnchor.href = './register.html?ref=' + encodeURIComponent(cleanCode);
+          }
+          const headerStartAnchor = document.getElementById('header-get-started-btn');
+          if (headerStartAnchor) {
+            headerStartAnchor.href = './register.html?ref=' + encodeURIComponent(cleanCode);
+          }
         }
       } catch (e) {
         console.error('Referral check error:', e);
@@ -559,8 +919,6 @@
     })();
 
     // 2. Standalone / Installed PWA Router Gatekeeper
-    // If the user is running the app as an installed PWA on their device:
-    // SKIP the download landing page completely and route straight to register.html or app.html!
     (async function checkInstalledStandaloneMode() {
       const urlParams = new URLSearchParams(window.location.search);
       const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
@@ -583,55 +941,76 @@
           } catch (e) {}
         }
         
-        // Otherwise route directly to register.html
-        window.location.replace('./register.html');
+        // Otherwise route directly to register.html (preserving ref code)
+        const savedRef = localStorage.getItem('referred_by_code');
+        const targetUrl = savedRef ? './register.html?ref=' + encodeURIComponent(savedRef) : './register.html';
+        window.location.replace(targetUrl);
       }
     })();
 
-    // 3. Native PWA Install Prompt Event Listener
+    // 3. Live Payout Ticker Simulation
+    const payoutEvents = [
+      { addr: '0x71C...24b', amt: '52.05', time: '28s ago' },
+      { addr: '0xFE3...bd7', amt: '104.10', time: '52s ago' },
+      { addr: '0x39a...11f', amt: '10.41', time: '1m ago' },
+      { addr: '0x94c...82a', amt: '3.00 Auto Payout', time: '2m ago' },
+      { addr: '0xb21...54c', amt: '260.25', time: '2m ago' },
+      { addr: '0x18a...77e', amt: '26.03', time: '3m ago' }
+    ];
+    let tickerIndex = 0;
+    const tickerEl = document.getElementById('live-stream-ticker-msg');
+    if (tickerEl) {
+      setInterval(() => {
+        tickerIndex = (tickerIndex + 1) % payoutEvents.length;
+        const ev = payoutEvents[tickerIndex];
+        tickerEl.style.opacity = '0';
+        setTimeout(() => {
+          tickerEl.innerText = ev.addr + ' received $' + ev.amt + ' USDT • ' + ev.time;
+          tickerEl.style.opacity = '1';
+        }, 300);
+      }, 4000);
+    }
+
+    // 4. Native PWA Install Prompt Event Listener
     let deferredInstallPrompt = null;
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       deferredInstallPrompt = e;
       const btn = document.getElementById('btn-hero-pwa-download');
       if (btn) {
-        btn.innerHTML = `
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-            <polyline points="7 10 12 15 17 10"></polyline>
-            <line x1="12" y1="15" x2="12" y2="3"></line>
-          </svg>
-          <span>Install Official US Link App</span>
-        `;
+        const badge = btn.querySelector('.pwa-sub-badge');
+        if (badge) badge.innerText = 'INSTALL 📲';
       }
     });
 
     window.addEventListener('appinstalled', () => {
-      console.log('US Link PWA was installed successfully!');
       deferredInstallPrompt = null;
       sessionStorage.setItem('is_pwa_session', 'true');
+      const savedRef = localStorage.getItem('referred_by_code');
+      const targetUrl = savedRef ? './register.html?ref=' + encodeURIComponent(savedRef) : './register.html';
       setTimeout(() => {
-        window.location.href = './register.html';
+        window.location.href = targetUrl;
       }, 1000);
     });
 
-    // 4. Download / Install Handler
+    // 5. Download / Install Handler
     async function triggerPwaAppInstall() {
-      // If native deferred prompt is available (Chrome, Edge, Samsung Browser)
+      const savedRef = localStorage.getItem('referred_by_code');
+      const targetUrl = savedRef ? './register.html?ref=' + encodeURIComponent(savedRef) : './register.html';
+
       if (deferredInstallPrompt) {
         deferredInstallPrompt.prompt();
         const { outcome } = await deferredInstallPrompt.userChoice;
         if (outcome === 'accepted') {
           sessionStorage.setItem('is_pwa_session', 'true');
           setTimeout(() => {
-            window.location.href = './register.html';
+            window.location.href = targetUrl;
           }, 1200);
         }
         deferredInstallPrompt = null;
         return;
       }
 
-      // Check if iOS Safari
       const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
       if (isIos) {
         const modal = document.getElementById('ios-guide-modal');
@@ -639,8 +1018,7 @@
         return;
       }
 
-      // If standalone already or general browser without prompt, guide straight to register
-      window.location.href = './register.html';
+      window.location.href = targetUrl;
     }
 
     function closeIosGuideModal() {

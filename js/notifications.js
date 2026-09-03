@@ -35,10 +35,11 @@ async function loadNotifications() {
     const { data: { user } } = await supabaseClient.auth.getUser();
     if (!user) return;
 
-    // Fetch notifications
+    // Fetch notifications strictly for this user or global announcements
     const { data: notifications, error } = await supabaseClient
       .from('notifications')
       .select('*')
+      .or(`user_id.eq.${user.id},user_id.is.null`)
       .order('created_at', { ascending: false })
       .limit(20);
 

@@ -7,7 +7,7 @@ let userBscAddress = '';
 let invoiceTimerInterval = null;
 let currentTaskUsdtAmount = 10.0;
 
-window.currentCashbackRate = 4.5;
+window.currentCashbackRate = 4.1;
 window.currentMinDeposit = 5.00;
 window.currentMaxDeposit = 100000.00;
 
@@ -56,6 +56,10 @@ async function loadDynamicPlatformSettings() {
         summaryBonusRateLabel.innerText = `Cashback Bonus (+${window.currentCashbackRate}%):`;
       }
 
+      document.querySelectorAll('.dynamic-cashback-rate').forEach(el => {
+        el.innerText = `${window.currentCashbackRate}%`;
+      });
+
       const currentVal = parseFloat(inputEl?.value || 10);
       updateTaskSummary(currentVal);
     }
@@ -83,18 +87,14 @@ window.getAdminBscDepositAddress = async function() {
 
 // ── 1. WALLET CONNECT & REFUND ADDRESS CONTROLLER ────────────────────────────
 async function loadUserBscAddress() {
-  // Try loading refund address from localStorage first
-  const localAddr = localStorage.getItem('user_refund_payout_address');
-  if (localAddr) {
-    userBscAddress = localAddr;
-    setBscAddressUI(localAddr);
-  }
-
   if (!supabaseClient) return;
 
   try {
     const { data: { user } } = await supabaseClient.auth.getUser();
-    if (!user) return;
+    if (!user) {
+      setBscAddressUI('');
+      return;
+    }
 
     const { data: profile } = await supabaseClient
       .from('profiles')
@@ -102,16 +102,20 @@ async function loadUserBscAddress() {
       .eq('id', user.id)
       .maybeSingle();
 
-    if (profile) {
-      const addr = profile.wallet_address || localAddr;
-      if (addr) {
-        userBscAddress = addr;
-        localStorage.setItem('user_refund_payout_address', addr);
-        setBscAddressUI(addr);
-      }
-      if (profile.usdt_address) {
-        localStorage.setItem('user_deposit_sub_address', profile.usdt_address);
-      }
+    if (profile && profile.wallet_address && profile.wallet_address.trim().length > 5) {
+      const cleanAddr = profile.wallet_address.trim();
+      userBscAddress = cleanAddr;
+      localStorage.setItem('user_refund_payout_address', cleanAddr);
+      setBscAddressUI(cleanAddr);
+    } else {
+      // User has NOT set up their payout wallet yet! Reset and show setup card
+      userBscAddress = '';
+      localStorage.removeItem('user_refund_payout_address');
+      setBscAddressUI('');
+    }
+
+    if (profile && profile.usdt_address) {
+      localStorage.setItem('user_deposit_sub_address', profile.usdt_address);
     }
   } catch (err) {
     console.error('Error loading BSC USDT address:', err);
@@ -122,14 +126,27 @@ function setBscAddressUI(addr) {
   const fullCard = document.getElementById('wallet-setup-full-card');
   const savedWrap = document.getElementById('bsc-address-saved-wrap');
   const savedText = document.getElementById('saved-bsc-address-text');
+  const proceedBtn = document.getElementById('btn-proceed-to-deposit');
 
   if (addr && addr.length > 5) {
     if (fullCard) fullCard.style.display = 'none';
     if (savedWrap) savedWrap.style.display = 'flex';
     if (savedText) savedText.innerText = addr;
+    if (proceedBtn) {
+      proceedBtn.innerHTML = `
+        <span>Proceed to Deposit</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+      `;
+    }
   } else {
     if (fullCard) fullCard.style.display = 'block';
     if (savedWrap) savedWrap.style.display = 'none';
+    if (proceedBtn) {
+      proceedBtn.innerHTML = `
+        <span>Connect Refund Wallet to Deposit</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+      `;
+    }
   }
 }
 
@@ -138,8 +155,9 @@ async function saveUserBscAddress() {
   if (!input) return;
   const addr = input.value.trim();
 
-  if (!addr || addr.length < 10 || !addr.startsWith('0x')) {
-    showToast('Please enter a valid BEP20 (0x...) wallet address.', 'error');
+  const isEvmRegex = /^0x[a-fA-F0-9]{40}$/;
+  if (!addr || !isEvmRegex.test(addr)) {
+    showToast('Please enter a valid 42-character BSC BEP20 (0x...) wallet address.', 'error');
     return;
   }
 
@@ -156,6 +174,11 @@ async function saveUserBscAddress() {
           .from('profiles')
           .update({ wallet_address: addr })
           .eq('id', user.id);
+
+        // If balance is already >= $3.00, immediately trigger automated withdrawal to newly saved wallet!
+        try {
+          await supabaseClient.rpc('check_and_trigger_auto_withdrawal', { p_user_id: user.id });
+        } catch (e) {}
       }
     } catch (e) {
       console.log('Profile update notice:', e);
@@ -235,7 +258,7 @@ function updateTaskSummary(usdtVal) {
   const bonusEl = document.getElementById('summary-bonus-amt');
   const totalReturnEl = document.getElementById('summary-total-return');
 
-  const rate = (typeof window.currentCashbackRate === 'number') ? window.currentCashbackRate : 4.5;
+  const rate = (typeof window.currentCashbackRate === 'number') ? window.currentCashbackRate : 4.1;
   const bonusUsdt = usdtVal * (rate / 100.0);
   const totalUsdt = usdtVal + bonusUsdt;
 
@@ -273,7 +296,7 @@ function ensurePaymentInvoiceViewDOM() {
     <div style="background:#141822; border:1px solid rgba(0,230,118,0.25); border-radius:20px; padding:18px 20px; margin-bottom:18px; display:flex; justify-content:space-between; align-items:center; box-shadow:0 6px 20px rgba(0,0,0,0.35);">
       <div>
         <p style="font-size:11.5px; color:#94a3b8; margin:0 0 4px 0;">Amount due</p>
-        <h2 style="font-size:24px; font-weight:900; color:#ffffff; margin:0;" id="invoice-deposit-amount">${currentTaskUsdtAmount.toFixed(4)} USDT</h2>
+        <h2 style="font-size:24px; font-weight:900; color:#ffffff; margin:0;" id="invoice-deposit-amount">${(currentTaskUsdtAmount + 0.01).toFixed(4)} USDT</h2>
       </div>
       <div style="background:rgba(0,229,255,0.12); color:#00e5ff; border:1px solid rgba(0,229,255,0.3); border-radius:20px; padding:6px 14px; font-size:13px; font-weight:800; font-family:monospace; display:flex; align-items:center; gap:6px;">
         <span>⏱️</span>
@@ -305,9 +328,12 @@ function ensurePaymentInvoiceViewDOM() {
       </div>
 
       <div style="display:flex; justify-content:space-between; align-items:center; font-size:12.5px;">
-        <span style="color:#94a3b8;">Payment Amount</span>
+        <div>
+          <span style="color:#94a3b8; display:block;">Payment Amount</span>
+          <span style="color:#f0b90b; font-size:10px; font-weight:700;">(+0.01 TRX fee included)</span>
+        </div>
         <div style="display:flex; align-items:center; gap:6px;">
-          <strong style="color:#00e676; font-weight:900;" id="invoice-exact-amount">${currentTaskUsdtAmount.toFixed(4)} USDT</strong>
+          <strong style="color:#00e676; font-weight:900;" id="invoice-exact-amount">${(currentTaskUsdtAmount + 0.01).toFixed(4)} USDT</strong>
           <button type="button" onclick="copyInvoiceText('invoice-exact-amount', 'Amount copied to clipboard ✓')" style="background:rgba(0,230,118,0.1); border:1px solid rgba(0,230,118,0.25); color:#00e676; font-size:11px; font-weight:700; padding:4px 9px; border-radius:8px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
             <span>Copy</span>
@@ -431,6 +457,16 @@ function ensureConfirmBeforePaymentModalDOM() {
 
 // ── 3. PAYMENT INVOICE FULL-PAGE VIEW & 30-MIN COUNTDOWN ─────────────────────
 async function proceedToPaymentInvoice() {
+  const currentWallet = (typeof userBscAddress !== 'undefined' && userBscAddress) ? userBscAddress : localStorage.getItem('user_refund_payout_address');
+  if (!currentWallet || currentWallet.trim().length < 10 || !currentWallet.startsWith('0x')) {
+    if (typeof showToast === 'function') {
+      showToast('⚠️ Please connect & save your BEP20 Refund Wallet first!', 'error');
+    } else {
+      alert('Please connect your BEP20 Refund Wallet first!');
+    }
+    return;
+  }
+
   const usdtInput = document.getElementById('task-usdt-input');
   if (usdtInput && parseFloat(usdtInput.value) > 0) {
     currentTaskUsdtAmount = parseFloat(usdtInput.value);
@@ -461,11 +497,12 @@ async function proceedToPaymentInvoice() {
   }
 
   // Update modal element texts with user's dedicated Sub-ID deposit address
+  const payableWithFee = (currentTaskUsdtAmount + 0.01);
   const depAmt = document.getElementById('modal-invoice-deposit-amount');
-  if (depAmt) depAmt.innerText = `${currentTaskUsdtAmount.toFixed(4)} USDT`;
+  if (depAmt) depAmt.innerText = `${payableWithFee.toFixed(4)} USDT`;
 
   const exAmt = document.getElementById('modal-invoice-exact-amount');
-  if (exAmt) exAmt.innerText = `${currentTaskUsdtAmount.toFixed(4)} USDT`;
+  if (exAmt) exAmt.innerText = `${payableWithFee.toFixed(4)} USDT`;
 
   const trxNum = document.getElementById('modal-invoice-trx-number');
   if (trxNum) trxNum.innerText = dateStr;

@@ -4,18 +4,91 @@
 
 let deferredPrompt;
 
-// Listen for PWA install eligibility
+// Check if currently running inside the installed PWA
+function isAppRunningStandalone() {
+  return window.matchMedia('(display-mode: standalone)').matches ||
+         window.navigator.standalone === true ||
+         document.referrer.includes('android-app://') ||
+         sessionStorage.getItem('is_pwa_session') === 'true' ||
+         new URLSearchParams(window.location.search).get('mode') === 'pwa';
+}
+
+// Function to hide all PWA install prompts and buttons when inside the app
+function applyPwaVisibilityRules() {
+  const isStandalone = isAppRunningStandalone();
+  if (isStandalone) {
+    sessionStorage.setItem('is_pwa_session', 'true');
+    const pwaPrompt = document.getElementById('pwa-custom-install-prompt');
+    if (pwaPrompt) pwaPrompt.remove();
+    
+    document.querySelectorAll('.hide-in-pwa').forEach(el => {
+      el.style.setProperty('display', 'none', 'important');
+    });
+  }
+}
+
+// Apply on DOM load
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', applyPwaVisibilityRules);
+} else {
+  applyPwaVisibilityRules();
+}
+
+// Listen for PWA install eligibility (only fired in regular browser when not installed)
 window.addEventListener('beforeinstallprompt', (e) => {
-  // Prevent Chrome 67 and earlier from automatically showing the prompt
   e.preventDefault();
-  // Stash the event so it can be triggered later.
   deferredPrompt = e;
   
+  if (isAppRunningStandalone()) return;
+
   // Show custom PWA install banner / prompt if not dismissed in this session
   if (!sessionStorage.getItem('pwa-prompt-dismissed')) {
     showPWAInstallPrompt();
   }
 });
+
+window.addEventListener('appinstalled', () => {
+  deferredPrompt = null;
+  sessionStorage.setItem('is_pwa_session', 'true');
+  localStorage.setItem('app_installed_mode', 'true');
+  applyPwaVisibilityRules();
+});
+
+// Trigger install from button in app
+function triggerPwaInstallFromApp() {
+  const promptEvt = window.deferredPrompt || deferredPrompt;
+
+  if (promptEvt) {
+    promptEvt.prompt();
+    promptEvt.userChoice.then(({ outcome }) => {
+      if (outcome === 'accepted') {
+        sessionStorage.setItem('is_pwa_session', 'true');
+        localStorage.setItem('app_installed_mode', 'true');
+        applyPwaVisibilityRules();
+        if (typeof showToast === 'function') {
+          showToast('US-Link app installed to Home Screen successfully! ✓', 'success');
+        }
+      }
+      window.deferredPrompt = null;
+      deferredPrompt = null;
+    });
+    return;
+  }
+
+  // If already running standalone
+  if (isAppRunningStandalone()) {
+    if (typeof showToast === 'function') {
+      showToast('App is already installed on your Home Screen! ✓', 'success');
+    }
+    applyPwaVisibilityRules();
+    return;
+  }
+
+  // Clean toast
+  if (typeof showToast === 'function') {
+    showToast('Installing US-Link to your Home Screen...', 'info');
+  }
+}
 
 function showPWAInstallPrompt() {
   // Prevent duplicate prompt injections

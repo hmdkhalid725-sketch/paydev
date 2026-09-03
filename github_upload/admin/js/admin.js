@@ -457,7 +457,7 @@ async function loadRefunds() {
   tbody.innerHTML = data.map(s => {
     const prof = profilesMap[s.user_id] || {};
     const depositAmt = parseFloat(s.amount || 10);
-    const bonusAmt = parseFloat(s.bonus_amount || (depositAmt * 0.045));
+    const bonusAmt = parseFloat(s.bonus_amount || (depositAmt * 0.041));
     const totalRefund = (depositAmt + bonusAmt).toFixed(2);
     const userWallet = prof.usdt_address || s.sender_number || 'BEP20 Address';
     const userName = prof.full_name || s.user_name || 'USDT Trader';

@@ -70,13 +70,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Global Logout function
 async function logoutUser() {
-  if (!supabaseClient) return;
+  // Clear user-specific storage so next user gets a clean slate
+  localStorage.removeItem('user_refund_payout_address');
+  localStorage.removeItem('user_deposit_sub_address');
+  localStorage.removeItem('user_bsc_usdt_address');
+  localStorage.removeItem('user_task_deposit_history');
+  localStorage.removeItem('user_phone');
+
+  if (!supabaseClient) {
+    window.location.href = './login.html';
+    return;
+  }
   try {
     const { error } = await supabaseClient.auth.signOut();
     if (error) throw error;
     window.location.href = './login.html';
   } catch (err) {
     console.error("Logout error:", err);
+    window.location.href = './login.html';
   }
 }
 
