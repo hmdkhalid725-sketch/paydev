@@ -159,3 +159,14 @@ function showNotificationModal(title, message) {
     if (modal && modal.parentNode) modal.remove();
   }, 8000);
 }
+
+function setupNotificationsDrawer() {
+  const bellBtn = document.getElementById('bell-btn');
+  if (bellBtn) {
+    bellBtn.addEventListener('click', () => {
+      if (typeof switchTab === 'function') switchTab('notifications');
+      markAllNotificationsRead();
+      loadNotifications();
+    });
+  }
+}

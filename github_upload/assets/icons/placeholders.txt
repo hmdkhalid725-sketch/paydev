@@ -1,0 +1,4 @@
+Please place your PWA launcher icons (PNG files) in this directory:
+- icon-192.png (192x192 px)
+- icon-512.png (512x512 px)
+These will be displayed on mobile devices when users install the application.

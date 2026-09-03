@@ -2,36 +2,16 @@
 // WALLET LEDGER & WITHDRAWAL SYSTEM CONTROLLER
 // ====================================================
 
-var selectedWithdrawMethod = 'bKash';
+var selectedWithdrawMethod = 'USDT';
 var cachedUserBalanceBdt = 0;
 var cachedMinBdtWithdrawal = 100;
 var cachedMinUsdtWithdrawal = 3.00;
 
 function selectWithdrawMethod(method) {
-  selectedWithdrawMethod = method;
+  selectedWithdrawMethod = 'USDT';
 
-  const bkashBtn = document.getElementById('method-bkash-btn');
-  const nagadBtn = document.getElementById('method-nagad-btn');
-  const usdtBtn  = document.getElementById('method-usdt-btn');
-
-  const options = [bkashBtn, nagadBtn, usdtBtn];
-  options.forEach(o => {
-    if (o) {
-      o.classList.remove('selected');
-      o.style.border = '2px solid rgba(255,255,255,0.07)';
-      o.style.background = 'rgba(255,255,255,0.02)';
-    }
-  });
-
-  if (method === 'bKash' && bkashBtn) {
-    bkashBtn.classList.add('selected');
-    bkashBtn.style.border = '2px solid #e2136e';
-    bkashBtn.style.background = 'rgba(226,19,110,0.08)';
-  } else if (method === 'Nagad' && nagadBtn) {
-    nagadBtn.classList.add('selected');
-    nagadBtn.style.border = '2px solid #ff6a00';
-    nagadBtn.style.background = 'rgba(255,106,0,0.08)';
-  } else if (method === 'USDT' && usdtBtn) {
+  const usdtBtn = document.getElementById('method-usdt-btn');
+  if (usdtBtn) {
     usdtBtn.classList.add('selected');
     usdtBtn.style.border = '2px solid #00e676';
     usdtBtn.style.background = 'rgba(0,230,118,0.12)';
@@ -70,9 +50,11 @@ function setupWithdrawalMethodSwitch() {
 }
 
 function updateWithdrawalFormUi() {
-  const bkashBtn = document.getElementById('method-bkash-btn');
-  const nagadBtn = document.getElementById('method-nagad-btn');
-  const usdtBtn  = document.getElementById('method-usdt-btn');
+  const usdtBtn = document.getElementById('method-usdt-btn');
+  if (usdtBtn) {
+    usdtBtn.style.border = '2px solid #00e676';
+    usdtBtn.style.background = 'rgba(0,230,118,0.12)';
+  }
 
   const accLabel = document.getElementById('withdraw-account-label');
   const accInput = document.getElementById('withdraw-number');
@@ -83,41 +65,16 @@ function updateWithdrawalFormUi() {
   const convHint = document.getElementById('withdraw-conversion-hint');
   const balDisplay = document.getElementById('wallet-balance');
 
-  if (selectedWithdrawMethod === 'bKash') {
-    if (bkashBtn) { bkashBtn.style.border = '2px solid #e2136e'; bkashBtn.style.background = 'rgba(226,19,110,0.08)'; }
-    if (accLabel)  accLabel.innerText = 'বিকাশ একাউন্ট নম্বর';
-    if (accInput)  accInput.placeholder = '01XXXXXXXXX';
-    if (amtLabel)  amtLabel.innerText = 'উইথড্র পরিমাণ (৳)';
-    if (curPrefix) curPrefix.innerText = '৳';
-    if (minLabel)  minLabel.innerText = `৳${cachedMinBdtWithdrawal}`;
-    if (amtInput)  { amtInput.min = cachedMinBdtWithdrawal; amtInput.placeholder = '0'; }
-    if (convHint)  convHint.style.display = 'none';
-    if (balDisplay) balDisplay.innerText = `৳${cachedUserBalanceBdt.toFixed(2)}`;
+  if (accLabel)  accLabel.innerText = 'USDT Wallet Address (BEP20 BSC)';
+  if (accInput)  accInput.placeholder = '0x... (BEP20 Address)';
+  if (amtLabel)  amtLabel.innerText = 'Withdraw Amount ($ USDT)';
+  if (curPrefix) curPrefix.innerText = '$';
+  if (minLabel)  minLabel.innerText = `$${cachedMinUsdtWithdrawal.toFixed(2)} USDT`;
+  if (amtInput)  { amtInput.min = cachedMinUsdtWithdrawal; amtInput.placeholder = cachedMinUsdtWithdrawal.toString(); }
+  if (convHint)  convHint.style.display = 'block';
 
-  } else if (selectedWithdrawMethod === 'Nagad') {
-    if (nagadBtn) { nagadBtn.style.border = '2px solid #ff6a00'; nagadBtn.style.background = 'rgba(255,106,0,0.08)'; }
-    if (accLabel)  accLabel.innerText = 'নগদ একাউন্ট নম্বর';
-    if (accInput)  accInput.placeholder = '01XXXXXXXXX';
-    if (amtLabel)  amtLabel.innerText = 'উইথড্র পরিমাণ (৳)';
-    if (curPrefix) curPrefix.innerText = '৳';
-    if (minLabel)  minLabel.innerText = `৳${cachedMinBdtWithdrawal}`;
-    if (amtInput)  { amtInput.min = cachedMinBdtWithdrawal; amtInput.placeholder = '0'; }
-    if (convHint)  convHint.style.display = 'none';
-    if (balDisplay) balDisplay.innerText = `৳${cachedUserBalanceBdt.toFixed(2)}`;
-
-  } else if (selectedWithdrawMethod === 'USDT') {
-    if (usdtBtn) { usdtBtn.style.border = '2px solid #00e676'; usdtBtn.style.background = 'rgba(0,230,118,0.12)'; }
-    if (accLabel)  accLabel.innerText = 'আপনার USDT ওয়ালেট এড্রেস (শুধুমাত্র BEP20 BSC)';
-    if (accInput)  accInput.placeholder = 'যেমন: 0x155070856B... (BEP20 Address)';
-    if (amtLabel)  amtLabel.innerText = 'উইথড্র পরিমাণ ($ USDT)';
-    if (curPrefix) curPrefix.innerText = '$';
-    if (minLabel)  minLabel.innerText = `$${cachedMinUsdtWithdrawal.toFixed(2)} USDT (৳${(cachedMinUsdtWithdrawal * 130).toFixed(0)})`;
-    if (amtInput)  { amtInput.min = cachedMinUsdtWithdrawal; amtInput.placeholder = cachedMinUsdtWithdrawal.toString(); }
-    if (convHint)  convHint.style.display = 'block';
-
-    const balUsdt = cachedUserBalanceBdt / 130;
-    if (balDisplay) balDisplay.innerText = `$${balUsdt.toFixed(2)} USDT`;
-  }
+  const balUsdt = cachedUserBalanceBdt / 127;
+  if (balDisplay) balDisplay.innerText = `$${balUsdt.toFixed(2)} USDT`;
 
   updateWithdrawConversionHint();
 }
@@ -129,12 +86,11 @@ function updateWithdrawConversionHint() {
 
   if (selectedWithdrawMethod === 'USDT') {
     const valUsdt = parseFloat(amtInput.value) || 0;
-    const valBdt = valUsdt * 130;
     convHint.style.display = 'block';
     convHint.innerHTML = `
       <div style="background:rgba(0,230,118,0.08); border:1px solid rgba(0,230,118,0.3); border-radius:8px; padding:8px 10px; margin-top:8px; line-height:1.4;">
-        <span style="color:#00e676; font-weight:800; font-size:11.5px; display:block; margin-bottom:2px;">⚡ শুধুমাত্র BEP20 (Binance Smart Chain) এড্রেসে উইথড্র নেওয়া যাবে।</span>
-        <span style="color:var(--accent-cyan); font-weight:700; font-size:11px;">💡 $${valUsdt.toFixed(2)} USDT = ৳${valBdt.toFixed(0)} BDT কেটে নেওয়া হবে। (রেট: ৳130/USDT)</span>
+        <span style="color:#00e676; font-weight:800; font-size:11.5px; display:block; margin-bottom:2px;">Network: BEP20 (Binance Smart Chain)</span>
+        <span style="color:var(--accent-cyan); font-weight:700; font-size:11px;">Automatic payout processed within minutes upon admin approval.</span>
       </div>
     `;
   } else {
@@ -143,58 +99,54 @@ function updateWithdrawConversionHint() {
 }
 
 async function loadWalletData() {
+  // Sync connected BSC wallet address display
+  const savedBsc = localStorage.getItem('user_bsc_usdt_address');
+  const walletBscEl = document.getElementById('wallet-tab-bsc-address');
+  if (walletBscEl && savedBsc && savedBsc.length >= 10) {
+    walletBscEl.innerText = savedBsc;
+  }
+
   if (!supabaseClient) return;
 
   try {
     const { data: { user } } = await supabaseClient.auth.getUser();
     if (!user) return;
 
-    // 1. Fetch current wallet balance
-    const { data: balance, error: balErr } = await supabaseClient
-      .rpc('get_user_balance', { user_id: user.id });
-
-    if (balErr) throw balErr;
-
-    let bal = parseFloat(balance || 0);
-    // If balance is in USDT fraction (< 5), convert at rate 130 BDT
-    if (bal > 0 && bal < 5) {
-      bal = bal * 130;
-    }
-    cachedUserBalanceBdt = bal;
-
-    // 2. Fetch withdrawal settings limits dynamically
-    const { data: settings } = await supabaseClient
-      .from('app_settings')
-      .select('min_withdrawal, min_usdt_withdrawal, max_withdrawal')
-      .limit(1)
+    // 1. Fetch user profile and USDT wallet address
+    const { data: profile } = await supabaseClient
+      .from('profiles')
+      .select('usdt_address, total_earned_bonus, balance')
+      .eq('id', user.id)
       .maybeSingle();
 
-    if (settings) {
-      if (settings.min_withdrawal) cachedMinBdtWithdrawal = parseFloat(settings.min_withdrawal);
-      if (settings.min_usdt_withdrawal) cachedMinUsdtWithdrawal = parseFloat(settings.min_usdt_withdrawal);
+    if (profile) {
+      if (profile.usdt_address && walletBscEl) {
+        walletBscEl.innerText = profile.usdt_address;
+        localStorage.setItem('user_bsc_usdt_address', profile.usdt_address);
+      }
+
+      const balEl = document.getElementById('wallet-balance');
+      let currentBal = parseFloat(profile.balance || 0);
+      if (currentBal > 0 && currentBal > 100) {
+        currentBal = currentBal / 127.0; // convert legacy BDT balance to USDT
+      }
+      if (balEl) balEl.innerText = `$${currentBal.toFixed(2)}`;
     }
 
-    updateWithdrawalFormUi();
-
-    // 3. Fetch transaction ledger logs
+    // 2. Fetch transaction ledger logs
     const { data: transactions, error: ledgerErr } = await supabaseClient
       .from('wallet_transactions')
       .select('*')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false });
 
-    if (ledgerErr) throw ledgerErr;
-
     const listContainer = document.getElementById('wallet-transactions-list');
     if (!listContainer) return;
 
-    if (transactions.length === 0) {
+    if (!transactions || transactions.length === 0) {
       listContainer.innerHTML = `
-        <div class="empty-state">
-          <svg class="empty-state-icon" viewBox="0 0 24 24">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
-          </svg>
-          <p class="empty-state-text">এখনও কোনো ট্রানজেকশন রেকর্ড নেই।</p>
+        <div class="empty-state" style="padding:40px 20px; text-align:center;">
+          <p class="empty-state-text" style="color:#94a3b8; font-size:13px;">No payout records found yet. Completed tasks are credited automatically.</p>
         </div>
       `;
       return;
@@ -206,22 +158,25 @@ async function loadWalletData() {
       const isPositive = rawAmt >= 0;
       let absAmt = Math.abs(rawAmt);
 
-      // If amount is small (< 5), convert at rate 1 USDT = 130 BDT for BDT view
-      let displayAmtStr = `৳${absAmt.toFixed(2)}`;
-      if (absAmt > 0 && absAmt < 5) {
-        const usdtVal = absAmt;
-        const bdtVal  = absAmt * 130;
-        displayAmtStr = `+$${usdtVal.toFixed(2)} USDT (৳${bdtVal.toFixed(0)})`;
-      }
+      let displayAmtStr = `$${absAmt.toFixed(2)} USDT`;
 
       const row = document.createElement('div');
       row.className = 'timeline-item';
+      row.style.background = '#121622';
+      row.style.border = '1px solid rgba(255,255,255,0.08)';
+      row.style.borderRadius = '12px';
+      row.style.padding = '12px 14px';
+      row.style.marginBottom = '8px';
+      row.style.display = 'flex';
+      row.style.justifyContent = 'space-between';
+      row.style.alignItems = 'center';
+
       row.innerHTML = `
         <div class="timeline-info">
-          <span class="timeline-title">${tx.description || 'Adjustment'}</span>
-          <span class="timeline-date">${new Date(tx.created_at).toLocaleString('bn-BD')}</span>
+          <span class="timeline-title" style="font-weight:800; color:#ffffff; font-size:13px; display:block;">${tx.description || 'Auto Refund & Bonus'}</span>
+          <span class="timeline-date" style="font-size:10.5px; color:#94a3b8;">${new Date(tx.created_at).toLocaleString('en-US')}</span>
         </div>
-        <span class="timeline-amount ${isPositive ? 'plus' : 'minus'}" style="font-weight:800; font-size:13.5px;">
+        <span class="timeline-amount" style="font-weight:900; font-size:14px; color:${isPositive ? '#00e676' : '#ff3d00'};">
           ${isPositive ? '+' : '-'}${displayAmtStr}
         </span>
       `;
@@ -229,8 +184,7 @@ async function loadWalletData() {
     });
 
   } catch (err) {
-    console.error("Wallet loader error:", err);
-    showToast("ওয়ালেট লোড করতে ব্যর্থ হয়েছে।", "error");
+    console.error("Wallet loader notice:", err);
   }
 }
 
@@ -243,30 +197,28 @@ async function handleWithdrawalRequest(e) {
   const inputAmt = parseFloat(document.getElementById('withdraw-amount').value);
 
   if (!withdrawNum || isNaN(inputAmt) || inputAmt <= 0) {
-    showToast('অনুগ্রহ করে সঠিক নম্বর ও উইথড্র পরিমাণ দিন', 'error');
+    showToast('Please enter a valid wallet address and amount', 'error');
     return;
   }
 
   // Calculate actual BDT amount for request_withdrawal RPC
-  let withdrawAmtBdt = inputAmt;
-  let successMsg = `৳${inputAmt} টাকা উইথড্র রিকোয়েস্ট সফল হয়েছে!`;
+  let withdrawAmtBdt = inputAmt * 127;
+  let successMsg = `$${inputAmt.toFixed(2)} USDT withdrawal request submitted successfully!`;
 
   if (selectedWithdrawMethod === 'USDT') {
     if (inputAmt < cachedMinUsdtWithdrawal) {
-      showToast(`USDT উইথড্রর জন্য সর্বনিম্ন $${cachedMinUsdtWithdrawal.toFixed(2)} USDT দিতে হবে`, 'error');
+      showToast(`Minimum withdrawal is $${cachedMinUsdtWithdrawal.toFixed(2)} USDT`, 'error');
       return;
     }
-    withdrawAmtBdt = inputAmt * 130;
-    successMsg = `$${inputAmt.toFixed(2)} USDT (৳${withdrawAmtBdt.toFixed(0)} BDT) উইথড্র রিকোয়েস্ট জমা হয়েছে!`;
   } else {
     if (inputAmt < cachedMinBdtWithdrawal) {
-      showToast(`বিকাশ/নগদে উইথড্রর জন্য সর্বনিম্ন ৳${cachedMinBdtWithdrawal} টাকা দিতে হবে`, 'error');
+      showToast(`Minimum withdrawal is $${cachedMinUsdtWithdrawal.toFixed(2)} USDT`, 'error');
       return;
     }
   }
 
   if (withdrawAmtBdt > cachedUserBalanceBdt) {
-    showToast('আপনার একাউন্টে পর্যাপ্ত ব্যালেন্স নেই।', 'error');
+    showToast('Insufficient balance.', 'error');
     return;
   }
 

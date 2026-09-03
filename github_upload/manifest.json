@@ -1,8 +1,8 @@
 {
-  "name": "DevPay - Earn & Withdraw",
-  "short_name": "DevPay",
-  "description": "DevPay — Premium Dark Mobile Task & Cashback Rewards App",
-  "start_url": "./app.html",
+  "name": "US Link - Web3 USDT Terminal",
+  "short_name": "US Link",
+  "description": "US Link — Institutional Web3 USDT Platform",
+  "start_url": "./index.html?mode=pwa",
   "display": "standalone",
   "background_color": "#08090D",
   "theme_color": "#08090D",

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>DevPay Admin Panel</title>
+  <title>US - Link Admin Panel</title>
   <link rel="stylesheet" href="../css/global.css">
   <link rel="stylesheet" href="../css/admin.css">
   <link rel="manifest" href="../manifest.json">
@@ -80,7 +80,7 @@
   <!-- ═══════════════════════════════════════════════════ SIDEBAR -->
   <aside id="sidebar">
     <div class="sidebar-logo">
-      <h2>DevPay</h2>
+      <h2>US - Link</h2>
       <p>Admin Control Panel</p>
     </div>
 
@@ -98,25 +98,17 @@
         <span class="nav-badge" id="badge-submissions" style="display:none">0</span>
       </div>
       <div class="nav-link" data-page="refunds">
-        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 14h-2v-2h2v2zm0-4h-2V7h2v5z"/></svg>
         Refunds
         <span class="nav-badge" id="badge-refunds" style="display:none">0</span>
       </div>
-      <div class="nav-link" data-page="p2p">
-        <svg viewBox="0 0 24 24" fill="currentColor" style="width:20px;height:20px;"><path d="M16 17.01V10h-2v7.01h-3L15 21l4-3.99h-3zM9 3L5 6.99h3V14h2V6.99h3L9 3z"/></svg>
-        P2P Refund Queue
-      </div>
       <div class="nav-link" data-page="withdrawals">
-        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.1 0-2-.9-2-2V5c0-1.1.9-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 14V6c0-1.1-.9-2-2-2H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zm-9-1c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm13-6v11c0 1.1-.9 2-2 2H4v-2h17V7h2z"/></svg>
         Withdrawals
         <span class="nav-badge" id="badge-withdrawals" style="display:none">0</span>
       </div>
 
       <div class="nav-section-label">Management</div>
-      <div class="nav-link" data-page="tasks">
-        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
-        Tasks
-      </div>
       <div class="nav-link" data-page="users">
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
         Users
@@ -200,7 +192,7 @@
           </div>
           <div class="stat-card">
             <div class="stat-card-label">Total Bonuses</div>
-            <div class="stat-card-value green" id="d-total-bonus">৳—</div>
+            <div class="stat-card-value green" id="d-total-bonus">$—</div>
           </div>
           <div class="stat-card">
             <div class="stat-card-label">Active Tasks</div>
@@ -220,8 +212,9 @@
           <h3>Payment Submissions</h3>
           <select class="form-control" id="sub-filter" style="width:auto;padding:6px 12px;font-size:13px;" onchange="loadSubmissions()">
             <option value="pending,under_review">Pending Review</option>
-            <option value="refund_pending">Refund Pending</option>
-            <option value="refunded">Completed</option>
+            <option value="approved,refund_pending">Approved (Moved to Refunds)</option>
+            <option value="refunded">Completed (USD Sent)</option>
+            <option value="all">All Submissions</option>
             <option value="rejected">Rejected</option>
           </select>
         </div>
@@ -249,89 +242,32 @@
 
       <!-- ─── PAGE: REFUNDS ───────────────────────────── -->
       <div class="admin-page" id="page-refunds">
-        <div class="section-header"><h3>Pending Refunds</h3></div>
+        <div class="section-header">
+          <div>
+            <h3 style="margin:0 0 4px 0;">Deposit Refunds &amp; Cashback Payouts</h3>
+            <p style="font-size:12px; color:var(--txt3); margin:0;">Approve payouts for verified deposits. Total refund includes deposit + cashback bonus.</p>
+          </div>
+          <select class="form-control" id="refund-filter" style="width:auto;padding:6px 12px;font-size:13px;" onchange="loadRefunds()">
+            <option value="pending_refunds">Awaiting Refund (Approved)</option>
+            <option value="refunded">Refunded (USD Sent)</option>
+            <option value="all">All</option>
+          </select>
+        </div>
         <div class="data-table-wrap">
           <table class="data-table">
             <thead>
               <tr>
                 <th>User</th>
-                <th>Phone</th>
-                <th>Task</th>
-                <th>Refund To</th>
-                <th>Amount</th>
-                <th>Txn ID</th>
-                <th>Verified At</th>
+                <th>Deposit Amount</th>
+                <th>Bonus (4.5%)</th>
+                <th>Total Refund Due</th>
+                <th>BEP20 Destination</th>
+                <th>Reference ID</th>
+                <th>Status (Change)</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody id="refunds-tbody">
-              <tr><td colspan="8"><div class="empty-state">Loading...</div></td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- ─── PAGE: P2P QUEUE ─────────────────────────── -->
-      <div class="admin-page" id="page-p2p">
-        <div class="section-header">
-          <h3>P2P Refund Queue</h3>
-        </div>
-        <div style="display:grid; grid-template-columns: 1fr 2fr; gap:20px; align-items: start; margin-bottom: 28px;">
-          <!-- Left side: Add manually form -->
-          <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;">
-            <h4 style="margin-bottom:14px;font-size:14px;">Add Payout Number Manually</h4>
-            <form id="p2p-add-form">
-              <div class="form-group">
-                <label class="form-label">Phone Number</label>
-                <input class="form-control" type="tel" id="p2p-add-phone" required placeholder="01XXXXXXXXX">
-              </div>
-              <div class="form-group">
-                <label class="form-label">Payment Method</label>
-                <select class="form-control" id="p2p-add-method">
-                  <option value="bKash">bKash</option>
-                  <option value="Nagad">Nagad</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Amount (৳)</label>
-                <input class="form-control" type="number" id="p2p-add-amount" required placeholder="100">
-              </div>
-              <div class="form-group">
-                <label class="form-label">Number of times (Count)</label>
-                <input class="form-control" type="number" id="p2p-add-count" value="1" min="1" required>
-              </div>
-              <button type="submit" class="btn btn-green" style="width:100%;padding:10px;font-size:13px;">Add to P2P Queue</button>
-            </form>
-          </div>
-
-          <!-- Right side: Queue Statistics -->
-          <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px; display:flex; flex-direction:column; gap:12px;">
-            <h4 style="font-size:14px;margin:0;">Queue Guidelines</h4>
-            <ul style="font-size:12.5px;color:var(--txt2);line-height:1.6;margin:0;padding-left:16px;">
-              <li>When a user initiates a payment task, the system checks this queue first.</li>
-              <li>If a matching payout exists, the user will see that peer's phone number and the number will lock for 60 seconds.</li>
-              <li>When the peer's payment is approved, the queue owner gets marked refunded automatically.</li>
-              <li>If the queue is empty, the system falls back to showing your global admin receiver numbers.</li>
-            </ul>
-          </div>
-        </div>
-
-        <div class="section-header"><h3>Active P2P Queue</h3></div>
-        <div class="data-table-wrap">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Target User</th>
-                <th>Phone Number</th>
-                <th>Method</th>
-                <th>Amount</th>
-                <th>Status</th>
-                <th>Lock Expiration</th>
-                <th>Created At</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody id="p2p-tbody">
               <tr><td colspan="8"><div class="empty-state">Loading...</div></td></tr>
             </tbody>
           </table>
@@ -467,84 +403,105 @@
 
       <!-- ─── PAGE: SETTINGS ──────────────────────────── -->
       <div class="admin-page" id="page-settings">
-        <div style="max-width:500px;">
+        <div style="max-width:680px;">
           <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px;">
-            <h3 style="margin-bottom:20px;font-size:15px;">Platform Settings</h3>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:1px solid var(--border); padding-bottom:14px;">
+              <div>
+                <h3 style="margin:0 0 4px 0;font-size:16px; font-weight:800; color:#fff;">Platform Core Settings</h3>
+                <p style="margin:0; font-size:12px; color:var(--txt3);">Manage deposit limits, cashback bonus rates, BEP20 receiving wallet, and support channels.</p>
+              </div>
+            </div>
+
             <form id="settings-form">
-              <div class="form-grid-3" style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
+              <!-- 1. DEPOSIT & CASHBACK PARAMETERS -->
+              <h4 style="margin:0 0 12px 0; font-size:13px; color:#00e5ff; font-weight:800; display:flex; align-items:center; gap:6px;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                Deposit & Cashback Parameters
+              </h4>
+              <div class="form-grid-3" style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom:16px;">
                 <div class="form-group">
-                  <label class="form-label">Min Withdrawal (৳ BDT)</label>
-                  <input class="form-control" type="number" id="s-min-wdr" placeholder="100">
+                  <label class="form-label">Min Deposit ($ USDT)</label>
+                  <input class="form-control" type="number" step="any" id="s-min-deposit" value="5" required>
                 </div>
                 <div class="form-group">
-                  <label class="form-label">Max Withdrawal (৳ BDT)</label>
-                  <input class="form-control" type="number" id="s-max-wdr" placeholder="10000">
+                  <label class="form-label">Max Deposit ($ USDT)</label>
+                  <input class="form-control" type="number" step="any" id="s-max-deposit" value="100000" required>
                 </div>
                 <div class="form-group">
-                  <label class="form-label">Min USDT Withdrawal ($ USD)</label>
-                  <input class="form-control" type="number" step="any" id="s-min-usdt-wdr" placeholder="3.00">
-                </div>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Support Channel URL (Telegram)</label>
-                <input class="form-control" type="text" id="s-support">
-              </div>
-              
-              <!-- Global Task Numbers Section -->
-              <h4 style="margin-top: 20px; margin-bottom: 10px; font-size: 13px; color: var(--txt1); border-top: 1px solid var(--border); padding-top: 15px;">Global Task Numbers (Updates all tasks at once)</h4>
-              <div class="form-grid-2">
-                <div class="form-group">
-                  <label class="form-label">Global bKash Receiver Number</label>
-                  <input class="form-control" type="tel" id="s-global-bkash" placeholder="017XXXXXXXX">
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Global Nagad Receiver Number</label>
-                  <input class="form-control" type="tel" id="s-global-nagad" placeholder="018XXXXXXXX">
+                  <label class="form-label">Cashback Bonus Rate (%)</label>
+                  <input class="form-control" type="number" step="0.1" id="s-cashback-rate" value="4.5" required>
                 </div>
               </div>
 
-              <!-- USDT Deposit Wallet Addresses Section -->
-              <h4 style="margin-top: 20px; margin-bottom: 10px; font-size: 13px; color: var(--txt); border-top: 1px solid var(--border); padding-top: 15px;">USDT Deposit Wallet Addresses</h4>
-              <div class="form-group">
-                <label class="form-label">TRC20 Wallet Address (TRON)</label>
-                <input class="form-control" type="text" id="s-usdt-trc20" placeholder="TYourTrc20Address...">
-              </div>
-              <div class="form-group">
-                <label class="form-label">BEP20 / BSC Wallet Address (Binance Smart Chain)</label>
-                <input class="form-control" type="text" id="s-usdt-bep20" placeholder="0xYourBep20Address...">
-              </div>
-              <div class="form-group">
-                <label class="form-label">ERC20 Wallet Address (Ethereum)</label>
-                <input class="form-control" type="text" id="s-usdt-erc20" placeholder="0xYourErc20Address...">
-              </div>
-              <div class="form-group">
-                <label class="form-label">SOL Wallet Address (Solana)</label>
-                <input class="form-control" type="text" id="s-usdt-sol" placeholder="YourSolanaAddress...">
-              </div>
-              <div class="form-group">
-                <label class="form-label">POLYGON / MATIC Wallet Address</label>
-                <input class="form-control" type="text" id="s-usdt-polygon" placeholder="0xYourPolygonAddress...">
+              <!-- 2. REFERRAL PROGRAM SETTINGS -->
+              <h4 style="margin:18px 0 12px 0; font-size:13px; color:#00e676; font-weight:800; display:flex; align-items:center; gap:6px; border-top:1px solid var(--border); padding-top:16px;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                Referral Rewards Program
+              </h4>
+              <div class="form-grid-2" style="display:grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom:16px;">
+                <div class="form-group">
+                  <label class="form-label">Milestone Tasks Required</label>
+                  <input class="form-control" type="number" id="s-reffer-tasks" value="20" required placeholder="e.g. 20">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Milestone Reward Amount ($ USDT)</label>
+                  <input class="form-control" type="number" step="any" id="s-reffer-reward" value="1.00" required placeholder="e.g. 1.00">
+                </div>
               </div>
 
-              <div class="form-group">
-                <label class="form-label">Maintenance Mode</label>
-                <select class="form-control" id="s-maintenance">
-                  <option value="false">OFF — Site is Live</option>
-                  <option value="true">ON — Site Offline</option>
-                </select>
+              <!-- 3. WITHDRAWAL LIMITS -->
+              <h4 style="margin:18px 0 12px 0; font-size:13px; color:#ffab00; font-weight:800; display:flex; align-items:center; gap:6px; border-top:1px solid var(--border); padding-top:16px;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+                Withdrawal Limits (Referral Balance)
+              </h4>
+              <div class="form-grid-2" style="display:grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom:16px;">
+                <div class="form-group">
+                  <label class="form-label">Min Withdrawal ($ USDT)</label>
+                  <input class="form-control" type="number" step="any" id="s-min-wdr" value="3.00" required>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Max Withdrawal ($ USDT)</label>
+                  <input class="form-control" type="number" step="any" id="s-max-wdr" value="10000" required>
+                </div>
               </div>
-              <div class="form-group">
-                <label class="form-label">Task Availability</label>
-                <select class="form-control" id="s-tasks-avail">
-                  <option value="true">Tasks Visible</option>
-                  <option value="false">Tasks Hidden</option>
-                </select>
+
+              <!-- 4. SUB-ID WALLET ARCHITECTURE INFO -->
+              <div style="background:rgba(0, 229, 255, 0.05); border:1px solid rgba(0, 229, 255, 0.2); border-radius:12px; padding:12px 14px; margin: 18px 0 16px 0;">
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                  <span style="color:#00e5ff; font-weight:800; font-size:12.5px;">⚡ Dedicated User Sub-ID Architecture Active</span>
+                </div>
+                <p style="font-size:11.5px; color:var(--txt2); margin:0; line-height:1.5;">
+                  Every user is automatically assigned their own dedicated BEP20 Sub-Wallet upon registration. All user deposits arrive directly into their individual Sub-Wallets. You can export and control the Private Key for any user directly from the <strong>Users</strong> or <strong>Refunds</strong> tab.
+                </p>
               </div>
+
+              <!-- 5. SUPPORT & SYSTEM STATUS -->
+              <h4 style="margin:18px 0 12px 0; font-size:13px; color:var(--txt); font-weight:800; border-top:1px solid var(--border); padding-top:16px;">Support & Maintenance</h4>
               <div class="form-group">
-                <label class="form-label">Default Task Instructions</label>
-                <textarea class="form-control" id="s-instructions"></textarea>
+                <label class="form-label">Support Channel / Telegram Link</label>
+                <input class="form-control" type="text" id="s-support" placeholder="https://t.me/yourchannel">
               </div>
-              <button type="submit" class="btn btn-green" style="padding:10px 20px;font-size:14px; margin-top: 10px;">Save Settings</button>
+
+              <div class="form-grid-2" style="display:grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom:16px;">
+                <div class="form-group">
+                  <label class="form-label">Maintenance Mode</label>
+                  <select class="form-control" id="s-maintenance">
+                    <option value="false">OFF — Site is Live</option>
+                    <option value="true">ON — Site Offline</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Task Availability</label>
+                  <select class="form-control" id="s-tasks-avail">
+                    <option value="true">Tasks Enabled</option>
+                    <option value="false">Tasks Disabled</option>
+                  </select>
+                </div>
+              </div>
+
+              <button type="submit" class="btn btn-green" style="width:100%; padding:14px; font-size:14px; font-weight:800; margin-top:10px;">
+                Save All Settings
+              </button>
             </form>
           </div>
 
@@ -598,22 +555,22 @@
             <!-- Messages Thread Container -->
             <div id="admin-support-messages-body" style="flex: 1; min-height: 0; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; background: var(--bg); -webkit-overflow-scrolling: touch;">
               <div style="text-align: center; color: var(--txt2); margin: auto; font-size: 13px;">
-                👈 বাম পাশ থেকে কাস্টমার সিলেক্ট করুন তার মেসেজ দেখার ও উত্তর পাঠানোর জন্য।
+                Select a user from the left list to view chat and reply.
               </div>
             </div>
 
             <!-- Quick Reply Chips -->
             <div style="padding: 6px 12px; border-top: 1px solid var(--border); background: var(--bg2); display: flex; gap: 6px; overflow-x: auto; flex-shrink: 0;" id="admin-support-quick-replies">
-              <button type="button" onclick="insertAdminQuickReply('আপনার ট্রানজেকশন ভেরিফাই করা হচ্ছে, ৩ মিনিটের মধ্যে আপডেট পাবেন।')" style="background: rgba(255,255,255,0.06); border: 1px solid var(--border); color: #fff; padding: 4px 10px; border-radius: 20px; font-size: 11px; cursor: pointer; white-space: nowrap;">⚡ ট্রানজেকশন ভেরিফাই হচ্ছে</button>
-              <button type="button" onclick="insertAdminQuickReply('✅ আপনার রিফান্ড ওয়ালেটে যোগ হয়ে গেছে। অনুগ্রহ করে ওয়ালেট ব্যালেন্স চেক করুন।')" style="background: rgba(0,230,118,0.1); border: 1px solid rgba(0,230,118,0.3); color: #00e676; padding: 4px 10px; border-radius: 20px; font-size: 11px; cursor: pointer; white-space: nowrap;">✅ রিফান্ড সফল হয়েছে</button>
-              <button type="button" onclick="insertAdminQuickReply('⚠️ ভাই আপনার প্রদানকৃত ট্রানজেকশন আইডি ম্যাচ করেনি, দয়া করে সঠিক TrxID দিন।')" style="background: rgba(255,61,0,0.1); border: 1px solid rgba(255,61,0,0.3); color: #ff5252; padding: 4px 10px; border-radius: 20px; font-size: 11px; cursor: pointer; white-space: nowrap;">⚠️ সঠিক TrxID প্রদান করুন</button>
+              <button type="button" onclick="insertAdminQuickReply('Your transaction is currently being verified on the blockchain. Updates will follow shortly.')" style="background: rgba(255,255,255,0.06); border: 1px solid var(--border); color: #fff; padding: 4px 10px; border-radius: 20px; font-size: 11px; cursor: pointer; white-space: nowrap;">⚡ Verification in progress</button>
+              <button type="button" onclick="insertAdminQuickReply('✅ Your refund and cashback bonus have been transferred to your wallet. Please verify your balance.')" style="background: rgba(0,230,118,0.1); border: 1px solid rgba(0,230,118,0.3); color: #00e676; padding: 4px 10px; border-radius: 20px; font-size: 11px; cursor: pointer; white-space: nowrap;">✅ Refund transferred</button>
+              <button type="button" onclick="insertAdminQuickReply('⚠️ Your submitted Transaction Hash did not match on-chain. Please provide the authentic TxID.')" style="background: rgba(255,61,0,0.1); border: 1px solid rgba(255,61,0,0.3); color: #ff5252; padding: 4px 10px; border-radius: 20px; font-size: 11px; cursor: pointer; white-space: nowrap;">⚠️ Provide valid TxID</button>
             </div>
 
             <!-- Image Preview Zone for Admin -->
             <div id="admin-support-img-preview-wrap" style="display:none; padding: 8px 14px; background: var(--bg); border-top: 1px solid var(--border); align-items: center; justify-content: space-between; flex-shrink: 0;">
               <div style="display: flex; align-items: center; gap: 8px;">
                 <img id="admin-support-img-preview-img" src="" style="width: 40px; height: 40px; border-radius: 6px; object-fit: cover; border: 1.5px solid #00e676;">
-                <span style="font-size: 11.5px; color: #00e676; font-weight: 700;">📸 ফটো যুক্ত করা হয়েছে</span>
+                <span style="font-size: 11.5px; color: #00e676; font-weight: 700;">📸 Photo Attached</span>
               </div>
               <button type="button" onclick="removeAdminSupportImageAttachment()" style="background: rgba(255,61,0,0.2); color: #ff5252; border: 1px solid rgba(255,61,0,0.4); border-radius: 50%; width: 24px; height: 24px; font-size: 12px; cursor: pointer;">✕</button>
             </div>
@@ -621,10 +578,10 @@
             <!-- Input Bar (ALWAYS VISIBLE AT BOTTOM) -->
             <div style="padding: 10px 14px; border-top: 1px solid var(--border); background: var(--bg2); display: flex; gap: 8px; flex-shrink: 0; align-items: center;">
               <input type="file" id="admin-support-file-input" accept="image/*" style="display:none;" onchange="handleAdminSupportImageSelect(this)">
-              <button type="button" onclick="document.getElementById('admin-support-file-input').click()" style="background: rgba(255,255,255,0.08); border: 1px solid var(--border); color: #fff; padding: 9px 12px; border-radius: 10px; font-size: 14px; cursor: pointer;" title="ছবি যুক্ত করুন">📸 ফটো</button>
-              <input type="text" id="admin-support-input" placeholder="কাস্টমারকে উত্তর লিখুন..." onkeypress="if(event.key === 'Enter') sendAdminSupportReply()"
+              <button type="button" onclick="document.getElementById('admin-support-file-input').click()" style="background: rgba(255,255,255,0.08); border: 1px solid var(--border); color: #fff; padding: 9px 12px; border-radius: 10px; font-size: 14px; cursor: pointer;" title="Attach Image">📸 Photo</button>
+              <input type="text" id="admin-support-input" placeholder="Type a reply to customer..." onkeypress="if(event.key === 'Enter') sendAdminSupportReply()"
                 style="flex: 1; background: var(--bg); border: 1px solid var(--border); color: #fff; padding: 10px 14px; border-radius: 10px; font-size: 13.5px; outline: none;">
-              <button type="button" onclick="sendAdminSupportReply()" class="btn btn-green" style="padding: 10px 20px; font-size: 13.5px; font-weight: 700; white-space: nowrap; background: #00e676; color: #000; border: none; border-radius: 10px; cursor: pointer;">পাঠান 🚀</button>
+              <button type="button" onclick="sendAdminSupportReply()" class="btn btn-green" style="padding: 10px 20px; font-size: 13.5px; font-weight: 700; white-space: nowrap; background: #00e676; color: #000; border: none; border-radius: 10px; cursor: pointer;">Send 🚀</button>
             </div>
           </div>
 
@@ -646,14 +603,13 @@
           <input type="hidden" id="t-id">
           <div class="form-group">
             <label class="form-label">Task Title</label>
-            <input class="form-control" type="text" id="t-title" required placeholder="e.g. ৳100 bKash Task">
+            <input class="form-control" type="text" id="t-title" required placeholder="e.g. USDT Crypto Profit Task">
           </div>
           <div class="form-grid-2">
             <div class="form-group">
               <label class="form-label">Payment Method</label>
               <select class="form-control" id="t-method">
-                <option value="bKash">bKash</option>
-                <option value="Nagad">Nagad</option>
+                <option value="USDT" selected>USDT (Crypto)</option>
               </select>
             </div>
             <div class="form-group">
@@ -665,17 +621,17 @@
             </div>
           </div>
           <div class="form-group">
-            <label class="form-label">Receiver Account Number</label>
-            <input class="form-control" type="tel" id="t-number" required placeholder="01XXXXXXXXX">
+            <label class="form-label">Deposit Address / Network Info</label>
+            <input class="form-control" type="text" id="t-number" required placeholder="TRC20 / BEP20 / ERC20 Wallet Address">
           </div>
           <div class="form-grid-2">
             <div class="form-group">
-              <label class="form-label">Send Amount (৳)</label>
-              <input class="form-control" type="number" id="t-amount" required placeholder="100">
+              <label class="form-label">Deposit Amount ($ USD)</label>
+              <input class="form-control" type="number" step="any" id="t-amount" required placeholder="10">
             </div>
             <div class="form-group">
-              <label class="form-label">Cashback Bonus (৳)</label>
-              <input class="form-control" type="number" id="t-bonus" required placeholder="23">
+              <label class="form-label">Cashback Bonus ($ USD)</label>
+              <input class="form-control" type="number" step="any" id="t-bonus" required placeholder="0.60">
             </div>
           </div>
           <div class="form-grid-2">
@@ -738,7 +694,7 @@
           </div>
           <div style="text-align: right;">
             <span style="font-size: 10px; color: var(--txt3); display: block; text-transform: uppercase;">Current Balance</span>
-            <strong style="font-size: 15px; color: #00e676;" id="bal-modal-current-bal">৳0.00</strong>
+            <strong style="font-size: 15px; color: #00e676;" id="bal-modal-current-bal">$0.00</strong>
           </div>
         </div>
 
@@ -754,20 +710,20 @@
               </select>
             </div>
             <div class="form-group">
-              <label class="form-label">Amount (৳ BDT)</label>
-              <input class="form-control" type="number" step="any" id="bal-modal-amount" required placeholder="e.g. 100" style="font-weight: 800; font-size: 15px; color: #00e676;">
+              <label class="form-label">Amount ($ USDT)</label>
+              <input class="form-control" type="number" step="any" id="bal-modal-amount" required placeholder="e.g. 10.00" style="font-weight: 800; font-size: 15px; color: #00e676;">
             </div>
           </div>
 
           <div class="form-group">
-            <label class="form-label">Reason / Description (কাজের বিবরণ/কারণ)</label>
+            <label class="form-label">Reason / Description</label>
             <input class="form-control" type="text" id="bal-modal-reason" required placeholder="e.g. Bonus, Admin Manual Deposit, Correction" value="Admin Bonus">
           </div>
 
           <div class="form-group" style="margin-bottom: 0;">
             <label style="font-size: 11px; color: var(--txt2); display: flex; align-items: center; gap: 6px; cursor: pointer;">
               <input type="checkbox" id="bal-modal-notify-user" checked style="accent-color: #00e676;">
-              <span>ইউজারকে রিয়েল-টাইম অ্যাপ নোটিফিকেশন পাঠান</span>
+              <span>Send real-time in-app notification to user</span>
             </label>
           </div>
         </form>
@@ -779,8 +735,40 @@
     </div>
   </div>
 
+  <!-- ═══════════════════════ EXPORT PRIVATE KEY MODAL -->
+  <div class="modal-backdrop" id="private-key-modal">
+    <div class="modal" style="max-width: 480px;">
+      <div class="modal-header">
+        <span class="modal-title" style="color:var(--cyan);">🔑 User Sub-Wallet Private Key</span>
+        <button class="modal-close" onclick="closeModal('private-key-modal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size:12px; color:var(--txt2); margin-top:0;" id="key-modal-user-info">User: ...</p>
+        
+        <div class="form-group">
+          <label class="form-label">BEP20 USDT Deposit Address</label>
+          <input class="form-control" type="text" id="key-modal-address" readonly style="font-family:monospace; color:var(--cyan); font-weight:700;">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" style="color:#ffc107;">🔑 Private Key (Secret Password)</label>
+          <textarea class="form-control" id="key-modal-pkey" readonly rows="3" style="font-family:monospace; color:#ffc107; font-weight:700; font-size:12px; word-break:break-all;"></textarea>
+        </div>
+
+        <div style="background:rgba(255,193,7,0.1); border:1px solid rgba(255,193,7,0.25); border-radius:8px; padding:10px; font-size:11.5px; color:#ffc107;">
+          💡 <strong>How to Use:</strong> Copy the Private Key above and paste it into Trust Wallet / MetaMask (<code>Add Wallet</code> → <code>Import Private Key</code>) to gain 100% control of this user's wallet!
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeModal('private-key-modal')">Close</button>
+        <button class="btn btn-green" onclick="copyModalPrivateKeyText()">📋 Copy Private Key</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
   <script src="./js/supabase.js"></script>
   <script src="./js/admin.js"></script>
 </body>

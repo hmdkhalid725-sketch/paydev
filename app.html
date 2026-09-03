@@ -1,146 +1,2157 @@
 <!DOCTYPE html>
-<html lang="bn">
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Major System Update</title>
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-html,body{min-height:100%;background:#07090d}
-body{font-family:"Noto Sans Bengali","Segoe UI",Arial,sans-serif;display:flex;justify-content:center;color:#fff}
-.page{
-  width:100%;max-width:480px;min-height:100vh;position:relative;
-  overflow:hidden;background:
-  radial-gradient(circle at 50% 18%,rgba(75,120,255,.16),transparent 30%),
-  radial-gradient(circle at 15% 80%,rgba(0,220,180,.08),transparent 28%),
-  #07090d;
-  display:flex;align-items:center;justify-content:center;padding:28px 22px;
-}
-.grid{
-  position:absolute;inset:0;opacity:.18;
-  background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),
-                   linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);
-  background-size:38px 38px;
-  mask-image:linear-gradient(to bottom,black,transparent 85%);
-}
-.orb{position:absolute;border-radius:50%;filter:blur(2px);opacity:.45}
-.o1{width:7px;height:7px;background:#56c8ff;top:20%;left:13%;animation:float1 5s infinite}
-.o2{width:5px;height:5px;background:#7dffcf;top:32%;right:14%;animation:float2 6s infinite}
-.o3{width:4px;height:4px;background:#fff;bottom:25%;left:20%;animation:float2 7s infinite}
-@keyframes float1{50%{transform:translate(18px,-20px);opacity:.9}100%{transform:translate(0,0)}}
-@keyframes float2{50%{transform:translate(-14px,18px);opacity:.35}100%{transform:translate(0,0)}}
-
-.wrap{width:100%;max-width:410px;position:relative;z-index:2;text-align:center}
-.badge{
-  display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:30px;
-  border:1px solid rgba(104,160,255,.25);background:rgba(70,110,220,.08);
-  color:#9fc2ff;font-size:10px;font-weight:800;letter-spacing:1.8px;
-  animation:badgeGlow 2.4s infinite;
-}
-.badge i{width:7px;height:7px;border-radius:50%;background:#65b9ff;box-shadow:0 0 13px #65b9ff}
-@keyframes badgeGlow{50%{box-shadow:0 0 25px rgba(70,130,255,.1)}}
-
-.visual{width:150px;height:150px;margin:28px auto 25px;position:relative;display:grid;place-items:center}
-.ring{position:absolute;border-radius:50%;border:1px solid rgba(100,160,255,.2)}
-.r1{inset:0;animation:spin 9s linear infinite}
-.r2{inset:14px;border-style:dashed;border-color:rgba(100,230,190,.25);animation:spinReverse 7s linear infinite}
-.r3{inset:29px;border-color:rgba(100,160,255,.12)}
-.core{
-  width:72px;height:72px;border-radius:23px;display:grid;place-items:center;
-  background:linear-gradient(145deg,#162033,#0e151e);
-  border:1px solid rgba(120,180,255,.28);
-  box-shadow:0 0 45px rgba(65,145,255,.18),inset 0 0 25px rgba(255,255,255,.025);
-}
-.core span{font-size:35px;animation:gear 4s linear infinite;filter:drop-shadow(0 0 10px rgba(100,180,255,.5))}
-@keyframes spin{to{transform:rotate(360deg)}}
-@keyframes spinReverse{to{transform:rotate(-360deg)}}
-@keyframes gear{to{transform:rotate(360deg)}}
-
-h1{font-size:35px;line-height:1.18;letter-spacing:-1px;margin-bottom:15px}
-h1 span{display:block}
-.highlight{background:linear-gradient(90deg,#fff,#8fc4ff);-webkit-background-clip:text;color:transparent}
-.desc{color:#8d98a8;font-size:13px;line-height:1.85;max-width:380px;margin:auto}
-
-.panel{
-  margin-top:25px;border:1px solid rgba(255,255,255,.09);border-radius:22px;
-  background:rgba(15,19,27,.82);backdrop-filter:blur(15px);
-  padding:19px;text-align:left;box-shadow:0 25px 70px rgba(0,0,0,.3);
-}
-.panel-title{display:flex;align-items:center;gap:10px;margin-bottom:17px}
-.panel-icon{width:35px;height:35px;border-radius:11px;background:rgba(80,150,255,.1);display:grid;place-items:center;color:#72b7ff}
-.panel-title b{font-size:14px}.panel-title small{display:block;color:#697586;font-size:9px;margin-top:2px}
-.live{margin-left:auto;font-size:9px;color:#64e6bd;font-weight:800}
-.progress{height:5px;border-radius:10px;background:#1b222c;overflow:hidden}
-.progress i{display:block;height:100%;width:72%;border-radius:10px;background:linear-gradient(90deg,#4b8cff,#60e2c0);animation:progress 2.5s ease-in-out infinite alternate}
-@keyframes progress{from{width:45%}to{width:86%}}
-.rows{margin-top:8px}
-.row{display:flex;align-items:center;gap:11px;padding:11px 0;border-bottom:1px solid rgba(255,255,255,.045)}
-.row:last-child{border-bottom:0}
-.tick{width:25px;height:25px;border-radius:8px;background:rgba(100,220,185,.08);color:#68e0bc;display:grid;place-items:center;font-size:12px}
-.row b{font-size:11px}.row small{display:block;color:#687484;font-size:9px;margin-top:2px}
-.wait{margin-top:21px;color:#697585;font-size:10px}
-.wait strong{display:block;color:#dce4ee;font-size:13px;margin-top:5px}
-.users{margin-top:26px;padding-top:21px;border-top:1px solid rgba(255,255,255,.08)}
-.user-number{font-size:31px;font-weight:850;letter-spacing:-1px}
-.user-label{font-size:11px;color:#737f8e;margin-top:1px}
-.footer{margin-top:20px;color:#4f5a68;font-size:9px}
-@media(max-width:380px){h1{font-size:30px}.visual{width:130px;height:130px}.core{width:65px;height:65px}}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - US - Link</title>
+  <link rel="stylesheet" href="./css/global.css">
+  <link rel="stylesheet" href="./css/app.css">
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#08090D">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
-<div class="page">
-  <div class="grid"></div>
-  <i class="orb o1"></i><i class="orb o2"></i><i class="orb o3"></i>
-
-  <main class="wrap">
-    <div class="badge"><i></i> MAJOR SYSTEM UPDATE</div>
-
-    <div class="visual">
-      <div class="ring r1"></div>
-      <div class="ring r2"></div>
-      <div class="ring r3"></div>
-      <div class="core"><span>⚙</span></div>
-    </div>
-
-    <h1>
-      <span>We’re Making</span>
-      <span class="highlight">Something Better</span>
-    </h1>
-
-    <p class="desc">
-      আমাদের সাইটে বর্তমানে একটি বড় ধরনের সিস্টেম আপডেট চলছে।
-      আরও দ্রুত, নিরাপদ ও উন্নত সেবা দেওয়ার জন্য গুরুত্বপূর্ণ
-      পরিবর্তন করা হচ্ছে।
-    </p>
-
-    <section class="panel">
-      <div class="panel-title">
-        <div class="panel-icon">↻</div>
-        <div><b>System Upgrade</b><small>Major infrastructure maintenance</small></div>
-        <div class="live">● IN PROGRESS</div>
+  <div id="app-container">
+    <!-- MAINTENANCE OVERLAY -->
+    <div id="maintenance-overlay" class="spinner-overlay" style="background: #08090d; z-index: 99999; display: none; flex-direction: column; gap: 18px; text-align: center; padding: 32px 24px; justify-content: center; opacity: 1; pointer-events: auto; box-sizing: border-box;">
+      <div style="width: 80px; height: 80px; background: rgba(0, 229, 255, 0.1); border: 2px solid var(--accent-cyan); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto; box-shadow: 0 0 30px rgba(0, 229, 255, 0.35);">
+        <span style="font-size: 42px;">🚀</span>
+      </div>
+      
+      <div>
+        <h2 style="font-weight: 900; color: #ffffff; font-size: 22px; margin: 0 0 8px 0; letter-spacing: 0.5px;">System Upgrade in Progress...</h2>
+        <span style="background: rgba(0, 230, 118, 0.15); color: #00e676; border: 1px solid rgba(0, 230, 118, 0.3); font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 20px; display: inline-block;">Resuming Very Shortly</span>
       </div>
 
-      <div class="progress"><i></i></div>
-
-      <div class="rows">
-        <div class="row"><div class="tick">✓</div><div><b>Core System Update</b><small>System infrastructure is being upgraded</small></div></div>
-        <div class="row"><div class="tick">✓</div><div><b>Security Improvements</b><small>Improving reliability and protection</small></div></div>
-        <div class="row"><div class="tick">✓</div><div><b>Performance Optimization</b><small>Faster and smoother service</small></div></div>
+      <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; padding: 18px; max-width: 340px; margin: 0 auto;">
+        <p style="color: #e0e0e0; font-size: 13.5px; line-height: 1.7; margin: 0; font-weight: 500;">
+          Dear user, scheduled system improvements and blockchain node updates are underway. Please check back shortly.
+          <br><br>
+          Thank you for choosing our platform!
+        </p>
       </div>
-    </section>
 
-    <div class="wait">
-      অনুগ্রহ করে কিছুক্ষণ অপেক্ষা করুন
-      <strong>সিস্টেম আপডেট সম্পন্ন হলে সাইট আবার চালু হবে</strong>
+      <div style="font-size: 12px; color: var(--text-muted); font-weight: 700; margin-top: 8px;">
+        US - Link Official Platform • Always Secure
+      </div>
     </div>
 
-    <div class="users">
-      <div class="user-number">14K+</div>
-      <div class="user-label">Users on the platform</div>
+    <!-- Toast system -->
+    <div id="toast-container"></div>
+
+    <!-- Spinner overlay -->
+    <div id="spinner-overlay" class="spinner-overlay">
+      <div class="spinner"></div>
     </div>
 
-    <div class="footer">Thank you for your patience & support.</div>
-  </main>
-</div>
+    <!-- HEADER -->
+    <header class="app-header glass">
+      <!-- BRAND LOGO: US LINK (OFFICIAL WEB3 EMBLEM) -->
+      <div class="app-brand-logo" onclick="switchTab('home')" style="display: flex; align-items: center; gap: 10px; cursor: pointer; user-select: none;">
+        <img src="./assets/uslink-logo.svg" alt="US Link" style="width: 36px; height: 36px; border-radius: 10px; filter: drop-shadow(0 0 8px rgba(0,230,118,0.35));">
+        <div>
+          <h3 style="font-size: 17px; font-weight: 900; color: #ffffff; margin: 0; letter-spacing: 0.4px;">US Link</h3>
+          <p style="font-size: 10px; color: var(--accent-green); margin: 1px 0 0 0; font-weight: 700; letter-spacing: 0.4px;">Web3 Terminal</p>
+        </div>
+      </div>
+      <!-- Hidden legacy elements to preserve JS compatibility -->
+      <span id="header-avatar" style="display:none;"></span>
+      <span id="header-username" style="display:none;"></span>
+      <div class="header-actions">
+        <button class="icon-btn" id="bell-btn" aria-label="Notifications">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+          </svg>
+          <div class="badge-dot hidden" id="notification-badge-dot"></div>
+        </button>
+      </div>
+    </header>
+
+    <!-- MAIN SPA WRAPPER -->
+    <main class="app-main">
+      
+      <section id="tab-home" class="tab-content active">
+        
+        <!-- PRO REAL USER ACCOUNT BALANCE CARD -->
+        <div class="home-balance-banner-card" style="background:#11151f; border:1px solid rgba(255,255,255,0.08); border-radius:20px; padding:22px; margin-bottom:18px; box-shadow:0 8px 30px rgba(0,0,0,0.45); position:relative; overflow:hidden;">
+          
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:18px;">
+            <div>
+              <div style="margin-bottom:6px;">
+                <span class="balance-card-subtitle" style="font-size:11px; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:0.8px; margin:0;">Total Balance</span>
+              </div>
+              <h2 style="font-size:30px; font-weight:900; color:#ffffff; margin:0; line-height:1.1; display:flex; align-items:center;">
+                <span id="home-balance">$0.00</span>
+                <span style="font-size:11.5px; font-weight:800; color:#00e676; background:rgba(0,230,118,0.12); border:1px solid rgba(0,230,118,0.25); padding:2px 7px; border-radius:6px; margin-left:8px; letter-spacing:0.3px;">USDT</span>
+              </h2>
+            </div>
+
+            <button class="balance-deposit-btn" onclick="switchTab('tasks')" style="white-space:nowrap; display:flex; align-items:center; gap:6px; padding:10px 16px; border-radius:12px; font-size:12.5px; font-weight:900; background:linear-gradient(135deg, #00e676 0%, #00e5ff 100%); color:#000000; border:none; cursor:pointer; box-shadow:0 4px 16px rgba(0,230,118,0.35); flex-shrink:0;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              <span>Deposit Tasks</span>
+            </button>
+          </div>
+
+          <div class="balance-card-stats-row" style="background:#0b0e14; border:1px solid rgba(255,255,255,0.06); border-radius:14px; padding:12px 14px; display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; text-align:center;">
+            <div class="stat-box">
+              <span class="stat-box-title" style="font-size:10.5px; color:#64748b; font-weight:700; text-transform:uppercase; margin-bottom:4px; display:block;">Cashback Bonus</span>
+              <span class="stat-box-val" id="home-bonus" style="font-size:13px; font-weight:900; color:#00e676;">+$0.00</span>
+            </div>
+            <div class="stat-box" style="border-left:1px solid rgba(255,255,255,0.06); border-right:1px solid rgba(255,255,255,0.06);">
+              <span class="stat-box-title" style="font-size:10.5px; color:#64748b; font-weight:700; text-transform:uppercase; margin-bottom:4px; display:block;">Completed Tasks</span>
+              <span class="stat-box-val" id="home-tasks-completed" style="font-size:13px; font-weight:900; color:#ffffff;">0</span>
+            </div>
+            <div class="stat-box">
+              <span class="stat-box-title" style="font-size:10.5px; color:#64748b; font-weight:700; text-transform:uppercase; margin-bottom:4px; display:block;">Payout Status</span>
+              <span class="stat-box-val" id="home-payout-status" style="font-size:12px; font-weight:800; color:#00e676;">Active ✓</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- PROMO BANNER CAROUSEL / SLIDER -->
+        <div class="home-promo-slider-container">
+          <div class="promo-banner-slide active" id="promo-slide-0">
+            <div class="promo-badge">HOT CASHBACK OFFER</div>
+            <h3 class="promo-title">Instant Cashback & Automated Refund Engine</h3>
+            <p class="promo-subtitle">Complete USDT BEP20 deposit tasks and receive automatic refunds with guaranteed bonuses!</p>
+            <button type="button" onclick="switchTab('tasks')" class="promo-btn">Start Tasks</button>
+          </div>
+
+          <div class="promo-banner-slide" id="promo-slide-1" style="display:none;">
+            <div class="promo-badge" style="background: rgba(0,229,255,0.18); color: var(--accent-cyan); border-color: rgba(0,229,255,0.4);">100% SECURE TRANSACTIONS</div>
+            <h3 class="promo-title">High-Speed Automated Payout System</h3>
+            <p class="promo-subtitle">Instant refunds and referral bonuses transferred directly to your connected BSC wallet.</p>
+            <button type="button" onclick="switchTab('wallet')" class="promo-btn" style="background: linear-gradient(135deg, #00e676 0%, #00b0ff 100%); color:#000; font-weight:800;">View Wallet</button>
+          </div>
+
+          <div class="promo-banner-slide" id="promo-slide-2" style="display:none;">
+            <div class="promo-badge" style="background: rgba(0,230,118,0.18); color: #00e676; border-color: rgba(0,230,118,0.4);">24/7 LIVE SUPPORT</div>
+            <h3 class="promo-title">Direct Live Chat with Admin Helpdesk</h3>
+            <p class="promo-subtitle">Get real-time assistance and instant payment confirmations anytime.</p>
+            <button type="button" onclick="switchTab('support')" class="promo-btn" style="background: linear-gradient(135deg, #00e676 0%, #00e5ff 100%); color:#000; font-weight:800;">Live Support</button>
+          </div>
+
+          <!-- Slider Indicators / Dot Dots -->
+          <div class="promo-slider-dots">
+            <span class="promo-dot active" onclick="switchPromoSlide(0)"></span>
+            <span class="promo-dot" onclick="switchPromoSlide(1)"></span>
+            <span class="promo-dot" onclick="switchPromoSlide(2)"></span>
+          </div>
+        </div>
+
+        <!-- PLATFORM REAL METRICS GRID -->
+        <div class="home-metrics-grid">
+          <div class="metric-card">
+            <div class="metric-icon-badge">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00e5ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 3h12l4 6-10 12L2 9z"/>
+                <path d="M11 3L8 9l4 12 4-12-3-6"/>
+                <path d="M2 9h20"/>
+              </svg>
+            </div>
+            <div class="metric-val">$128,450+</div>
+            <div class="metric-label">Total Paid Out</div>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-icon-badge" style="background: rgba(0, 230, 118, 0.1); border-color: rgba(0, 230, 118, 0.3);">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00e676" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+              </svg>
+            </div>
+            <div class="metric-val">Instant</div>
+            <div class="metric-label">Auto-Refund Payout</div>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-icon-badge" style="background: rgba(0, 229, 255, 0.1); border-color: rgba(0, 229, 255, 0.3);">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00e5ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                <path d="M9 12l2 2 4-4"/>
+              </svg>
+            </div>
+            <div class="metric-val">100% Secure</div>
+            <div class="metric-label">Smart Verification</div>
+          </div>
+        </div>
+
+        <!-- Announcement box -->
+        <div class="announcement-box">
+          <svg class="announcement-icon" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+          <div class="announcement-text">
+            <h4>Key Security Guidelines</h4>
+            <p>Always transfer exact USDT on Binance Smart Chain (BEP20). Verifications are processed within minutes.</p>
+          </div>
+        </div>
+
+        <!-- HOW IT WORKS GUIDE STEPS CARD -->
+        <div class="home-guide-card">
+          <h3 class="guide-title">How It Works in 3 Simple Steps</h3>
+          <div class="guide-steps-list">
+            <div class="guide-step-item">
+              <span class="step-num">1</span>
+              <div>
+                <h4>Select Amount</h4>
+                <p>Choose your desired USDT deposit amount or package.</p>
+              </div>
+            </div>
+            <div class="guide-step-item">
+              <span class="step-num">2</span>
+              <div>
+                <h4>Transfer USDT</h4>
+                <p>Send BEP20 USDT to the generated address and submit hash.</p>
+              </div>
+            </div>
+            <div class="guide-step-item">
+              <span class="step-num">3</span>
+              <div>
+                <h4>Receive Refund + Bonus</h4>
+                <p>Principal deposit + 4.5% bonus transferred directly to your wallet!</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. TASK TAB (WEB3 EXCHANGE OTC DEPOSIT TERMINAL) -->
+      <section id="tab-tasks" class="tab-content">
+        <!-- MAIN TASK CALCULATOR SUB-VIEW -->
+        <div id="task-calculator-main-view">
+          <!-- HERO HEADER WITH SUBMISSION HISTORY BUTTON -->
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
+            <div>
+              <h2 style="font-size:19px; font-weight:900; color:#ffffff; margin:0 0 2px 0;">USDT Deposit & Refund Terminal</h2>
+              <p style="font-size:11px; color:#94a3b8; margin:0;">Automatic BEP20 (BSC) Instant Refund Processing</p>
+            </div>
+            <button type="button" id="btn-top-tasks-history" onclick="openSubmissionsHistoryModal()" style="background:rgba(0, 229, 255, 0.1); border:1px solid rgba(0, 229, 255, 0.3); color:#00e5ff; font-size:11.5px; font-weight:800; padding:8px 14px; border-radius:12px; cursor:pointer; display:flex; align-items:center; gap:6px; box-shadow:0 4px 12px rgba(0,229,255,0.15); transition:all 0.2s;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+              <span>Tracker</span>
+            </button>
+          </div>
+
+          <!-- 1. WALLET CONNECT & REFUND ADDRESS CONTAINER -->
+          <div id="wallet-connect-card" style="margin-bottom:18px;">
+            <!-- FULL SETUP CARD (Displayed when address is NOT saved or editing) -->
+            <div id="wallet-setup-full-card" style="background:#121622; border:1px solid rgba(0, 229, 255, 0.3); border-radius:20px; padding:18px; box-shadow:0 8px 24px rgba(0,0,0,0.4); position:relative; overflow:hidden;">
+              <div style="position:absolute; top:-20px; right:-20px; width:90px; height:90px; background:radial-gradient(circle, rgba(0,229,255,0.15) 0%, transparent 70%); border-radius:50%; pointer-events:none;"></div>
+              
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <div style="width:32px; height:32px; border-radius:10px; background:rgba(0,229,255,0.12); border:1px solid rgba(0,229,255,0.3); display:flex; align-items:center; justify-content:center; color:#00e5ff;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2-.9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+                  </div>
+                  <h4 style="font-size:14px; font-weight:800; color:#ffffff; margin:0;">USDT Refund Wallet (BSC BEP20)</h4>
+                </div>
+                <span id="bsc-address-status-badge" style="background:rgba(255, 171, 0, 0.15); color:#ffab00; border:1px solid rgba(255, 171, 0, 0.3); border-radius:6px; padding:3px 10px; font-size:10px; font-weight:800;">Not Configured</span>
+              </div>
+              
+              <p style="font-size:11.5px; color:#94a3b8; margin:0 0 12px 0; line-height:1.4;">
+                Configure your <strong>BEP20 (BSC) USDT</strong> address. Your principal deposit + 4.5% cashback bonus will be automatically refunded directly to this wallet.
+              </p>
+
+              <!-- Input Form Wrap -->
+              <div id="bsc-address-input-wrap" style="display:flex; gap:8px;">
+                <input type="text" id="bsc-usdt-address-input" placeholder="0x... (BEP20 USDT Address)" style="flex:1; background:#0b0e14; border:1.5px solid rgba(255,255,255,0.12); color:#ffffff; font-size:12px; padding:12px 14px; border-radius:12px; font-family:monospace; outline:none;" />
+                <button type="button" onclick="saveUserBscAddress()" style="background:linear-gradient(135deg, #00e676 0%, #00e5ff 100%); color:#000000; border:none; font-size:13px; font-weight:900; padding:12px 18px; border-radius:12px; cursor:pointer; white-space:nowrap; box-shadow:0 4px 14px rgba(0,230,118,0.3);">
+                  Save Wallet
+                </button>
+              </div>
+            </div>
+
+            <!-- COMPACT CONNECTED BANNER (Displayed once address IS saved) -->
+            <div id="bsc-address-saved-wrap" style="display:none; align-items:center; justify-content:space-between; background:#121622; border:1px solid rgba(0, 230, 118, 0.35); border-radius:16px; padding:12px 16px; box-shadow:0 4px 16px rgba(0,0,0,0.3);">
+              <div style="display:flex; align-items:center; gap:10px; overflow:hidden;">
+                <div style="width:30px; height:30px; border-radius:50%; background:rgba(0,230,118,0.15); border:1px solid rgba(0,230,118,0.4); color:#00e676; font-weight:900; display:flex; align-items:center; justify-content:center; font-size:13px; flex-shrink:0;">
+                  ✓
+                </div>
+                <div style="overflow:hidden;">
+                  <div style="font-size:10px; color:#00e676; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; display:flex; align-items:center; gap:4px;">
+                    <span style="display:inline-block; width:6px; height:6px; background:#00e676; border-radius:50%; box-shadow:0 0 6px #00e676;"></span>
+                    BSC WALLET CONNECTED
+                  </div>
+                  <div id="saved-bsc-address-text" style="font-size:12px; font-family:monospace; color:#ffffff; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:1px;">
+                    0x...
+                  </div>
+                </div>
+              </div>
+              <button type="button" onclick="editUserBscAddress()" style="background:rgba(0,229,255,0.08); border:1px solid rgba(0,229,255,0.3); color:#00e5ff; font-size:11.5px; font-weight:800; padding:6px 12px; border-radius:10px; cursor:pointer; white-space:nowrap; transition:all 0.2s;">
+                Edit Wallet
+              </button>
+            </div>
+          </div>
+
+          <!-- 2. TASK AMOUNT CALCULATOR (CUSTOM USDT: MIN $5, MAX $100,000) -->
+          <div class="task-card-box" style="background:#121622; border:1px solid rgba(255, 255, 255, 0.08); border-radius:20px; padding:20px; margin-bottom:18px; box-shadow:0 8px 24px rgba(0,0,0,0.4);">
+            <!-- Fixed Network Banner -->
+            <div style="display:flex; align-items:center; justify-content:space-between; background:#0b0e14; border:1px solid rgba(240, 185, 11, 0.25); padding:10px 14px; border-radius:12px; margin-bottom:16px;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <svg width="20" height="20" viewBox="0 0 200 200" fill="none" style="flex-shrink:0;">
+                  <path d="M100 0L141.4 41.4L100 82.8L58.6 41.4L100 0Z" fill="#F0B90B"/>
+                  <path d="M41.4 58.6L82.8 100L41.4 141.4L0 100L41.4 58.6Z" fill="#F0B90B"/>
+                  <path d="M158.6 58.6L200 100L158.6 141.4L117.2 100L158.6 58.6Z" fill="#F0B90B"/>
+                  <path d="M100 117.2L141.4 158.6L100 200L58.6 158.6L100 117.2Z" fill="#F0B90B"/>
+                  <path d="M100 58.6L129.3 87.9L100 117.2L70.7 87.9L100 58.6Z" fill="#F0B90B"/>
+                </svg>
+                <span style="font-size:11.5px; color:#94a3b8; font-weight:700;">Network:</span>
+                <span style="font-size:12px; color:#f0b90b; font-weight:900;">BEP20 (Binance Smart Chain)</span>
+              </div>
+              <span style="font-size:10px; background:rgba(240, 185, 11, 0.15); color:#f0b90b; border:1px solid rgba(240, 185, 11, 0.3); padding:2px 8px; border-radius:6px; font-weight:800;">FIXED</span>
+            </div>
+
+            <!-- Single Currency Input (USDT) -->
+            <div style="margin-bottom:16px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <label style="font-size:12px; color:#94a3b8; font-weight:700; margin:0;">Deposit Amount (USDT)</label>
+                <span id="task-deposit-limits-badge" style="font-size:10.5px; color:#00e5ff; font-weight:800; background:rgba(0,229,255,0.08); border:1px solid rgba(0,229,255,0.25); padding:2px 8px; border-radius:6px;">Min $5 • Max $100,000</span>
+              </div>
+              <div style="position:relative;">
+                <input type="number" id="task-usdt-input" placeholder="10" min="5" max="100000" step="any" oninput="onUsdtInputChanged(this.value)" style="width:100%; background:#0b0e14; border:1.5px solid rgba(0,229,255,0.4); color:#ffffff; font-size:18px; font-weight:900; padding:14px 75px 14px 44px; border-radius:12px; outline:none; box-sizing:border-box;" />
+                <div style="position:absolute; left:12px; top:50%; transform:translateY(-50%); width:24px; height:24px; display:flex; align-items:center; justify-content:center;">
+                  <img src="./assets/usdt-logo.png" alt="USDT" style="width:24px; height:24px; border-radius:50%; object-fit:contain; display:block;" />
+                </div>
+                <span style="position:absolute; right:14px; top:50%; transform:translateY(-50%); font-size:12px; color:#00e5ff; font-weight:800;">USDT</span>
+              </div>
+
+              <!-- Quick Presets -->
+              <div style="display:grid; grid-template-columns:repeat(5, 1fr); gap:6px; margin-top:10px;">
+                <button type="button" onclick="selectPresetAmount(10)" class="preset-amt-btn" style="background:#0b0e14; border:1px solid rgba(255,255,255,0.1); color:#ffffff; font-size:11.5px; font-weight:800; padding:8px 0; border-radius:10px; cursor:pointer; transition:all 0.2s;">$10</button>
+                <button type="button" onclick="selectPresetAmount(50)" class="preset-amt-btn" style="background:#0b0e14; border:1px solid rgba(255,255,255,0.1); color:#ffffff; font-size:11.5px; font-weight:800; padding:8px 0; border-radius:10px; cursor:pointer; transition:all 0.2s;">$50</button>
+                <button type="button" onclick="selectPresetAmount(100)" class="preset-amt-btn" style="background:#0b0e14; border:1px solid rgba(255,255,255,0.1); color:#ffffff; font-size:11.5px; font-weight:800; padding:8px 0; border-radius:10px; cursor:pointer; transition:all 0.2s;">$100</button>
+                <button type="button" onclick="selectPresetAmount(500)" class="preset-amt-btn" style="background:#0b0e14; border:1px solid rgba(255,255,255,0.1); color:#ffffff; font-size:11.5px; font-weight:800; padding:8px 0; border-radius:10px; cursor:pointer; transition:all 0.2s;">$500</button>
+                <button type="button" onclick="selectPresetAmount(1000)" class="preset-amt-btn" style="background:#0b0e14; border:1px solid rgba(255,255,255,0.1); color:#ffffff; font-size:11.5px; font-weight:800; padding:8px 0; border-radius:10px; cursor:pointer; transition:all 0.2s;">$1,000</button>
+              </div>
+
+              <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(0,230,118,0.06); border:1px solid rgba(0,230,118,0.2); padding:8px 12px; border-radius:8px; margin-top:12px;">
+                <span style="font-size:11.5px; color:#94a3b8; font-weight:600;">Automated Payout:</span>
+                <span id="task-bonus-rate-label" style="font-size:11.5px; color:#00e676; font-weight:800;">+4.5% Cashback Bonus Included</span>
+              </div>
+            </div>
+
+          <!-- Summary Box -->
+          <div style="background:rgba(0, 229, 255, 0.04); border:1px solid rgba(0, 229, 255, 0.15); border-radius:14px; padding:14px; margin-bottom:16px;">
+            <div style="display:flex; justify-content:space-between; font-size:12px; color:#94a3b8; margin-bottom:8px;">
+              <span>Deposit Amount:</span>
+              <strong style="color:#ffffff;" id="summary-deposit-amt">$10.00 USDT</strong>
+            </div>
+            <div style="display:flex; justify-content:space-between; font-size:12px; color:#94a3b8; margin-bottom:8px;">
+              <span id="summary-bonus-rate-label">Cashback Bonus (+4.5%):</span>
+              <strong style="color:#00e676;" id="summary-bonus-amt">+$0.45 USDT</strong>
+            </div>
+            <div style="height:1px; background:rgba(255,255,255,0.08); margin:8px 0;"></div>
+            <div style="display:flex; justify-content:space-between; font-size:13px; font-weight:800; color:#ffffff;">
+              <span>Total Refund to Wallet:</span>
+              <strong style="color:#00e5ff; font-size:15px;" id="summary-total-return">$10.45 USDT</strong>
+            </div>
+          </div>
+
+          <!-- PROCEED BUTTON -->
+          <button type="button" onclick="triggerDepositAttentionFlow()" style="width:100%; background:linear-gradient(135deg, #00e676 0%, #00e5ff 100%); color:#000000; border:none; font-size:15px; font-weight:900; padding:16px; border-radius:16px; cursor:pointer; box-shadow:0 8px 25px rgba(0,230,118,0.45); display:flex; align-items:center; justify-content:center; gap:8px;">
+            <span>Proceed to Deposit</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+          </button>
+
+          <!-- MY TASK SUBMISSION HISTORY QUICK LINK CARD (Matching User Screenshot 2) -->
+          <div id="card-task-submission-history" onclick="openSubmissionsHistoryModal()" role="button" tabindex="0" style="background:#141822; border:1px solid rgba(0,229,255,0.25); border-radius:16px; padding:14px 16px; margin-top:16px; display:flex; align-items:center; justify-content:space-between; cursor:pointer; box-shadow:0 4px 16px rgba(0,0,0,0.3); transition:all 0.25s ease;">
+            <div style="display:flex; align-items:center; gap:12px;">
+              <div style="width:40px; height:40px; border-radius:12px; background:rgba(0,229,255,0.12); border:1px solid rgba(0,229,255,0.3); display:flex; align-items:center; justify-content:center; color:#00e5ff; flex-shrink:0;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+              </div>
+              <div>
+                <h4 style="font-size:14px; font-weight:800; color:#ffffff; margin:0 0 3px 0;">Deposit & Refund Tracker</h4>
+                <p style="font-size:11px; color:#94a3b8; margin:0;">Live status, instant tracking & payout records</p>
+              </div>
+            </div>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </div>
+        </div>
+
+        <!-- SUB-VIEW 2: FULL-PAGE WEB3 PAYMENT INFO VIEW (Matching User Screenshot 1) -->
+        <div id="task-payment-full-view" style="display:none; background:#0b0e14; padding-bottom:30px;">
+          <!-- Top Back & Header Bar -->
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <button type="button" onclick="backToTaskCalculatorView()" style="background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.12); color:#ffffff; font-size:12.5px; font-weight:800; padding:6px 12px; border-radius:10px; cursor:pointer; display:flex; align-items:center; gap:6px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+              <span>Back</span>
+            </button>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span style="width:6px; height:6px; border-radius:50%; background:#00e676; box-shadow:0 0 6px #00e676;"></span>
+              <h3 style="font-size:15px; font-weight:900; color:#ffffff; margin:0; letter-spacing:0.3px;">Deposit Invoice</h3>
+            </div>
+            <button type="button" onclick="location.reload()" style="background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.12); color:#00e5ff; width:30px; height:30px; border-radius:10px; cursor:pointer; display:flex; align-items:center; justify-content:center;" title="Refresh">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00e5ff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+            </button>
+          </div>
+
+          <!-- Top Hero Amount Due Card -->
+          <div style="background:#11151f; border:1px solid rgba(0,230,118,0.25); border-radius:18px; padding:16px 18px; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; box-shadow:0 6px 20px rgba(0,0,0,0.5);">
+            <div style="display:flex; align-items:center; gap:12px;">
+              <img src="./assets/usdt-logo.png" alt="USDT" style="width:36px; height:36px; border-radius:50%; object-fit:contain; box-shadow:0 0 14px rgba(38,161,123,0.35);" />
+              <div>
+                <span style="font-size:11px; color:#94a3b8; font-weight:700; display:block; margin-bottom:2px;">Amount Due</span>
+                <strong style="font-size:20px; font-weight:900; color:#ffffff;" id="invoice-deposit-amount">10.0000 USDT</strong>
+              </div>
+            </div>
+            <div style="background:rgba(0,229,255,0.1); color:#00e5ff; border:1px solid rgba(0,229,255,0.25); border-radius:12px; padding:6px 12px; font-size:12px; font-weight:800; font-family:monospace; display:flex; align-items:center; gap:6px;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#00e5ff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              <span id="invoice-countdown-timer">24:59</span>
+            </div>
+          </div>
+
+          <!-- Payment Details List Card -->
+          <div style="background:#11151f; border:1px solid rgba(255,255,255,0.08); border-radius:18px; padding:16px; margin-bottom:14px; display:flex; flex-direction:column; gap:12px; box-shadow:0 6px 20px rgba(0,0,0,0.5);">
+            <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px;">
+              <span style="color:#94a3b8; font-weight:600;">Network</span>
+              <div style="display:flex; align-items:center; gap:6px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="#f3ba2f"><path d="M12 0l4.5 4.5L12 9 7.5 4.5 12 0zm0 15l4.5 4.5L12 24l-4.5-4.5L12 15zm-7.5-7.5L9 12 4.5 16.5 0 12l4.5-4.5zm15 0L24 12l-4.5 4.5L15 12l4.5-4.5zM12 9l3 3-3 3-3-3 3-3z"/></svg>
+                <strong style="color:#ffffff; font-weight:800; font-size:12.5px;">BNB Smart Chain (BEP20)</strong>
+              </div>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px;">
+              <span style="color:#94a3b8; font-weight:600;">Order Reference</span>
+              <strong style="color:#94a3b8; font-family:monospace; font-weight:700; font-size:11.5px;" id="invoice-trx-number">202609022011274174</strong>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px;">
+              <span style="color:#94a3b8; font-weight:600;">Deposit Address</span>
+              <div style="display:flex; align-items:center; gap:6px; max-width:62%;">
+                <span id="invoice-receiver-address" style="font-family:monospace; color:#00e5ff; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:11.5px;">Generating Unique Address...</span>
+                <button type="button" onclick="copyInvoiceText('invoice-receiver-address', 'Address copied to clipboard ✓')" style="background:rgba(0,229,255,0.1); border:1px solid rgba(0,229,255,0.25); color:#00e5ff; font-size:11px; font-weight:700; padding:4px 9px; border-radius:8px; cursor:pointer; display:inline-flex; align-items:center; gap:4px; flex-shrink:0;">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                  <span>Copy</span>
+                </button>
+              </div>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px;">
+              <span style="color:#94a3b8; font-weight:600;">Exact Amount</span>
+              <div style="display:flex; align-items:center; gap:6px;">
+                <strong style="color:#00e676; font-weight:900;" id="invoice-exact-amount">10.0000 USDT</strong>
+                <button type="button" onclick="copyInvoiceText('invoice-exact-amount', 'Amount copied to clipboard ✓')" style="background:rgba(0,230,118,0.1); border:1px solid rgba(0,230,118,0.25); color:#00e676; font-size:11px; font-weight:700; padding:4px 9px; border-radius:8px; cursor:pointer; display:inline-flex; align-items:center; gap:4px; flex-shrink:0;">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                  <span>Copy</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- QR Code & Safety Container -->
+          <div style="background:#11151f; border:1px solid rgba(255,255,255,0.08); border-radius:18px; padding:16px; margin-bottom:14px; text-align:center; box-shadow:0 6px 20px rgba(0,0,0,0.5);">
+            <!-- Protocol Warning Box with Clean SVG -->
+            <div style="background:rgba(234,179,8,0.08); border:1px solid rgba(234,179,8,0.25); border-radius:12px; padding:10px 12px; margin-bottom:14px; text-align:left; display:flex; align-items:center; gap:10px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#eab308" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              <p style="font-size:11px; color:#fef08a; margin:0; line-height:1.4; font-weight:600;">
+                Verify address & exact amount before sending. Transfer only via BEP20 BSC.
+              </p>
+            </div>
+
+            <!-- Dynamic QR Code with Centered Tether Logo -->
+            <div style="position:relative; background:#ffffff; border-radius:16px; padding:12px; display:inline-block; margin-bottom:10px; box-shadow:0 6px 20px rgba(0,0,0,0.4);">
+              <img id="invoice-qr-code-img" src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=USDT-BSC" alt="Deposit QR Code" style="width:150px; height:150px; display:block;" />
+              <div style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); width:32px; height:32px; border-radius:50%; background:#ffffff; padding:2px; box-shadow:0 2px 8px rgba(0,0,0,0.3); display:flex; align-items:center; justify-content:center;">
+                <img src="./assets/usdt-logo.png" alt="USDT" style="width:26px; height:26px; border-radius:50%; object-fit:contain;" />
+              </div>
+            </div>
+
+            <p style="font-size:10.5px; color:#64748b; margin:0; line-height:1.4;">
+              Scan QR code in Binance, Trust Wallet, MetaMask or OKX to complete transfer.
+            </p>
+          </div>
+
+          <!-- Submit / Cancel Buttons -->
+          <div style="background:#11151f; border:1px solid rgba(255,255,255,0.08); border-radius:18px; padding:16px; margin-bottom:14px;">
+            <div style="display:flex; align-items:center; gap:8px; background:rgba(0,229,255,0.06); border:1px solid rgba(0,229,255,0.2); border-radius:12px; padding:10px 12px; margin-bottom:14px; font-size:11.5px; color:#94a3b8;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#00e5ff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              <span>Automated BSC node detection active. Tap 'Confirm Paid' after transferring.</span>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1.3fr; gap:10px;">
+              <button type="button" onclick="backToTaskCalculatorView()" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); color:#ffffff; font-size:13px; font-weight:800; padding:13px; border-radius:12px; cursor:pointer;">
+                Cancel
+              </button>
+              <button type="button" onclick="confirmTaskPaymentSubmission()" style="background:linear-gradient(135deg, #00e676 0%, #00e5ff 100%); color:#000000; border:none; font-size:13px; font-weight:900; padding:13px; border-radius:12px; cursor:pointer; box-shadow:0 4px 16px rgba(0,230,118,0.35); display:flex; align-items:center; justify-content:center; gap:6px;" id="btn-submit-invoice-payment">
+                <span>Confirm Paid</span>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- SUB-VIEW 3: DEDICATED FULL-PAGE TASK DEPOSIT & SUBMISSION HISTORY VIEW -->
+        <div id="task-history-full-view" style="display:none; background:#0b0e14; padding-bottom:30px;">
+          <!-- Top Header Bar with Back Button -->
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; padding-bottom:12px; border-bottom:1px solid rgba(255,255,255,0.08);">
+            <button type="button" onclick="backToTaskCalculatorView()" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); color:#ffffff; font-size:13.5px; font-weight:800; padding:8px 16px; border-radius:12px; cursor:pointer; display:flex; align-items:center; gap:6px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+              <span>Back</span>
+            </button>
+            <h3 style="font-size:17px; font-weight:800; color:#ffffff; margin:0;">Deposit & Refund Tracker</h3>
+            <button type="button" onclick="loadTaskHistoryPageData()" style="background:none; border:none; color:#00e5ff; font-size:18px; cursor:pointer;" title="Refresh">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+            </button>
+          </div>
+
+          <!-- Hero Summary Card -->
+          <div style="background:#121622; border:1px solid rgba(0,229,255,0.3); border-radius:20px; padding:18px; margin-bottom:18px; display:grid; grid-template-columns:1fr 1fr; gap:12px; box-shadow:0 8px 24px rgba(0,0,0,0.4);">
+            <div style="background:#0b0e14; padding:12px 14px; border-radius:14px; border:1px solid rgba(255,255,255,0.08);">
+              <span style="font-size:11px; color:#94a3b8; font-weight:700; display:block; margin-bottom:2px;">Total Submissions</span>
+              <strong style="font-size:18px; font-weight:900; color:#ffffff;" id="history-total-count">0</strong>
+            </div>
+            <div style="background:#0b0e14; padding:12px 14px; border-radius:14px; border:1px solid rgba(0,230,118,0.25);">
+              <span style="font-size:11px; color:#94a3b8; font-weight:700; display:block; margin-bottom:2px;">Total Deposited</span>
+              <strong style="font-size:18px; font-weight:900; color:#00e676;" id="history-total-usdt">$0.00 USDT</strong>
+            </div>
+          </div>
+
+          <!-- History Entries List Container -->
+          <div id="task-history-page-list-container" style="display:flex; flex-direction:column; gap:12px;">
+            <div style="text-align:center; padding:40px 14px; background:#121622; border-radius:18px; border:1px dashed rgba(255,255,255,0.12);">
+              <p style="font-size:13px; color:#94a3b8; margin:0 0 4px 0; font-weight:700;">No Submissions Found</p>
+              <p style="font-size:11.5px; color:#64748b; margin:0;">Your completed USDT deposits and refund records will appear here.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="task-card-list" id="tasks-list-container" style="display:none;"></div>
+      </section>
+
+
+      <!-- 3. PROFILE TAB -->
+      <section id="tab-profile" class="tab-content">
+        <!-- SUB-VIEW 1: MAIN PROFILE VIEW (WEB3 ACCOUNT DASHBOARD) -->
+        <div id="profile-main-view">
+          <!-- Corporate Web3 Hero Account Card -->
+          <div style="background:#121622; border:1px solid rgba(255,255,255,0.08); border-radius:20px; padding:20px; margin-bottom:16px; box-shadow:0 8px 24px rgba(0,0,0,0.4); position:relative; overflow:hidden;">
+            <div style="position:absolute; top:-20px; right:-20px; width:100px; height:100px; background:radial-gradient(circle, rgba(0,229,255,0.15) 0%, transparent 70%); border-radius:50%; pointer-events:none;"></div>
+            
+            <div style="display:flex; align-items:center; gap:16px; margin-bottom:16px;">
+              <div style="position:relative;">
+                <div class="avatar-large" id="profile-avatar" style="width:62px; height:62px; font-size:24px; border:2px solid #00e5ff; box-shadow:0 0 16px rgba(0,229,255,0.35); background:linear-gradient(135deg, #1e293b 0%, #0f172a 100%);">U</div>
+                <span style="position:absolute; bottom:-2px; right:-2px; background:#00e676; border:2px solid #141822; width:14px; height:14px; border-radius:50%;" title="Verified User"></span>
+              </div>
+              <div style="flex:1;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <h3 class="profile-name" id="profile-fullname" style="font-size:18px; font-weight:800; color:#ffffff; margin:0;">Crypto Trader</h3>
+                  <span style="font-size:10px; background:rgba(0,230,118,0.15); color:#00e676; border:1px solid rgba(0,230,118,0.3); padding:2px 6px; border-radius:4px; font-weight:800;">VERIFIED ✓</span>
+                </div>
+                <p class="profile-details" id="profile-phone" style="font-size:12.5px; color:#94a3b8; margin:4px 0 0 0; font-family:monospace;">+8801XXXXXXXXX</p>
+              </div>
+            </div>
+
+            <!-- Referral Code & Link Quick Copy Box -->
+            <div style="background:#0b0e14; border:1px solid rgba(255,255,255,0.06); border-radius:14px; padding:12px; display:flex; flex-direction:column; gap:8px;">
+              <div style="display:flex; align-items:center; justify-content:space-between;">
+                <span style="font-size:11px; color:#94a3b8; font-weight:700; text-transform:uppercase;">Referral Code:</span>
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span id="profile-ref-code" style="font-size:15px; font-weight:900; color:#00e676; letter-spacing:1px; font-family:monospace;">XXXXXX</span>
+                  <button class="btn-copy" id="profile-ref-copy" style="padding:4px 10px; font-size:11px;">Copy Code</button>
+                </div>
+              </div>
+              <div style="border-top:1px solid rgba(255,255,255,0.06); padding-top:8px; display:flex; align-items:center; justify-content:space-between;">
+                <span style="font-size:11px; color:#94a3b8; font-weight:700;">Invite Link:</span>
+                <button class="btn-secondary" id="profile-ref-link-copy" style="padding:4px 12px; font-size:11px; color:#00e5ff; border-color:rgba(0,229,255,0.3); background:rgba(0,229,255,0.08);">
+                  Copy Link
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Web3 Action Menu Grid -->
+          <div style="display:grid; gap:10px; margin-bottom:20px;">
+            <!-- Option 1: Submission History -->
+            <div class="menu-item" id="menu-task-history" onclick="openSubmissionsHistoryModal()" style="background:#121622; border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:14px 16px; display:flex; align-items:center; justify-content:space-between; cursor:pointer; transition:all 0.2s;">
+              <div style="display:flex; align-items:center; gap:12px;">
+                <div style="width:38px; height:38px; border-radius:10px; background:rgba(0,229,255,0.12); border:1px solid rgba(0,229,255,0.3); display:flex; align-items:center; justify-content:center;">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00e5ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                </div>
+                <div>
+                  <h4 style="font-size:14px; font-weight:800; color:#ffffff; margin:0 0 2px 0;">Deposit & Refund Tracker</h4>
+                  <p style="font-size:11px; color:#94a3b8; margin:0;">Live status, instant tracking & payout records</p>
+                </div>
+              </div>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </div>
+
+            <!-- Option 2: Team & Referrals -->
+            <div class="menu-item" id="menu-referred-users" onclick="switchTab('referral')" style="background:#121622; border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:14px 16px; display:flex; align-items:center; justify-content:space-between; cursor:pointer; transition:all 0.2s;">
+              <div style="display:flex; align-items:center; gap:12px;">
+                <div style="width:38px; height:38px; border-radius:10px; background:rgba(0,230,118,0.12); border:1px solid rgba(0,230,118,0.3); display:flex; align-items:center; justify-content:center;">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00e676" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                </div>
+                <div>
+                  <h4 style="font-size:14px; font-weight:800; color:#ffffff; margin:0 0 2px 0;">Team & Referrals</h4>
+                  <p style="font-size:11px; color:#94a3b8; margin:0;">Referral tree & partner earnings report</p>
+                </div>
+              </div>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </div>
+
+            <!-- Option 3: Support Helpdesk -->
+            <div class="menu-item" id="menu-help" onclick="switchTab('support')" style="background:#121622; border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:14px 16px; display:flex; align-items:center; justify-content:space-between; cursor:pointer; transition:all 0.2s;">
+              <div style="display:flex; align-items:center; gap:12px;">
+                <div style="width:38px; height:38px; border-radius:10px; background:rgba(0,176,255,0.12); border:1px solid rgba(0,176,255,0.3); display:flex; align-items:center; justify-content:center;">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00b0ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                </div>
+                <div>
+                  <h4 style="font-size:14px; font-weight:800; color:#ffffff; margin:0 0 2px 0;">24/7 Live Support</h4>
+                  <p style="font-size:11px; color:#94a3b8; margin:0;">Direct chat with admin helpdesk</p>
+                </div>
+              </div>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </div>
+
+            <!-- Option 4: Terms & Guidelines -->
+            <div class="menu-item" id="menu-terms" onclick="openTermsSubView()" style="background:#121622; border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:14px 16px; display:flex; align-items:center; justify-content:space-between; cursor:pointer; transition:all 0.2s;">
+              <div style="display:flex; align-items:center; gap:12px;">
+                <div style="width:38px; height:38px; border-radius:10px; background:rgba(240,185,11,0.12); border:1px solid rgba(240,185,11,0.3); display:flex; align-items:center; justify-content:center;">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f0b90b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                </div>
+                <div>
+                  <h4 style="font-size:14px; font-weight:800; color:#ffffff; margin:0 0 2px 0;">Terms & Guidelines</h4>
+                  <p style="font-size:11px; color:#94a3b8; margin:0;">Platform policy & terms of service</p>
+                </div>
+              </div>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </div>
+          </div>
+
+          <!-- Red Outlined Logout Button -->
+          <button onclick="logoutUser()" type="button" style="background:rgba(255,61,0,0.08); border:1px solid rgba(255,61,0,0.3); color:#ff5252; width:100%; padding:14px; border-radius:16px; font-weight:800; font-size:14px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 4px 14px rgba(255,61,0,0.15); transition:all 0.2s;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ff5252" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+            <span>Sign Out</span>
+          </button>
+        </div>
+
+        <!-- SUB-VIEW 2: SUBMISSIONS HISTORY FULL-PAGE VIEW (NO POPUP MODAL) -->
+        <div id="profile-history-full-view" style="display:none;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <button type="button" onclick="backToProfileMainView()" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:#ffffff; font-size:12px; font-weight:800; padding:8px 14px; border-radius:10px; cursor:pointer; display:flex; align-items:center; gap:6px;">
+              ← Back
+            </button>
+            <h3 style="font-size:16px; font-weight:800; color:#ffffff; margin:0;">Deposit & Refund Tracker</h3>
+          </div>
+
+          <div id="profile-history-container" style="display:grid; gap:10px;">
+            <!-- Dynamic submissions content rendered here -->
+          </div>
+        </div>
+
+        <!-- SUB-VIEW 3: TERMS & POLICY FULL-PAGE VIEW (NO POPUP MODAL) -->
+        <div id="profile-terms-full-view" style="display:none;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <button type="button" onclick="backToProfileMainView()" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:#ffffff; font-size:12px; font-weight:800; padding:8px 14px; border-radius:10px; cursor:pointer; display:flex; align-items:center; gap:6px;">
+              ← Back
+            </button>
+            <h3 style="font-size:16px; font-weight:800; color:#ffffff; margin:0;">Platform Guidelines</h3>
+          </div>
+
+          <div style="background:#121622; border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:18px; color:#94a3b8; font-size:13px; line-height:1.6; display:flex; flex-direction:column; gap:14px;">
+            <div style="display:flex; align-items:center; gap:10px; background:rgba(0,229,255,0.08); border:1px solid rgba(0,229,255,0.2); padding:10px 14px; border-radius:12px;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00e5ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+              <span style="font-size:12px; color:#00e5ff; font-weight:800;">100% Secure Usage & Payout Guidelines</span>
+            </div>
+
+            <div>
+              <h4 style="color:#ffffff; font-size:14px; font-weight:800; margin:0 0 6px 0;">1. Automated Refund & Bonus System</h4>
+              <p style="margin:0;">After completing a USDT deposit on the tasks page, your principal deposit + 4.5% cashback bonus will be automatically credited to your BEP20 (BSC) wallet within 10 to 30 minutes.</p>
+            </div>
+
+            <div>
+              <h4 style="color:#ffffff; font-size:14px; font-weight:800; margin:0 0 6px 0;">2. Partner & Referral Policy</h4>
+              <p style="margin:0;">Earn an instant 1% commission on all deposits made by your invited partners, plus an additional $1.00 reward upon completing 20 tasks!</p>
+            </div>
+
+            <div>
+              <h4 style="color:#ffffff; font-size:14px; font-weight:800; margin:0 0 6px 0;">3. 24/7 Live Support Helpdesk</h4>
+              <p style="margin:0;">For any questions, deposit assistance, or inquiries, reach out directly through the 24/7 Support tab for immediate response.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4. WALLET TAB (AUTO-REFUND PAYOUT DASHBOARD) -->
+      <section id="tab-wallet" class="tab-content">
+        <!-- Balance stats -->
+        <div class="home-balance-banner-card" style="margin-bottom:18px; background:#121622; border:1px solid rgba(255,255,255,0.08);">
+          <div class="balance-card-header">
+            <div>
+              <p class="balance-card-subtitle">Total Automated Refund & Bonus Balance</p>
+              <h2 class="balance-card-amount"><span id="wallet-balance">$0.00</span> <span class="currency-tag">USDT</span></h2>
+            </div>
+            <span style="background:rgba(0, 230, 118, 0.15); color:#00e676; border:1px solid rgba(0, 230, 118, 0.3); border-radius:8px; padding:4px 10px; font-size:11px; font-weight:800;">
+              Auto-Payout Active ✓
+            </span>
+          </div>
+
+          <div style="font-size:11.5px; color:#94a3b8; line-height:1.4;">
+            Principal deposits and 4.5% cashback bonuses are automatically transferred directly to your connected BEP20 (BSC) wallet upon admin verification.
+          </div>
+        </div>
+
+        <!-- Connected Wallet Info Box -->
+        <div style="background:#121622; border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:16px; margin-bottom:20px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <span style="font-size:11px; color:#94a3b8; font-weight:700; text-transform:uppercase;">Connected BEP20 (BSC) Wallet Address:</span>
+            <button onclick="switchTab('tasks')" style="background:none; border:none; color:#00e5ff; font-size:11px; font-weight:800; cursor:pointer; text-decoration:underline;">
+              Change Wallet
+            </button>
+          </div>
+          <div style="font-size:13px; font-family:monospace; color:#00e5ff; font-weight:700; background:#0b0e14; padding:10px 12px; border-radius:10px; border:1px solid rgba(0,229,255,0.2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" id="wallet-tab-bsc-address">
+            0x... (Connect wallet in Tasks page)
+          </div>
+        </div>
+
+        <!-- Ledger -->
+        <h3 class="section-title" style="margin-bottom: 14px; font-size:16px; font-weight:800; color:#ffffff;">Payout & Refund Ledger</h3>
+        <div class="timeline-list" id="wallet-transactions-list">
+          <div class="empty-state" style="padding: 40px 20px; text-align: center; background:#121622; border:1px solid rgba(255,255,255,0.08); border-radius:16px;">
+            <p class="empty-state-text" style="color:#94a3b8; font-size:13px; margin:0;">No payout records found yet</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 5. REFERRAL TAB (WEB3 AFFILIATE DASHBOARD) -->
+      <section id="tab-referral" class="tab-content">
+        <!-- HERO REFERRAL BANNER CARD -->
+        <div style="background:#121622; border:1px solid rgba(255,255,255,0.08); border-radius:20px; padding:20px; margin-bottom:18px; box-shadow:0 8px 24px rgba(0,0,0,0.4); position:relative; overflow:hidden;">
+          <div style="position:absolute; top:-20px; right:-20px; width:120px; height:120px; background:radial-gradient(circle, rgba(0,230,118,0.15) 0%, transparent 70%); border-radius:50%; pointer-events:none;"></div>
+          
+          <div style="display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:800; color:#00e676; background:rgba(0,230,118,0.12); border:1px solid rgba(0,230,118,0.3); padding:4px 12px; border-radius:20px; margin-bottom:12px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00e676" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+            <span>WEB3 AFFILIATE NETWORK</span>
+          </div>
+
+          <h3 style="font-size:19px; font-weight:800; color:#ffffff; margin:0 0 6px 0;">Invite Partners & Earn Lifetime USDT</h3>
+          <p style="font-size:12px; color:#94a3b8; margin:0; line-height:1.5;">
+            Share your exclusive invite link. Earn 1% instant commission on every completed deposit plus an extra $1.00 reward for every 20 tasks completed!
+          </p>
+        </div>
+
+        <!-- 3 EARNINGS MECHANISM CARDS -->
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:18px;">
+          <div style="background:#121622; border:1px solid rgba(0,230,118,0.25); border-radius:16px; padding:14px 8px; text-align:center; box-shadow:0 4px 12px rgba(0,0,0,0.2);">
+            <div style="width:36px; height:36px; border-radius:50%; background:rgba(0,230,118,0.12); border:1px solid rgba(0,230,118,0.3); margin:0 auto 8px auto; display:flex; align-items:center; justify-content:center; color:#00e676;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"></polyline><rect x="2" y="7" width="20" height="5"></rect><line x1="12" y1="22" x2="12" y2="7"></line><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path></svg>
+            </div>
+            <div style="font-size:13px; font-weight:800; color:#00e676;">1% Commission</div>
+            <div style="font-size:10px; color:#94a3b8; font-weight:600; margin-top:2px;">Per Task</div>
+          </div>
+
+          <div style="background:#121622; border:1px solid rgba(0,229,255,0.25); border-radius:16px; padding:14px 8px; text-align:center; box-shadow:0 4px 12px rgba(0,0,0,0.2);">
+            <div style="width:36px; height:36px; border-radius:50%; background:rgba(0,229,255,0.12); border:1px solid rgba(0,229,255,0.3); margin:0 auto 8px auto; display:flex; align-items:center; justify-content:center; color:#00e5ff;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg>
+            </div>
+            <div style="font-size:13px; font-weight:800; color:#00e5ff;">+$1.00 USDT</div>
+            <div style="font-size:10px; color:#94a3b8; font-weight:600; margin-top:2px;">Per 10 Tasks</div>
+          </div>
+
+          <div style="background:#121622; border:1px solid rgba(240,185,11,0.25); border-radius:16px; padding:14px 8px; text-align:center; box-shadow:0 4px 12px rgba(0,0,0,0.2);">
+            <div style="width:36px; height:36px; border-radius:50%; background:rgba(240,185,11,0.12); border:1px solid rgba(240,185,11,0.3); margin:0 auto 8px auto; display:flex; align-items:center; justify-content:center; color:#f0b90b;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+            </div>
+            <div style="font-size:13px; font-weight:800; color:#f0b90b;">Unlimited</div>
+            <div style="font-size:10px; color:#94a3b8; font-weight:600; margin-top:2px;">No Earning Cap</div>
+          </div>
+        </div>
+
+        <!-- STATS DASHBOARD GRID -->
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:18px;">
+          <div style="background:#121622; border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:14px 10px; text-align:center;">
+            <div style="font-size:16px; font-weight:900; color:#ffffff;" id="tab-ref-total-users">0</div>
+            <div style="font-size:10.5px; color:#94a3b8; font-weight:700; margin-top:2px;">Total Partners</div>
+          </div>
+          <div style="background:#121622; border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:14px 10px; text-align:center;">
+            <div style="font-size:16px; font-weight:900; color:#00e676;" id="tab-ref-total-bonus">$0.00</div>
+            <div style="font-size:10.5px; color:#94a3b8; font-weight:700; margin-top:2px;">Total Earned</div>
+          </div>
+          <div style="background:#121622; border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:14px 10px; text-align:center;">
+            <div style="font-size:16px; font-weight:900; color:#00e5ff;" id="tab-ref-total-tasks">0</div>
+            <div style="font-size:10.5px; color:#94a3b8; font-weight:700; margin-top:2px;">Team Tasks</div>
+          </div>
+        </div>
+
+        <!-- REFERRAL LINK & CODE SHARING CARD -->
+        <div style="background:#121622; border:1px solid rgba(255,255,255,0.08); border-radius:20px; padding:18px; margin-bottom:20px; display:flex; flex-direction:column; gap:12px;">
+          <!-- Referral Code Section -->
+          <div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <span style="font-size:11px; color:#94a3b8; font-weight:700; text-transform:uppercase; display:flex; align-items:center; gap:6px;">
+                YOUR REFERRAL CODE:
+              </span>
+              <button class="btn-copy" id="btn-copy-tab-code" style="padding:4px 12px; font-size:11px;">Copy Code</button>
+            </div>
+            <div style="background:#0b0e14; border:1px solid rgba(0,230,118,0.25); border-radius:12px; padding:10px 14px; font-size:16px; font-weight:900; color:#00e676; letter-spacing:1.5px; font-family:monospace; text-align:center;" id="tab-ref-code-text">
+              XXXXXX
+            </div>
+          </div>
+
+          <!-- Referral Link Section -->
+          <div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <span style="font-size:11px; color:#94a3b8; font-weight:700; text-transform:uppercase; display:flex; align-items:center; gap:6px;">
+                YOUR INVITE LINK:
+              </span>
+              <button class="btn-secondary" id="btn-copy-tab-link" style="padding:4px 12px; font-size:11px; color:#00e5ff; border-color:rgba(0,229,255,0.3); background:rgba(0,229,255,0.08);">
+                Copy Link
+              </button>
+            </div>
+            <div style="background:#0b0e14; border:1px solid rgba(0,229,255,0.25); border-radius:12px; padding:10px 14px; font-size:12px; font-family:monospace; color:#00e5ff; word-break:break-all;" id="tab-ref-link-text">
+              https://site.com/register.html?ref=XXXXXX
+            </div>
+          </div>
+        </div>
+
+        <!-- TEAM USERS LIST SECTION -->
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+          <h3 class="section-title" style="margin:0; font-size:16px; font-weight:800; color:#ffffff;">My Team Members</h3>
+        </div>
+        <div id="tab-referral-team-list" style="display:grid; gap:10px;">
+          <div class="empty-state" style="padding: 40px 20px; text-align: center; background:#121622; border:1px solid rgba(255,255,255,0.08); border-radius:18px;">
+            <p style="font-size: 13px; color: #94a3b8; margin:0;">Loading partner records...</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 6. DEDICATED FULL-PAGE SUPPORT CHAT TAB (NO POPUP MODAL) -->
+      <section id="tab-support" class="tab-content" style="padding-bottom: 95px;">
+        <!-- Top Verified Helpdesk Header Bar -->
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; background:#11151f; padding:12px 14px; border-radius:16px; border:1px solid rgba(255,255,255,0.08); box-shadow:0 4px 16px rgba(0,0,0,0.4);">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <button type="button" onclick="switchTab('home')" style="background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.12); color:#ffffff; font-size:12px; font-weight:800; padding:6px 12px; border-radius:10px; cursor:pointer; display:flex; align-items:center; gap:5px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+              <span>Back</span>
+            </button>
+            <div style="display:flex; align-items:center; gap:9px;">
+              <div style="position:relative; width:34px; height:34px; border-radius:50%; background:linear-gradient(135deg, #0284c7 0%, #00e5ff 100%); display:flex; align-items:center; justify-content:center; color:#000; font-weight:900; font-size:15px;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                <span style="position:absolute; bottom:0; right:0; width:9px; height:9px; border-radius:50%; background:#00e676; border:2px solid #11151f; box-shadow:0 0 6px #00e676;"></span>
+              </div>
+              <div>
+                <div style="display:flex; align-items:center; gap:5px;">
+                  <h4 style="font-size:14px; font-weight:900; color:#fff; margin:0; letter-spacing:0.2px;">US Link Priority Helpdesk</h4>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="#00e5ff"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                </div>
+                <p style="font-size:10px; color:#00e676; margin:0; font-weight:700;">Verified Agent #104 Online • Avg response: ~1 min</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Inquiry Chips -->
+        <div style="display:flex; gap:8px; overflow-x:auto; margin-bottom:12px; padding-bottom:4px; scrollbar-width:none;">
+          <button type="button" onclick="insertSupportInquiry('Hello Admin, please verify my USDT deposit.')" style="background:#11151f; border:1px solid rgba(255,255,255,0.1); color:#94a3b8; font-size:11px; font-weight:700; padding:6px 12px; border-radius:20px; cursor:pointer; white-space:nowrap; transition:all 0.2s;">
+            ⚡ Deposit Verification
+          </button>
+          <button type="button" onclick="insertSupportInquiry('Hello Admin, checking on my withdrawal payout status.')" style="background:#11151f; border:1px solid rgba(255,255,255,0.1); color:#94a3b8; font-size:11px; font-weight:700; padding:6px 12px; border-radius:20px; cursor:pointer; white-space:nowrap; transition:all 0.2s;">
+            💸 Withdrawal Status
+          </button>
+          <button type="button" onclick="insertSupportInquiry('Hello Admin, I have a question regarding referral cashback bonus.')" style="background:#11151f; border:1px solid rgba(255,255,255,0.1); color:#94a3b8; font-size:11px; font-weight:700; padding:6px 12px; border-radius:20px; cursor:pointer; white-space:nowrap; transition:all 0.2s;">
+            🎁 Bonus Guide
+          </button>
+        </div>
+
+        <!-- Chat Container Box -->
+        <div style="background:#11151f; border:1px solid rgba(255,255,255,0.08); border-radius:18px; overflow:hidden; display:flex; flex-direction:column; height:calc(100vh - 280px); min-height:400px; box-shadow:0 6px 20px rgba(0,0,0,0.5);">
+          <!-- Chat Messages List -->
+          <div id="support-chat-messages" style="flex:1; padding:16px; overflow-y:auto; display:flex; flex-direction:column; gap:12px; background:#0b0e14;">
+            <div style="text-align:center; color:#64748b; font-size:10.5px; margin:8px 0; font-weight:700;">
+              🔒 256-Bit Encrypted Direct VIP Channel
+            </div>
+          </div>
+
+          <!-- Image Attachment Preview Zone -->
+          <div id="support-image-preview-wrap" style="display:none; padding:8px 12px; background:rgba(0,0,0,0.6); border-top:1px solid rgba(255,255,255,0.08); align-items:center; justify-content:space-between;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <img id="support-image-preview-img" src="" style="width:42px; height:42px; border-radius:8px; object-fit:cover; border:1.5px solid #00e676;">
+              <span style="font-size:11.5px; color:#00e676; font-weight:700;">Receipt / Photo Attached</span>
+            </div>
+            <button type="button" onclick="removeSupportImageAttachment()" style="background:rgba(239,68,68,0.2); color:#ef4444; border:1px solid rgba(239,68,68,0.4); border-radius:50%; width:24px; height:24px; font-size:12px; cursor:pointer; display:flex; align-items:center; justify-content:center;">✕</button>
+          </div>
+
+          <!-- Chat Input Footer -->
+          <div style="padding:10px 12px; background:#11151f; border-top:1px solid rgba(255,255,255,0.08); display:flex; gap:8px; align-items:center; flex-shrink:0;">
+            <input type="file" id="support-file-input" accept="image/*" style="display:none;" onchange="handleSupportImageSelect(this)">
+            <button type="button" onclick="document.getElementById('support-file-input').click()" style="background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.12); color:#94a3b8; padding:10px 12px; border-radius:12px; font-size:15px; cursor:pointer; display:flex; align-items:center; justify-content:center;" title="Attach Screenshot">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+            </button>
+            <input type="text" id="support-msg-input" placeholder="Type your inquiry here..." onkeypress="if(event.key === 'Enter') sendSupportMessage()" style="flex:1; background:#0b0e14; border:1px solid rgba(255,255,255,0.12); color:#fff; padding:11px 14px; border-radius:12px; font-size:13px; outline:none; box-sizing:border-box;">
+            <button type="button" id="support-msg-send-btn" onclick="sendSupportMessage()" style="background:linear-gradient(135deg, #00e676 0%, #00e5ff 100%); color:#000; border:none; padding:11px 16px; border-radius:12px; font-weight:900; font-size:13px; cursor:pointer; white-space:nowrap; display:flex; align-items:center; gap:6px; box-shadow:0 4px 14px rgba(0,230,118,0.3);">
+              <span>Send</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 7. DEDICATED FULL-PAGE NOTIFICATIONS TAB (WITH BACK BUTTON) -->
+      <section id="tab-notifications" class="tab-content">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+          <button type="button" onclick="switchTab('home')" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:#ffffff; font-size:12px; font-weight:800; padding:8px 14px; border-radius:10px; cursor:pointer; display:flex; align-items:center; gap:6px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+            <span>Back</span>
+          </button>
+          <h3 style="font-size:16px; font-weight:800; color:#ffffff; margin:0;">Notifications</h3>
+        </div>
+
+        <div id="notifications-list" style="display:grid; gap:10px;">
+          <div class="empty-state" style="padding:40px 20px; text-align:center; background:#121622; border:1px solid rgba(255,255,255,0.08); border-radius:16px;">
+            <div style="width:48px; height:48px; border-radius:50%; background:rgba(0,229,255,0.08); border:1px solid rgba(0,229,255,0.2); display:flex; align-items:center; justify-content:center; margin:0 auto 12px auto; color:#00e5ff;">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+            </div>
+            <p style="font-size:13.5px; color:#ffffff; font-weight:700; margin:0;">No New Notifications</p>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- FLOATING LIVE SUPPORT BUTTON (DIRECT SWITCH TAB TO FULL-PAGE SUPPORT) -->
+    <div id="floating-support-btn" onclick="switchTab('support')" 
+      style="position: absolute; bottom: 84px; right: 18px; z-index: 850; width: 54px; height: 54px; border-radius: 50%; background: linear-gradient(135deg, rgba(0, 229, 255, 0.95) 0%, rgba(0, 230, 118, 0.95) 100%); border: 1.5px solid rgba(255,255,255,0.4); display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 25px rgba(0, 229, 255, 0.45); cursor: pointer; transition: all 0.25s ease;">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+      </svg>
+      <span id="support-unread-badge" style="display: none; position: absolute; top: -3px; right: -3px; background: #ff3d00; color: #fff; font-size: 10px; font-weight: 900; width: 20px; height: 20px; border-radius: 50%; border: 2px solid #0b0e14; align-items: center; justify-content: center;">0</span>
+    </div>
+
+    <!-- TASK PAYMENT INVOICE MODAL REMOVED IN FAVOR OF FULL-PAGE SUB-VIEW -->
+
+    <!-- FLOATING CAPSULE BOTTOM NAVIGATION (EXACT SCREENSHOT MATCH) -->
+    <nav class="bottom-nav">
+      <div class="nav-item active" data-tab="home">
+        <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+        <span>Home</span>
+      </div>
+
+      <div class="nav-item" data-tab="tasks">
+        <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10H7v-2h10v2zm0-4H7V7h10v2zm0 8H7v-2h10v2z"/></svg>
+        <span>Tasks</span>
+      </div>
+
+      <!-- CENTER PROMINENT WALLET CIRCLE BUTTON -->
+      <div class="nav-item nav-item-center-wallet" data-tab="wallet">
+        <div class="center-wallet-circle">
+          <svg viewBox="0 0 24 24"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2-.9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+        </div>
+        <span>Wallet</span>
+      </div>
+
+      <div class="nav-item" data-tab="referral">
+        <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+        <span>Referral</span>
+      </div>
+
+      <div class="nav-item" data-tab="profile">
+        <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+        <span>Profile</span>
+      </div>
+    </nav>
+
+  <!-- CONFIRM BEFORE PAYMENT OVERLAY MODAL (Matching User Screenshot 2) -->
+  <div id="modal-confirm-before-payment" class="modal-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.75); backdrop-filter:blur(6px); z-index:9999; align-items:center; justify-content:center; padding:20px;">
+    <div style="background:#ffffff; border-radius:24px; max-width:420px; width:100%; padding:24px; box-shadow:0 12px 32px rgba(0,0,0,0.6); color:#1e293b; animation:fade-in 0.25s ease-out; font-family:var(--font-family);">
+      
+      <!-- Warning Emblem -->
+      <div style="width:48px; height:48px; border-radius:50%; background:#fef3c7; border:1px solid #fde68a; color:#d97706; display:flex; align-items:center; justify-content:center; font-size:24px; margin:0 0 14px 0;">
+        ⚠️
+      </div>
+
+      <h3 style="font-size:18px; font-weight:900; color:#0f172a; margin:0 0 4px 0;">Confirm before payment</h3>
+      <p style="font-size:12px; color:#64748b; margin:0 0 16px 0;">Confirm to create the order and continue to payment</p>
+
+      <!-- Red Warning Box -->
+      <div style="background:#fef2f2; border:1px solid #fee2e2; border-radius:14px; padding:14px; margin-bottom:12px;">
+        <h4 style="font-size:13px; font-weight:900; color:#991b1b; margin:0 0 6px 0;">The amount must match exactly</h4>
+        <p style="font-size:11.5px; color:#7f1d1d; margin:0; line-height:1.5;">
+          For USDT deposits, please assume the transaction fee yourself and ensure the amount received matches the order amount exactly.<br><br>
+          Inconsistent amounts will prevent automatic deposit recognition and require manual processing, which is time-consuming.
+        </p>
+      </div>
+
+      <!-- Yellow Warning Box -->
+      <div style="background:#fffbeb; border:1px solid #fef3c7; border-radius:14px; padding:14px; margin-bottom:16px;">
+        <h4 style="font-size:13px; font-weight:900; color:#92400e; margin:0 0 6px 0; display:flex; align-items:center; gap:6px;">
+          <span>🪟</span> Check the address and network
+        </h4>
+        <p style="font-size:11.5px; color:#78350f; margin:0; line-height:1.5;">
+          Only use the <strong>USDT-BSC</strong> network and receiving address shown on the order page.
+        </p>
+      </div>
+
+      <!-- Checkmarks -->
+      <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:20px; font-size:11.5px; color:#475569; font-weight:600;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="color:#0d9488; font-size:14px; font-weight:900;">✓</span>
+          <span>Don't scan the same QR code or pay to the same address again.</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="color:#0d9488; font-size:14px; font-weight:900;">✓</span>
+          <span>For another recharge, create a new order.</span>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+        <button type="button" onclick="closeConfirmBeforePaymentModal()" style="background:#f1f5f9; border:none; color:#475569; font-size:13.5px; font-weight:800; padding:14px; border-radius:14px; cursor:pointer;">
+          Cancel
+        </button>
+        <button type="button" onclick="executeProceedToPaymentInvoice()" style="background:#0d9488; color:#ffffff; border:none; font-size:13.5px; font-weight:900; padding:14px; border-radius:14px; cursor:pointer; box-shadow:0 4px 14px rgba(13,148,136,0.35);">
+          Confirm and continue
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  </div>
+
+  <!-- CDN & Module Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
+  <script src="./js/supabase.js"></script>
+  <script src="./js/auth.js"></script>
+  <script src="./js/pwa-install.js"></script>
+  <script src="./js/notifications.js"></script>
+  <script src="./js/app.js"></script>
+  <script src="./js/home.js"></script>
+  <script src="./js/tasks.js"></script>
+  <script src="./js/profile.js"></script>
+  <script src="./js/wallet.js"></script>
+  <script src="./js/support.js"></script>
+
+  <!-- ═══════════════════════════════════════════════════════
+       ATTENTION & SECURITY PROTOCOL MODAL (WITH 3S COUNTDOWN)
+  ═══════════════════════════════════════════════════════ -->
+  <div id="deposit-attention-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.86); backdrop-filter:blur(8px); z-index:9500; align-items:center; justify-content:center; padding:16px; box-sizing:border-box;">
+    <div style="max-width:390px; width:100%; background:#11151f; border:1px solid rgba(0,230,118,0.3); border-radius:22px; padding:22px 20px; box-shadow:0 12px 40px rgba(0,0,0,0.85); color:#ffffff; font-family:var(--font-family, sans-serif);">
+      
+      <!-- Top Security Emblem & Title -->
+      <div style="text-align:center; margin-bottom:16px;">
+        <div style="width:52px; height:52px; border-radius:18px; background:rgba(0,230,118,0.12); border:1px solid rgba(0,230,118,0.35); display:flex; align-items:center; justify-content:center; margin:0 auto 12px auto; color:#00e676;">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <path d="M12 8v4"/><path d="M12 16h.01"/>
+          </svg>
+        </div>
+        <h3 style="font-size:17px; font-weight:900; margin:0 0 4px 0; letter-spacing:0.2px;">Important Deposit Notice</h3>
+        <p style="font-size:11px; color:#94a3b8; margin:0;">BEP20 Protocol Verification</p>
+      </div>
+
+      <!-- Protocol Notices Container -->
+      <div style="background:#0b0e14; border:1px solid rgba(255,255,255,0.06); border-radius:14px; padding:14px; margin-bottom:16px; display:flex; flex-direction:column; gap:12px;">
+        <div style="display:flex; gap:10px; align-items:flex-start;">
+          <div style="width:20px; height:20px; border-radius:6px; background:rgba(234,179,8,0.15); color:#eab308; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:900; flex-shrink:0;">1</div>
+          <div style="font-size:12px; line-height:1.45;">
+            <strong style="color:#ffffff;">BSC (BEP20) Only:</strong> Send Tether (USDT) strictly via Binance Smart Chain. Other networks cannot be credited.
+          </div>
+        </div>
+        <div style="display:flex; gap:10px; align-items:flex-start;">
+          <div style="width:20px; height:20px; border-radius:6px; background:rgba(0,229,255,0.15); color:#00e5ff; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:900; flex-shrink:0;">2</div>
+          <div style="font-size:12px; line-height:1.45;">
+            <strong style="color:#ffffff;">Exact Amount:</strong> Send the exact deposit amount (<span id="attention-amount-label" style="color:#00e676; font-weight:800;">$10.00 USDT</span>) in a single transfer.
+          </div>
+        </div>
+        <div style="display:flex; gap:10px; align-items:flex-start;">
+          <div style="width:20px; height:20px; border-radius:6px; background:rgba(0,230,118,0.15); color:#00e676; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:900; flex-shrink:0;">3</div>
+          <div style="font-size:12px; line-height:1.45;">
+            <strong style="color:#ffffff;">Automatic Processing:</strong> After transferring, tap 'Confirm Paid' to activate your real-time payout tracker.
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        <button type="button" id="btn-attention-confirm" onclick="confirmAttentionAndGenerateGateway()" disabled style="width:100%; background:#1e293b; color:#64748b; border:none; font-size:13.5px; font-weight:900; padding:14px; border-radius:12px; cursor:not-allowed; opacity:0.6; display:flex; align-items:center; justify-content:center; gap:8px; transition:all 0.25s ease;">
+          <span>Please review protocol (3s)...</span>
+        </button>
+        <button type="button" onclick="closeDepositAttentionModal()" style="background:transparent; border:none; color:#94a3b8; font-size:12.5px; font-weight:700; padding:6px; cursor:pointer;">
+          Cancel
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       HIGH-TECH BLOCKCHAIN GATEWAY GENERATOR LOADER
+  ═══════════════════════════════════════════════════════ -->
+  <div id="deposit-gateway-loader" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(8,9,13,0.94); backdrop-filter:blur(10px); z-index:9600; align-items:center; justify-content:center; padding:16px; box-sizing:border-box;">
+    <div style="max-width:340px; width:100%; text-align:center; color:#ffffff;">
+      <!-- Concentric Glowing Ring with User Uploaded Tether Emblem -->
+      <div style="position:relative; width:84px; height:84px; margin:0 auto 18px auto; display:flex; align-items:center; justify-content:center;">
+        <div style="position:absolute; width:100%; height:100%; border-radius:50%; border:2.5px solid rgba(0,229,255,0.15); border-top-color:#00e5ff; border-right-color:#00e676; animation: spinGateway 0.9s linear infinite;"></div>
+        <img src="./assets/usdt-logo.png" alt="USDT" style="width:40px; height:40px; border-radius:50%; object-fit:contain; box-shadow:0 0 16px rgba(0,230,118,0.4);" />
+      </div>
+      <h4 style="font-size:16px; font-weight:900; margin:0 0 6px 0; letter-spacing:0.2px;">Connecting BSC Gateway</h4>
+      <p id="gateway-loader-step" style="font-size:11.5px; color:#00e5ff; font-weight:700; margin:0; font-family:monospace; min-height:18px;">
+        Connecting to Binance Smart Chain Node...
+      </p>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       BULLETPROOF FULL-SCREEN WEB3 PAYMENT INFO MODAL OVERLAY
+  ═══════════════════════════════════════════════════════ -->
+  <div id="payment-info-modal-screen" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#08090d; z-index:9000; overflow-y:auto; padding:16px 14px 110px 14px; box-sizing:border-box; color:#ffffff; font-family:var(--font-family, sans-serif);">
+    <div style="max-width:420px; margin:0 auto;">
+      
+      <!-- Top Header Bar -->
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; padding-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.08);">
+        <button type="button" onclick="closePaymentInfoModalScreen()" style="background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.12); color:#ffffff; font-size:12.5px; font-weight:800; padding:6px 12px; border-radius:10px; cursor:pointer; display:flex; align-items:center; gap:6px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+          <span>Back</span>
+        </button>
+        <div style="display:flex; align-items:center; gap:6px;">
+          <span style="width:6px; height:6px; border-radius:50%; background:#00e676; box-shadow:0 0 6px #00e676;"></span>
+          <h3 style="font-size:15px; font-weight:900; color:#ffffff; margin:0; letter-spacing:0.3px;">Deposit Invoice</h3>
+        </div>
+        <button type="button" onclick="closePaymentInfoModalScreen()" style="background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.12); color:#94a3b8; width:30px; height:30px; border-radius:10px; cursor:pointer; display:flex; align-items:center; justify-content:center;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+
+      <!-- Amount Due Card -->
+      <div style="background:#11151f; border:1px solid rgba(0,230,118,0.25); border-radius:18px; padding:16px 18px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; box-shadow:0 6px 20px rgba(0,0,0,0.5);">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <img src="./assets/usdt-logo.png" alt="USDT" style="width:36px; height:36px; border-radius:50%; object-fit:contain; box-shadow:0 0 14px rgba(38,161,123,0.35);" />
+          <div>
+            <span style="font-size:11px; color:#94a3b8; font-weight:700; display:block; margin-bottom:2px;">Amount Due</span>
+            <strong style="font-size:20px; font-weight:900; color:#ffffff;" id="modal-invoice-deposit-amount">10.0000 USDT</strong>
+          </div>
+        </div>
+        <div style="background:rgba(0,229,255,0.1); color:#00e5ff; border:1px solid rgba(0,229,255,0.25); border-radius:12px; padding:6px 12px; font-size:12px; font-weight:800; font-family:monospace; display:flex; align-items:center; gap:6px;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#00e5ff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <span id="modal-invoice-countdown-timer">29:59</span>
+        </div>
+      </div>
+
+      <!-- Details List Card -->
+      <div style="background:#11151f; border:1px solid rgba(255,255,255,0.08); border-radius:18px; padding:16px; margin-bottom:12px; display:flex; flex-direction:column; gap:12px; box-shadow:0 6px 20px rgba(0,0,0,0.5);">
+        <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px;">
+          <span style="color:#94a3b8; font-weight:600;">Network</span>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="#f3ba2f"><path d="M12 0l4.5 4.5L12 9 7.5 4.5 12 0zm0 15l4.5 4.5L12 24l-4.5-4.5L12 15zm-7.5-7.5L9 12 4.5 16.5 0 12l4.5-4.5zm15 0L24 12l-4.5 4.5L15 12l4.5-4.5zM12 9l3 3-3 3-3-3 3-3z"/></svg>
+            <strong style="color:#ffffff; font-weight:800; font-size:12.5px;">BNB Smart Chain (BEP20)</strong>
+          </div>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px;">
+          <span style="color:#94a3b8; font-weight:600;">Order Reference</span>
+          <strong style="color:#94a3b8; font-family:monospace; font-weight:700; font-size:11.5px;" id="modal-invoice-trx-number">202609022011274174</strong>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px;">
+          <span style="color:#94a3b8; font-weight:600;">Deposit Address</span>
+          <div style="display:flex; align-items:center; gap:6px; max-width:62%;">
+            <span id="modal-invoice-receiver-address" style="font-family:monospace; color:#00e5ff; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:11.5px;">Generating Unique Address...</span>
+            <button type="button" id="btn-copy-modal-addr" onclick="copyInvoiceText('modal-invoice-receiver-address', 'Address copied to clipboard ✓')" style="background:rgba(0,229,255,0.1); border:1px solid rgba(0,229,255,0.25); color:#00e5ff; font-size:11px; font-weight:700; padding:4px 9px; border-radius:8px; cursor:pointer; display:inline-flex; align-items:center; gap:4px; flex-shrink:0;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              <span>Copy</span>
+            </button>
+          </div>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px;">
+          <span style="color:#94a3b8; font-weight:600;">Exact Amount</span>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <strong style="color:#00e676; font-weight:900;" id="modal-invoice-exact-amount">10.0000 USDT</strong>
+            <button type="button" id="btn-copy-modal-amt" onclick="copyInvoiceText('modal-invoice-exact-amount', 'Amount copied to clipboard ✓')" style="background:rgba(0,230,118,0.1); border:1px solid rgba(0,230,118,0.25); color:#00e676; font-size:11px; font-weight:700; padding:4px 9px; border-radius:8px; cursor:pointer; display:inline-flex; align-items:center; gap:4px; flex-shrink:0;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              <span>Copy</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- QR Code & Safety Container -->
+      <div style="background:#11151f; border:1px solid rgba(255,255,255,0.08); border-radius:18px; padding:16px; margin-bottom:12px; text-align:center; box-shadow:0 6px 20px rgba(0,0,0,0.5);">
+        <!-- Protocol Warning Box with Clean SVG -->
+        <div style="background:rgba(234,179,8,0.08); border:1px solid rgba(234,179,8,0.25); border-radius:12px; padding:10px 12px; margin-bottom:14px; text-align:left; display:flex; align-items:center; gap:10px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#eab308" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <p style="font-size:11px; color:#fef08a; margin:0; line-height:1.4; font-weight:600;">
+            Verify address & exact amount before sending. Transfer only via BEP20 BSC.
+          </p>
+        </div>
+
+        <!-- Dynamic QR Code with Tether Logo Watermark Centered -->
+        <div style="position:relative; background:#ffffff; border-radius:16px; padding:12px; display:inline-block; margin-bottom:10px; box-shadow:0 6px 20px rgba(0,0,0,0.4);">
+          <img id="modal-invoice-qr-code-img" src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=USDT-BSC" alt="Deposit QR Code" style="width:150px; height:150px; display:block;" />
+          <div style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); width:32px; height:32px; border-radius:50%; background:#ffffff; padding:2px; box-shadow:0 2px 8px rgba(0,0,0,0.3); display:flex; align-items:center; justify-content:center;">
+            <img src="./assets/usdt-logo.png" alt="USDT" style="width:26px; height:26px; border-radius:50%; object-fit:contain;" />
+          </div>
+        </div>
+
+        <p style="font-size:10.5px; color:#64748b; margin:0; line-height:1.4;">
+          Scan QR code in Binance, Trust Wallet, MetaMask or OKX to complete transfer.
+        </p>
+      </div>
+
+      <!-- Action Buttons Card -->
+      <div style="background:#11151f; border:1px solid rgba(255,255,255,0.08); border-radius:18px; padding:16px; margin-bottom:12px;">
+        <div style="display:flex; align-items:center; gap:8px; background:rgba(0,229,255,0.06); border:1px solid rgba(0,229,255,0.2); border-radius:12px; padding:10px 12px; margin-bottom:14px; font-size:11.5px; color:#94a3b8;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#00e5ff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <span>Automated BSC node detection active. Tap 'Confirm Paid' after transferring.</span>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1.3fr; gap:10px;">
+          <button type="button" onclick="closePaymentInfoModalScreen()" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); color:#ffffff; font-size:13px; font-weight:800; padding:13px; border-radius:12px; cursor:pointer;">
+            Cancel
+          </button>
+          <button type="button" onclick="confirmModalTaskPaymentSubmission()" style="background:linear-gradient(135deg, #00e676 0%, #00e5ff 100%); color:#000000; border:none; font-size:13px; font-weight:900; padding:13px; border-radius:12px; cursor:pointer; box-shadow:0 4px 16px rgba(0,230,118,0.35); display:flex; align-items:center; justify-content:center; gap:6px;" id="btn-submit-modal-payment">
+            <span>Confirm Paid</span>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    let globalInvoiceCountdownInterval = null;
+
+    // 30-Minute Live Countdown Timer (Counting Down 29:59 ... 00:00)
+    window.startInvoice30MinCountdown = function() {
+      if (globalInvoiceCountdownInterval) clearInterval(globalInvoiceCountdownInterval);
+
+      let totalSeconds = 30 * 60; // 30 mins = 1800 seconds
+
+      function updateTimerUI() {
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+        const formatted = String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
+
+        const timerEl = document.getElementById('modal-invoice-countdown-timer');
+        if (timerEl) timerEl.innerText = formatted;
+
+        const altTimerEl = document.getElementById('invoice-countdown-timer');
+        if (altTimerEl) altTimerEl.innerText = formatted;
+
+        if (totalSeconds <= 0) {
+          clearInterval(globalInvoiceCountdownInterval);
+          if (timerEl) timerEl.innerText = '00:00';
+        } else {
+          totalSeconds--;
+        }
+      }
+
+      updateTimerUI();
+      globalInvoiceCountdownInterval = setInterval(updateTimerUI, 1000);
+    };
+
+    // In-Page Copy Handler & Instant Sleek Web3 HUD Toast Notification
+    window.copyInvoiceText = async function(elementId, msg) {
+      const el = document.getElementById(elementId);
+      if (!el) return;
+      const text = el.innerText || el.textContent;
+
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(text);
+        } else {
+          const textarea = document.createElement('textarea');
+          textarea.value = text;
+          document.body.appendChild(textarea);
+          textarea.select();
+          document.execCommand('copy');
+          document.body.removeChild(textarea);
+        }
+      } catch (e) {
+        console.log('Copy fallback used:', e);
+      }
+
+      window.showInvoiceOverlayToast(msg || 'Copied to clipboard ✓');
+    };
+
+    window.showInvoiceOverlayToast = function(msg) {
+      let toast = document.getElementById('invoice-overlay-toast');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'invoice-overlay-toast';
+        toast.style.cssText = 'position:fixed; top:20px; left:50%; transform:translateX(-50%); background:#11151f; border:1px solid rgba(0,230,118,0.35); color:#ffffff; font-size:12.5px; font-weight:700; padding:10px 18px; border-radius:14px; z-index:9999999; box-shadow:0 10px 30px rgba(0,0,0,0.85); font-family:var(--font-family, sans-serif); transition:all 0.25s cubic-bezier(0.16, 1, 0.3, 1); display:flex; align-items:center; gap:8px; pointer-events:none;';
+        document.body.appendChild(toast);
+      }
+      toast.innerHTML = `
+        <div style="width:20px; height:20px; border-radius:50%; background:rgba(0,230,118,0.15); border:1px solid rgba(0,230,118,0.35); display:flex; align-items:center; justify-content:center; color:#00e676; flex-shrink:0;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#00e676" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <span style="color:#ffffff; font-size:12px; font-weight:700;">${msg}</span>
+      `;
+      toast.style.display = 'flex';
+      toast.style.opacity = '1';
+      toast.style.transform = 'translateX(-50%) translateY(0)';
+
+      if (window.invoiceToastTimeout) clearTimeout(window.invoiceToastTimeout);
+      window.invoiceToastTimeout = setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(-50%) translateY(-8px)';
+        setTimeout(() => { toast.style.display = 'none'; }, 250);
+      }, 2000);
+    };
+
+    // Attention Modal & Blockchain Gateway Handlers
+    let attentionTimerInterval = null;
+    window.currentDepositFlowAmount = 10.0;
+
+    window.triggerDepositAttentionFlow = function(targetAmount) {
+      let amt = 10.0;
+      if (targetAmount && parseFloat(targetAmount) > 0) {
+        amt = parseFloat(targetAmount);
+      } else {
+        const input = document.getElementById('task-usdt-input');
+        if (input && !isNaN(parseFloat(input.value))) amt = parseFloat(input.value);
+      }
+
+      const minD = (typeof window.currentMinDeposit === 'number') ? window.currentMinDeposit : 5;
+      const maxD = (typeof window.currentMaxDeposit === 'number') ? window.currentMaxDeposit : 100000;
+
+      if (amt < minD) {
+        if (typeof showToast === 'function') {
+          showToast(`Minimum deposit amount is $${minD}.00 USDT`, 'error');
+        } else {
+          alert(`Minimum deposit amount is $${minD}.00 USDT`);
+        }
+        return;
+      }
+      if (amt > maxD) {
+        if (typeof showToast === 'function') {
+          showToast(`Maximum deposit amount is $${maxD.toLocaleString()}.00 USDT`, 'error');
+        } else {
+          alert(`Maximum deposit amount is $${maxD.toLocaleString()}.00 USDT`);
+        }
+        return;
+      }
+
+      window.currentDepositFlowAmount = amt;
+
+      const amtLabel = document.getElementById('attention-amount-label');
+      if (amtLabel) amtLabel.innerText = `$${amt.toFixed(2)} USDT`;
+
+      const btn = document.getElementById('btn-attention-confirm');
+      if (btn) {
+        btn.disabled = true;
+        btn.style.opacity = '0.6';
+        btn.style.cursor = 'not-allowed';
+        btn.style.background = '#1e293b';
+        btn.style.color = '#94a3b8';
+        let timeLeft = 3;
+        btn.innerHTML = `<span>Please review protocol (${timeLeft}s)...</span>`;
+
+        if (attentionTimerInterval) clearInterval(attentionTimerInterval);
+        attentionTimerInterval = setInterval(() => {
+          timeLeft--;
+          if (timeLeft > 0) {
+            btn.innerHTML = `<span>Please review protocol (${timeLeft}s)...</span>`;
+          } else {
+            clearInterval(attentionTimerInterval);
+            btn.disabled = false;
+            btn.style.opacity = '1';
+            btn.style.cursor = 'pointer';
+            btn.style.background = 'linear-gradient(135deg, #00e676 0%, #00e5ff 100%)';
+            btn.style.color = '#000000';
+            btn.innerHTML = `
+              <span>I Understand • Proceed to Payment</span>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+            `;
+          }
+        }, 1000);
+      }
+
+      const modal = document.getElementById('deposit-attention-modal');
+      if (modal) modal.style.display = 'flex';
+    };
+
+    window.closeDepositAttentionModal = function() {
+      if (attentionTimerInterval) clearInterval(attentionTimerInterval);
+      const modal = document.getElementById('deposit-attention-modal');
+      if (modal) modal.style.display = 'none';
+    };
+
+    window.confirmAttentionAndGenerateGateway = async function() {
+      window.closeDepositAttentionModal();
+
+      // Show High-Tech Crypto Gateway Generator Loader
+      const loader = document.getElementById('deposit-gateway-loader');
+      const statusEl = document.getElementById('gateway-loader-step');
+      if (loader) loader.style.display = 'flex';
+
+      if (statusEl) statusEl.innerText = 'Connecting to Binance Smart Chain Node...';
+
+      setTimeout(() => {
+        if (statusEl) statusEl.innerText = 'Allocating Dedicated BEP20 Deposit Address...';
+      }, 400);
+
+      setTimeout(() => {
+        if (statusEl) statusEl.innerText = 'Securing Gateway Session ✓';
+      }, 850);
+
+      setTimeout(async () => {
+        if (loader) loader.style.display = 'none';
+        await window.proceedToPaymentInvoice(window.currentDepositFlowAmount);
+      }, 1300);
+    };
+
+    window.pasteClipboardToInput = async function(inputId) {
+      try {
+        const text = await navigator.clipboard.readText();
+        if (text) {
+          const el = document.getElementById(inputId);
+          if (el) el.value = text.trim();
+          window.showInvoiceOverlayToast('TxID Pasted from Clipboard ✓');
+        }
+      } catch (e) {
+        window.showInvoiceOverlayToast('Paste permission required');
+      }
+    };
+
+    // Pure Full-Screen Overlay Modal Handlers
+    window.proceedToPaymentInvoice = async function(customAmt) {
+      let amt = 10.0;
+      if (customAmt && parseFloat(customAmt) > 0) {
+        amt = parseFloat(customAmt);
+      } else {
+        const usdtInput = document.getElementById('task-usdt-input');
+        if (usdtInput && parseFloat(usdtInput.value) > 0) {
+          amt = parseFloat(usdtInput.value);
+        }
+      }
+
+      const now = new Date();
+      const dateStr = now.getFullYear().toString() +
+        String(now.getMonth() + 1).padStart(2, '0') +
+        String(now.getDate()).padStart(2, '0') +
+        String(now.getHours()).padStart(2, '0') +
+        String(now.getMinutes()).padStart(2, '0') +
+        String(now.getSeconds()).padStart(2, '0') +
+        String(Math.floor(Math.random() * 1000)).padStart(3, '0');
+
+      let userSubAddress = '';
+      if (typeof window.getUserUniqueBscDepositAddress === 'function') {
+        try {
+          userSubAddress = await window.getUserUniqueBscDepositAddress();
+        } catch (e) {
+          console.log('Address fetch error:', e);
+        }
+      }
+      if (!userSubAddress || !userSubAddress.startsWith('0x')) {
+        userSubAddress = localStorage.getItem('user_bsc_usdt_address') || '0xFE3B557E8Fb62b89F4916B721be55cEb828dBd73';
+      }
+
+      // Update modal element texts
+      const depAmt = document.getElementById('modal-invoice-deposit-amount');
+      if (depAmt) depAmt.innerText = amt.toFixed(4) + ' USDT';
+
+      const exAmt = document.getElementById('modal-invoice-exact-amount');
+      if (exAmt) exAmt.innerText = amt.toFixed(4) + ' USDT';
+
+      const trxNum = document.getElementById('modal-invoice-trx-number');
+      if (trxNum) trxNum.innerText = dateStr;
+
+      const recAddr = document.getElementById('modal-invoice-receiver-address');
+      if (recAddr) recAddr.innerText = userSubAddress;
+
+      const qrImg = document.getElementById('modal-invoice-qr-code-img');
+      if (qrImg) qrImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' + encodeURIComponent(userSubAddress);
+
+      // Also update full view if active
+      const fullDepAmt = document.getElementById('invoice-deposit-amount');
+      if (fullDepAmt) fullDepAmt.innerText = amt.toFixed(4) + ' USDT';
+
+      const fullExAmt = document.getElementById('invoice-exact-amount');
+      if (fullExAmt) fullExAmt.innerText = amt.toFixed(4) + ' USDT';
+
+      const fullTrxNum = document.getElementById('invoice-trx-number');
+      if (fullTrxNum) fullTrxNum.innerText = dateStr;
+
+      const fullRecAddr = document.getElementById('invoice-receiver-address');
+      if (fullRecAddr) fullRecAddr.innerText = userSubAddress;
+
+      const fullQrImg = document.getElementById('invoice-qr-code-img');
+      if (fullQrImg) fullQrImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' + encodeURIComponent(userSubAddress);
+
+      const modalScreen = document.getElementById('payment-info-modal-screen');
+      if (modalScreen) {
+        modalScreen.style.display = 'block';
+        modalScreen.scrollTop = 0;
+      }
+
+      window.startInvoice30MinCountdown();
+    };
+
+    window.closePaymentInfoModalScreen = function() {
+      window.backToTaskCalculatorView();
+    };
+
+    window.backToTaskCalculatorView = function() {
+      // 1. Hide payment info modal overlay screen
+      const paymentModal = document.getElementById('payment-info-modal-screen');
+      if (paymentModal) paymentModal.style.display = 'none';
+
+      // 2. Hide standalone task history overlay screen
+      const historyScreen = document.getElementById('task-history-standalone-screen');
+      if (historyScreen) historyScreen.style.display = 'none';
+
+      // 3. Hide full page history view if present
+      const histView = document.getElementById('task-history-full-view');
+      if (histView) histView.style.setProperty('display', 'none', 'important');
+
+      // 4. Hide full page payment view if present
+      const payView = document.getElementById('task-payment-full-view');
+      if (payView) payView.style.setProperty('display', 'none', 'important');
+
+      // 5. Restore main calculator terminal view
+      const calcView = document.getElementById('task-calculator-main-view');
+      if (calcView) calcView.style.setProperty('display', 'block', 'important');
+
+      // 6. Clear timers
+      if (typeof invoiceTimerInterval !== 'undefined' && invoiceTimerInterval) {
+        clearInterval(invoiceTimerInterval);
+      }
+      if (window.globalInvoiceCountdownInterval) {
+        clearInterval(window.globalInvoiceCountdownInterval);
+      }
+
+      // 7. Reset scroll position to top
+      window.scrollTo(0, 0);
+      const mainApp = document.querySelector('.app-main');
+      if (mainApp) mainApp.scrollTop = 0;
+    };
+
+    window.closeSubmissionsHistoryModal = function() {
+      const historyScreen = document.getElementById('task-history-standalone-screen');
+      if (historyScreen) historyScreen.style.display = 'none';
+      if (typeof window.backToTaskCalculatorView === 'function') {
+        window.backToTaskCalculatorView();
+      }
+    };
+
+    window.openSubmissionsHistoryModal = function() {
+      const screen = document.getElementById('task-history-standalone-screen');
+      if (screen) {
+        screen.style.display = 'block';
+        screen.scrollTop = 0;
+      }
+      if (typeof window.loadTaskHistoryOverlayContent === 'function') {
+        window.loadTaskHistoryOverlayContent();
+      }
+    };
+
+    window.loadTaskHistoryOverlayContent = async function() {
+      let historyItems = [];
+      const sb = window.supabaseClient || (typeof supabaseClient !== 'undefined' ? supabaseClient : null);
+
+      if (sb) {
+        // Auto-sync any local/offline submissions to database first
+        if (typeof window.syncPendingLocalSubmissionsToSupabase === 'function') {
+          await window.syncPendingLocalSubmissionsToSupabase();
+        }
+
+        try {
+          let userId = null;
+          try {
+            const { data: { user } } = await sb.auth.getUser();
+            if (user) userId = user.id;
+          } catch (e) {}
+
+          if (!userId) {
+            try {
+              const { data: { session } } = await sb.auth.getSession();
+              if (session && session.user) userId = session.user.id;
+            } catch (e) {}
+          }
+
+          let query = sb
+            .from('task_submissions')
+            .select('*')
+            .order('submitted_at', { ascending: false });
+
+          if (userId) {
+            query = query.or(`user_id.eq.${userId},user_id.is.null`);
+          }
+          
+          const { data: subs, error } = await query;
+          if (!error && subs && subs.length > 0) historyItems = subs;
+        } catch (e) {
+          console.log('History query error:', e);
+        }
+      }
+
+      // Fallback to localStorage if 0 items found
+      if (historyItems.length === 0) {
+        try {
+          const localHist = localStorage.getItem('user_task_deposit_history');
+          if (localHist) {
+            const parsed = JSON.parse(localHist);
+            if (Array.isArray(parsed) && parsed.length > 0) historyItems = parsed;
+          }
+        } catch (e) {}
+      }
+
+      let totalAmt = 0;
+      historyItems.forEach(i => totalAmt += parseFloat(i.amount || 0));
+
+      let cardsHtml = '';
+      if (historyItems.length === 0) {
+        cardsHtml = `
+          <div style="text-align:center; padding:48px 16px; background:#11151f; border-radius:16px; border:1px dashed rgba(255,255,255,0.1);">
+            <div style="width:48px; height:48px; border-radius:50%; background:rgba(0,229,255,0.08); border:1px solid rgba(0,229,255,0.2); display:flex; align-items:center; justify-content:center; margin:0 auto 12px auto; color:#00e5ff;">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+            </div>
+            <p style="font-size:13.5px; color:#ffffff; margin:0 0 4px 0; font-weight:800;">No Submissions Found</p>
+            <p style="font-size:11.5px; color:#64748b; margin:0;">Your USDT deposits and live refund tracking will appear here.</p>
+          </div>
+        `;
+      } else {
+        cardsHtml = historyItems.map(item => {
+          const amt = parseFloat(item.amount || 10);
+          const bonusUsdt = parseFloat(item.bonus_amount || (amt * 0.045));
+          
+          let dateStr = 'Recent';
+          try {
+            const dt = new Date(item.submitted_at || item.created_at || Date.now());
+            dateStr = dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ', ' +
+                      dt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+          } catch (_) {}
+
+          const trxId = item.transaction_id || ('TRX_' + (item.id ? item.id.substring(0, 6) : Math.floor(100000 + Math.random() * 900000)));
+          const rawStatus = (item.status || 'pending').toLowerCase();
+          const isApproved = rawStatus === 'approved';
+          const isRefunded = rawStatus === 'refunded' || rawStatus === 'completed';
+          const isRejected = rawStatus === 'rejected' || rawStatus === 'cancelled';
+
+          // 30-min countdown calculation
+          const submitTs = new Date(item.submitted_at || item.created_at || Date.now()).getTime();
+          const deadline = submitTs + (30 * 60 * 1000);
+          const remainingMs = Math.max(0, deadline - Date.now());
+          const mins = Math.floor(remainingMs / 60000);
+          const secs = Math.floor((remainingMs % 60000) / 1000);
+
+          // Styling & Logic by user specifications:
+          let statusBadgeText = 'Awaiting Verification';
+          let statusBg = 'rgba(240, 185, 11, 0.12)';
+          let statusColor = '#f0b90b';
+          let statusBorder = 'rgba(240, 185, 11, 0.35)';
+          let subStatusHtml = `<span style="color:#94a3b8;">Verifying Transfer (1-5m)</span>`;
+          let cardBorder = 'rgba(255,255,255,0.08)';
+
+          if (isRefunded) {
+            statusBadgeText = 'USD Sent';
+            statusBg = 'rgba(0, 230, 118, 0.16)';
+            statusColor = '#00e676';
+            statusBorder = 'rgba(0, 230, 118, 0.4)';
+            cardBorder = 'rgba(0, 230, 118, 0.25)';
+            subStatusHtml = `
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#00e676" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span style="color:#00e676;">Refund Transferred</span>
+            `;
+          } else if (isApproved) {
+            statusBadgeText = 'Deposit Received';
+            statusBg = 'rgba(0, 229, 255, 0.14)';
+            statusColor = '#00e5ff';
+            statusBorder = 'rgba(0, 229, 255, 0.4)';
+            cardBorder = 'rgba(0, 229, 255, 0.25)';
+            
+            const timerLabel = remainingMs > 0 ? `USD Processing (${mins}m ${secs}s)` : 'USD Processing (Finalizing)';
+            subStatusHtml = `
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#00e5ff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+              <span class="live-tracker-timer" data-deadline="${deadline}" style="color:#00e5ff;">${timerLabel}</span>
+            `;
+          } else if (isRejected) {
+            statusBadgeText = 'Rejected';
+            statusBg = 'rgba(239, 68, 68, 0.15)';
+            statusColor = '#ef4444';
+            statusBorder = 'rgba(239, 68, 68, 0.35)';
+            cardBorder = 'rgba(239, 68, 68, 0.2)';
+            subStatusHtml = `
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+              <span style="color:#ef4444;">Order Declined</span>
+            `;
+          }
+
+          // Shorten long transaction / wallet references cleanly
+          let shortTrx = trxId;
+          if (shortTrx.length > 20) {
+            shortTrx = shortTrx.substring(0, 10) + '...' + shortTrx.substring(shortTrx.length - 6);
+          }
+
+          return `
+            <div style="background:#11151f; border:1px solid ${cardBorder}; border-radius:14px; padding:12px 14px; margin-bottom:10px; box-shadow:0 4px 16px rgba(0,0,0,0.35); transition:all 0.2s;">
+              
+              <!-- TOP ROW: Amount & Status Badge -->
+              <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                  <div style="width:34px; height:34px; border-radius:10px; background:rgba(38,161,123,0.12); border:1px solid rgba(38,161,123,0.3); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                    <img src="./assets/usdt-logo.png" alt="USDT" style="width:22px; height:22px; border-radius:50%; object-fit:contain; display:block;" />
+                  </div>
+                  <div>
+                    <div style="display:flex; align-items:center; gap:6px;">
+                      <span style="font-size:15px; font-weight:900; color:#ffffff; letter-spacing:0.2px;">$${amt.toFixed(2)} USDT</span>
+                      <span style="font-size:11px; font-weight:800; color:#00e676; background:rgba(0,230,118,0.12); border:1px solid rgba(0,230,118,0.25); padding:1px 6px; border-radius:6px;">+$${bonusUsdt.toFixed(2)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div style="flex-shrink:0;">
+                  <div style="display:inline-flex; align-items:center; gap:5px; padding:4px 9px; border-radius:8px; font-size:11px; font-weight:800; background:${statusBg}; color:${statusColor}; border:1px solid ${statusBorder};">
+                    <span style="display:inline-block; width:5px; height:5px; background:${statusColor}; border-radius:50%; box-shadow:0 0 6px ${statusColor};"></span>
+                    <span>${statusBadgeText}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- DIVIDER -->
+              <div style="height:1px; background:rgba(255,255,255,0.06); margin-bottom:8px;"></div>
+
+              <!-- BOTTOM ROW: Date, Monospace Ref, Sub-status -->
+              <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:11px;">
+                <div style="color:#64748b; display:flex; align-items:center; gap:6px; min-width:0; overflow:hidden;">
+                  <span style="white-space:nowrap;">${dateStr}</span>
+                  <span>•</span>
+                  <span style="font-family:monospace; color:#94a3b8; font-size:10.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${trxId}">
+                    ${shortTrx}
+                  </span>
+                </div>
+
+                <div style="flex-shrink:0; font-weight:700; display:flex; align-items:center; gap:4px;">
+                  ${subStatusHtml}
+                </div>
+              </div>
+
+            </div>
+          `;
+        }).join('');
+      }
+
+      let screen = document.getElementById('task-history-standalone-screen');
+      if (screen) {
+        screen.innerHTML = `
+          <div style="max-width:440px; margin:0 auto;">
+            
+            <!-- Top Header Bar -->
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; padding-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.08);">
+              <button type="button" onclick="closeSubmissionsHistoryModal()" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); color:#ffffff; font-size:12.5px; font-weight:800; padding:6px 12px; border-radius:10px; cursor:pointer; display:flex; align-items:center; gap:6px; transition:all 0.2s;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                <span>Back</span>
+              </button>
+              <h3 style="font-size:16px; font-weight:900; color:#ffffff; margin:0; letter-spacing:0.3px;">Deposit & Refund Tracker</h3>
+              <button type="button" onclick="loadTaskHistoryOverlayContent()" style="background:rgba(0,229,255,0.08); border:1px solid rgba(0,229,255,0.22); color:#00e5ff; width:32px; height:32px; border-radius:10px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.2s;" title="Refresh">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#00e5ff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+              </button>
+            </div>
+
+            <!-- Hero Analytics Card -->
+            <div style="background:#11151f; border:1px solid rgba(0,229,255,0.25); border-radius:16px; padding:12px 14px; margin-bottom:14px; display:grid; grid-template-columns:1fr 1fr; gap:10px; box-shadow:0 6px 20px rgba(0,0,0,0.4);">
+              <div style="background:#0b0e14; padding:9px 12px; border-radius:12px; border:1px solid rgba(255,255,255,0.06);">
+                <span style="font-size:10.5px; color:#94a3b8; font-weight:700; display:block; margin-bottom:2px;">Total Submissions</span>
+                <strong style="font-size:16px; font-weight:900; color:#ffffff;">${historyItems.length}</strong>
+              </div>
+              <div style="background:#0b0e14; padding:9px 12px; border-radius:12px; border:1px solid rgba(0,230,118,0.2);">
+                <span style="font-size:10.5px; color:#94a3b8; font-weight:700; display:block; margin-bottom:2px;">Total Deposited</span>
+                <strong style="font-size:16px; font-weight:900; color:#00e676;">$${totalAmt.toFixed(2)} USDT</strong>
+              </div>
+            </div>
+
+            <!-- Sleek Compact Rows Container -->
+            <div style="display:flex; flex-direction:column;">
+              ${cardsHtml}
+            </div>
+
+          </div>
+        `;
+
+        // Start Live 1-Second Countdown Ticker for active timers
+        if (window.historyTrackerInterval) {
+          clearInterval(window.historyTrackerInterval);
+        }
+        window.historyTrackerInterval = setInterval(() => {
+          const timerEls = document.querySelectorAll('.live-tracker-timer');
+          if (!timerEls || timerEls.length === 0) {
+            clearInterval(window.historyTrackerInterval);
+            return;
+          }
+          timerEls.forEach(el => {
+            const d = parseInt(el.getAttribute('data-deadline') || '0', 10);
+            if (d > 0) {
+              const diff = Math.max(0, d - Date.now());
+              if (diff > 0) {
+                const m = Math.floor(diff / 60000);
+                const s = Math.floor((diff % 60000) / 1000);
+                el.innerText = `USD Processing (${m}m ${s}s)`;
+              } else {
+                el.innerText = 'USD Processing (Finalizing)';
+              }
+            }
+          });
+        }, 1000);
+      }
+    };
+
+    // Master Unified USDT Task Deposit Submission Handler
+    window.submitUsdtTaskDepositOrder = async function() {
+      const usdtInput = document.getElementById('task-usdt-input');
+      let amt = 10.0;
+      if (usdtInput && parseFloat(usdtInput.value) > 0) {
+        amt = parseFloat(usdtInput.value);
+      } else if (typeof currentTaskUsdtAmount !== 'undefined' && parseFloat(currentTaskUsdtAmount) > 0) {
+        amt = parseFloat(currentTaskUsdtAmount);
+      }
+
+      const now = new Date();
+      const userTrxId = 'USDT_' + now.getFullYear().toString().slice(-2) +
+        String(now.getMonth() + 1).padStart(2, '0') +
+        String(now.getDate()).padStart(2, '0') + '_' +
+        Math.floor(100000 + Math.random() * 900000);
+
+      // 1. Direct Supabase Insert (NON-BLOCKING, SYNCHRONOUS PAYLOAD)
+      const sb = window.supabaseClient || (typeof supabaseClient !== 'undefined' ? supabaseClient : null);
+      if (sb) {
+        try {
+          let userId = null;
+          let userName = 'USDT Trader';
+
+          try {
+            const { data: { session } } = await sb.auth.getSession();
+            if (session && session.user) {
+              userId = session.user.id;
+              userName = session.user.user_metadata?.full_name || session.user.email || 'USDT Trader';
+            }
+          } catch (e) {}
+
+          const insertPayload = {
+            amount: amt,
+            transaction_id: userTrxId,
+            status: 'pending',
+            submitted_at: now.toISOString(),
+            sender_number: 'USDT-BSC',
+            user_name: userName
+          };
+          if (userId) insertPayload.user_id = userId;
+
+          const { data, error } = await sb
+            .from('task_submissions')
+            .insert(insertPayload)
+            .select();
+
+          if (error) {
+            console.error('Supabase direct insert error:', error);
+            await sb.from('task_submissions').insert({
+              amount: amt,
+              transaction_id: userTrxId,
+              status: 'pending',
+              submitted_at: now.toISOString(),
+              sender_number: 'USDT-BSC',
+              user_name: userName,
+              user_id: userId
+            });
+          } else {
+            console.log('Supabase deposit order inserted successfully:', data);
+          }
+        } catch (err) {
+          console.error('Task deposit submission exception:', err);
+        }
+      }
+
+      // 2. Save local history for instant display
+      try {
+        const localHist = localStorage.getItem('user_task_deposit_history');
+        let arr = localHist ? JSON.parse(localHist) : [];
+        arr.unshift({
+          id: userTrxId,
+          transaction_id: userTrxId,
+          amount: amt,
+          status: 'pending',
+          submitted_at: now.toISOString(),
+          created_at: now.toISOString()
+        });
+        localStorage.setItem('user_task_deposit_history', JSON.stringify(arr.slice(0, 30)));
+      } catch (e) {}
+
+      // 3. Auto-sync all local submissions to Supabase
+      if (typeof window.syncPendingLocalSubmissionsToSupabase === 'function') {
+        window.syncPendingLocalSubmissionsToSupabase();
+      }
+
+      // 4. Close Payment Invoice Screens
+      if (typeof closePaymentInfoModalScreen === 'function') {
+        closePaymentInfoModalScreen();
+      }
+      if (typeof backToTaskCalculatorView === 'function') {
+        backToTaskCalculatorView();
+      }
+
+      // 5. Show Sleek Dark Web3 Toast
+      if (typeof showInvoiceOverlayToast === 'function') {
+        showInvoiceOverlayToast('Deposit confirmed! Live blockchain tracking initialized ✓');
+      }
+
+      // 6. Instantly Open Deposit & Refund Tracker
+      setTimeout(() => {
+        if (typeof openSubmissionsHistoryModal === 'function') {
+          openSubmissionsHistoryModal();
+        }
+      }, 400);
+    };
+
+    // Auto-sync any local submissions to Supabase database so Admin Panel always receives them!
+    window.syncPendingLocalSubmissionsToSupabase = async function() {
+      const sb = window.supabaseClient || (typeof supabaseClient !== 'undefined' ? supabaseClient : null);
+      if (!sb) return;
+
+      try {
+        const localHist = localStorage.getItem('user_task_deposit_history');
+        if (!localHist) return;
+        const items = JSON.parse(localHist);
+        if (!Array.isArray(items) || items.length === 0) return;
+
+        let userId = null;
+        let userName = 'USDT Trader';
+        try {
+          const { data: { session } } = await sb.auth.getSession();
+          if (session && session.user) {
+            userId = session.user.id;
+            userName = session.user.user_metadata?.full_name || session.user.email || 'USDT Trader';
+          }
+        } catch (e) {}
+
+        for (const item of items) {
+          const trxId = item.transaction_id || item.id;
+          if (!trxId) continue;
+
+          const { data: existing } = await sb
+            .from('task_submissions')
+            .select('id')
+            .eq('transaction_id', trxId)
+            .limit(1);
+
+          if (!existing || existing.length === 0) {
+            await sb.from('task_submissions').insert({
+              amount: parseFloat(item.amount || 10),
+              transaction_id: trxId,
+              status: item.status || 'pending',
+              submitted_at: item.submitted_at || item.created_at || new Date().toISOString(),
+              sender_number: 'USDT-BSC',
+              user_name: userName,
+              user_id: userId
+            });
+            console.log('Synced offline/local submission to Supabase:', trxId);
+          }
+        }
+      } catch (err) {
+        console.error('Auto sync error:', err);
+      }
+    };
+
+    // Aliases for 100% backward compatibility
+    window.confirmTaskPaymentSubmission = window.submitUsdtTaskDepositOrder;
+    window.confirmModalTaskPaymentSubmission = window.submitUsdtTaskDepositOrder;
+
+    // Dedicated Notifications Drawer Overlay Handlers
+    window.openNotificationsModal = function() {
+      if (navigator.vibrate) navigator.vibrate(15);
+      const overlay = document.getElementById('notifications-drawer-overlay');
+      if (overlay) {
+        overlay.style.display = 'block';
+        overlay.scrollTop = 0;
+      }
+      window.loadNotificationsOverlayContent();
+    };
+
+    window.closeNotificationsModal = function() {
+      const overlay = document.getElementById('notifications-drawer-overlay');
+      if (overlay) {
+        overlay.style.display = 'none';
+      }
+    };
+
+    window.loadNotificationsOverlayContent = async function() {
+      const container = document.getElementById('notifications-modal-list');
+      if (!container) return;
+
+      let combinedNotifs = [];
+
+      if (window.supabaseClient) {
+        try {
+          const { data: { user } } = await window.supabaseClient.auth.getUser();
+
+          // 1. Fetch system notifications
+          let query = window.supabaseClient
+            .from('notifications')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+          if (user) {
+            query = query.or(`user_id.eq.${user.id},user_id.is.null`);
+          }
+
+          const { data: sysNotifs } = await query;
+          if (sysNotifs && sysNotifs.length > 0) {
+            sysNotifs.forEach(n => {
+              combinedNotifs.push({
+                id: n.id,
+                title: n.title || 'System Notification',
+                message: n.message || '',
+                type: 'system',
+                badgeColor: '#00e5ff',
+                badgeBg: 'rgba(0,229,255,0.12)',
+                icon: '🔔',
+                created_at: n.created_at
+              });
+            });
+          }
+
+          // 2. Fetch deposit task updates for real-time status alerts
+          let subQuery = window.supabaseClient
+            .from('task_submissions')
+            .select('*')
+            .order('submitted_at', { ascending: false });
+
+          if (user) {
+            subQuery = subQuery.or(`user_id.eq.${user.id},user_id.is.null`);
+          }
+
+          const { data: subs } = await subQuery;
+          if (subs && subs.length > 0) {
+            subs.forEach(s => {
+              const status = s.status || 'pending';
+              const isApproved = status === 'approved' || status === 'completed' || status === 'refunded';
+              const isRejected = status === 'rejected' || status === 'cancelled';
+
+              let title = 'Blockchain Verification Processing';
+              let msg = `Your $${parseFloat(s.amount || 0).toFixed(2)} USDT deposit order is undergoing blockchain confirmation.`;
+              let badgeColor = '#00e5ff';
+              let badgeBg = 'rgba(0,229,255,0.12)';
+              let icon = '⚡';
+
+              if (isApproved) {
+                title = 'Deposit Confirmed & Refund Sent';
+                msg = `Your $${parseFloat(s.amount || 0).toFixed(2)} USDT deposit refund and cashback bonus have been transferred!`;
+                badgeColor = '#00e676';
+                badgeBg = 'rgba(0,230,118,0.15)';
+                icon = '✓';
+              } else if (isRejected) {
+                title = 'Deposit Order Declined';
+                msg = `Your $${parseFloat(s.amount || 0).toFixed(2)} USDT deposit order was declined. Contact support if you need assistance.`;
+                badgeColor = '#ef4444';
+                badgeBg = 'rgba(239,68,68,0.15)';
+                icon = '✕';
+              }
+
+              combinedNotifs.push({
+                id: s.id,
+                title: title,
+                message: msg,
+                type: 'order',
+                badgeColor: badgeColor,
+                badgeBg: badgeBg,
+                icon: icon,
+                trx_id: s.transaction_id || s.id,
+                created_at: s.submitted_at || s.created_at
+              });
+            });
+          }
+
+        } catch (e) {
+          console.log('Notif fetch error:', e);
+        }
+      }
+
+      // Sort all combined notifications by date (newest first)
+      combinedNotifs.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+
+      if (combinedNotifs.length === 0) {
+        container.innerHTML = `
+          <div style="text-align:center; padding:36px 14px; background:#121622; border-radius:18px; border:1px dashed rgba(255,255,255,0.12);">
+            <div style="width:48px; height:48px; border-radius:50%; background:rgba(0,229,255,0.08); border:1px solid rgba(0,229,255,0.2); display:flex; align-items:center; justify-content:center; margin:0 auto 12px auto; color:#00e5ff;">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+            </div>
+            <p style="font-size:13.5px; color:#94a3b8; margin:0 0 4px 0; font-weight:700;">No Notifications Yet</p>
+            <p style="font-size:11.5px; color:#64748b; margin:0;">Account updates and deposit order confirmations will appear here.</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = combinedNotifs.map(n => {
+        const dateStr = n.created_at ? new Date(n.created_at).toLocaleTimeString('en-US', { hour12: true, hour: '2-digit', minute: '2-digit' }) : 'Recently';
+        
+        return `
+          <div style="background:#121622; border:1px solid ${n.badgeColor ? n.badgeColor + '40' : 'rgba(255,255,255,0.08)'}; border-radius:16px; padding:14px; box-shadow:0 4px 16px rgba(0,0,0,0.3); animation:fade-in 0.2s ease-out;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <span style="font-size:12px; font-weight:800; color:${n.badgeColor || '#00e5ff'}; background:${n.badgeBg || 'rgba(0,229,255,0.12)'}; padding:3px 10px; border-radius:8px; display:inline-flex; align-items:center; gap:4px;">
+                <span>${n.icon || '🔔'}</span> ${n.title}
+              </span>
+              <span style="font-size:10px; color:#64748b;">${dateStr}</span>
+            </div>
+            <p style="font-size:12px; color:#cbd5e1; margin:6px 0 0 0; line-height:1.5; font-weight:500;">${n.message}</p>
+            ${n.trx_id ? `<div style="font-family:monospace; font-size:10px; color:#64748b; margin-top:6px;">TRX: ${n.trx_id}</div>` : ''}
+          </div>
+        `;
+      }).join('');
+    };
+
+    // Register PWA service worker
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./service-worker.js')
+          .then((reg) => console.log('Service Worker registered successfully', reg.scope))
+          .catch((err) => console.error('Service Worker registration failed', err));
+      });
+    }
+  </script>
+
+  <!-- DEDICATED NOTIFICATIONS DRAWER OVERLAY -->
+  <div id="notifications-drawer-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(8,9,13,0.96); backdrop-filter:blur(12px); z-index:99999; overflow-y:auto; padding:20px 16px 100px 16px; box-sizing:border-box;">
+    <div style="max-width:440px; margin:0 auto;">
+      
+      <!-- Top Header -->
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid rgba(255,255,255,0.08);">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00e5ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+          <h3 style="font-size:17px; font-weight:800; color:#ffffff; margin:0;">Notifications</h3>
+        </div>
+        <button type="button" onclick="closeNotificationsModal()" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); color:#ffffff; font-size:14px; font-weight:800; width:34px; height:34px; border-radius:10px; cursor:pointer; display:flex; align-items:center; justify-content:center;">
+          ✕
+        </button>
+      </div>
+
+      <!-- Actions Row -->
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; background:#121622; padding:10px 14px; border-radius:14px; border:1px solid rgba(255,255,255,0.06);">
+        <span style="font-size:12px; color:#94a3b8; font-weight:700;">Latest Announcements</span>
+        <button type="button" onclick="loadNotificationsOverlayContent()" style="background:rgba(0,229,255,0.1); border:1px solid rgba(0,229,255,0.25); color:#00e5ff; font-size:11.5px; font-weight:800; padding:6px 12px; border-radius:8px; cursor:pointer; display:flex; align-items:center; gap:4px;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+          <span>Refresh</span>
+        </button>
+      </div>
+
+      <!-- Notifications List Container -->
+      <div id="notifications-modal-list" style="display:flex; flex-direction:column; gap:10px;">
+        <!-- Dynamic Notifications Cards -->
+      </div>
+
+    </div>
+  </div>
+  </div>
+
+  <!-- DEDICATED TASK SUBMISSIONS HISTORY OVERLAY SCREEN -->
+  <div id="task-history-standalone-screen" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#08090d; z-index:9999; overflow-y:auto; padding:16px 14px 110px 14px; box-sizing:border-box; color:#ffffff; font-family:var(--font-family, sans-serif);">
+    <div style="max-width:440px; margin:0 auto;">
+      <!-- Top Header Bar -->
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; padding-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.08);">
+        <button type="button" onclick="closeSubmissionsHistoryModal()" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); color:#ffffff; font-size:12.5px; font-weight:800; padding:6px 12px; border-radius:10px; cursor:pointer; display:flex; align-items:center; gap:6px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+          <span>Back</span>
+        </button>
+        <h3 style="font-size:16px; font-weight:900; color:#ffffff; margin:0; letter-spacing:0.3px;">Deposit & Refund Tracker</h3>
+        <button type="button" onclick="loadTaskHistoryOverlayContent()" style="background:rgba(0,229,255,0.08); border:1px solid rgba(0,229,255,0.22); color:#00e5ff; width:32px; height:32px; border-radius:10px; cursor:pointer; display:flex; align-items:center; justify-content:center;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#00e5ff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+        </button>
+      </div>
+      <div id="task-history-initial-loader" style="text-align:center; padding:50px 14px;">
+        <div style="width:28px; height:28px; border:3px solid rgba(0,229,255,0.2); border-top-color:#00e5ff; border-radius:50%; animation:spin 0.8s linear infinite; margin:0 auto 12px auto;"></div>
+        <p style="font-size:12.5px; color:#94a3b8; margin:0; font-weight:700;">Loading Tracker...</p>
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>

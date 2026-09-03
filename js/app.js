@@ -47,7 +47,6 @@ async function initApp() {
       updateLastActive(session.user.id);
       setInterval(() => updateLastActive(session.user.id), 30000);
       listenNotifications(); // Start realtime listener
-      showAnnouncementNotice(); // Show notice popup on entry
     } else {
       console.warn("No auth session found during initialization.");
     }
@@ -85,7 +84,7 @@ function setupNavigation() {
         if (settings && settings.maintenance_mode) return;
         await refreshCurrentTabData('home');
         showSpinner(false);
-        showToast('🔄 পেজ রিফ্রেশ করা হয়েছে', 'info');
+        showToast('Page refreshed successfully', 'info');
         if (currentActiveTab === 'home') return;
       }
 
@@ -104,6 +103,15 @@ function setupNavigation() {
 }
 
 async function switchTab(tabId) {
+  if (navigator.vibrate) navigator.vibrate(15);
+  window.scrollTo(0, 0);
+  const mainApp = document.querySelector('.app-main');
+  if (mainApp) mainApp.scrollTop = 0;
+
+  if (typeof closeSubmissionsHistoryModal === 'function') {
+    closeSubmissionsHistoryModal();
+  }
+
   // Always check global settings & maintenance mode when switching tabs
   const settings = await loadGlobalSettings();
   if (settings && settings.maintenance_mode) return;
@@ -130,6 +138,12 @@ async function switchTab(tabId) {
     }
   });
 
+  // Automatically hide floating support button when viewing support tab
+  const floatingSupportBtn = document.getElementById('floating-support-btn');
+  if (floatingSupportBtn) {
+    floatingSupportBtn.style.display = (tabId === 'support') ? 'none' : 'flex';
+  }
+
   // Load target tab data
   showSpinner(true);
   try {
@@ -152,8 +166,17 @@ async function refreshCurrentTabData(tabId) {
     case 'wallet':
       if (typeof loadWalletData === 'function') await loadWalletData();
       break;
+    case 'referral':
+      if (typeof loadReferralTabData === 'function') await loadReferralTabData();
+      break;
     case 'profile':
       if (typeof loadProfileData === 'function') await loadProfileData();
+      break;
+    case 'support':
+      if (typeof loadSupportMessages === 'function') await loadSupportMessages();
+      break;
+    case 'notifications':
+      if (typeof loadNotifications === 'function') await loadNotifications();
       break;
   }
   // Always reload notifications unread badge
@@ -166,15 +189,28 @@ function setupNotificationsDrawer() {
   const drawer = document.getElementById('notifications-drawer');
   const closeBtn = document.getElementById('notifications-close-btn');
 
-  bellBtn.addEventListener('click', () => {
-    drawer.classList.add('active');
-    markAllNotificationsRead();
-  });
+  if (bellBtn && !bellBtn.dataset.listenerWired) {
+    bellBtn.dataset.listenerWired = 'true';
+    bellBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (navigator.vibrate) navigator.vibrate(15);
 
-  closeBtn.addEventListener('click', () => {
-    drawer.classList.remove('active');
-    loadNotifications(); // Reload badge status
-  });
+      if (typeof openNotificationsModal === 'function') {
+        openNotificationsModal();
+      } else if (drawer) {
+        drawer.classList.add('active');
+      }
+      if (typeof markAllNotificationsRead === 'function') markAllNotificationsRead();
+    });
+  }
+
+  if (closeBtn && drawer) {
+    closeBtn.addEventListener('click', () => {
+      drawer.classList.remove('active');
+      if (typeof loadNotifications === 'function') loadNotifications();
+    });
+  }
 }
 
 function setupGlobalListeners() {
@@ -231,33 +267,9 @@ function showSpinner(show) {
   if (spinner) spinner.classList.toggle('active', show);
 }
 
-// Show announcement/notice popup overlay on load
+// Show announcement/notice popup overlay on load (Disabled per user request)
 function showAnnouncementNotice() {
-  const modal = document.getElementById('modal-overlay-notice');
-  const closeBtn = document.getElementById('btn-close-notice');
-  const timerEl = document.getElementById('notice-timer');
-  if (!modal || !closeBtn || !timerEl) return;
-
-  // Show notice modal
-  modal.classList.add('active');
-
-  let secondsLeft = 15;
-  timerEl.innerText = secondsLeft;
-
-  let autoCloseTimer = setInterval(() => {
-    secondsLeft--;
-    if (timerEl) timerEl.innerText = secondsLeft;
-    if (secondsLeft <= 0) {
-      clearInterval(autoCloseTimer);
-      modal.classList.remove('active');
-    }
-  }, 1000);
-
-  // Close manually
-  closeBtn.onclick = () => {
-    clearInterval(autoCloseTimer);
-    modal.classList.remove('active');
-  };
+  return;
 }
 
 // Global settings state

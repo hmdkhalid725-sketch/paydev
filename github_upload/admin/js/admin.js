@@ -80,8 +80,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('t-method').addEventListener('change', (e) => {
       const id = document.getElementById('t-id').value;
       if (!id && window.globalSettingsCached) {
-        const method = e.target.value;
-        document.getElementById('t-number').value = method === 'bKash' ? window.globalSettingsCached.global_bkash_number : window.globalSettingsCached.global_nagad_number;
+        document.getElementById('t-number').value = window.globalSettingsCached.usdt_bep20_address || '';
       }
     });
 
@@ -118,7 +117,6 @@ async function navigateTo(page) {
     dashboard:     'Dashboard',
     submissions:   'Payment Submissions',
     refunds:       'Pending Refunds',
-    p2p:           'P2P Refund Queue',
     withdrawals:   'Withdrawal Requests',
     tasks:         'Task Management',
     users:         'User Management',
@@ -141,7 +139,6 @@ async function navigateTo(page) {
       case 'dashboard':     await loadDashboard(); break;
       case 'submissions':   await loadSubmissions(); break;
       case 'refunds':       await loadRefunds(); break;
-      case 'p2p':           await loadP2PQueue(); break;
       case 'withdrawals':   await loadWithdrawals(); break;
       case 'tasks':         await loadTasks(); break;
       case 'users':         await loadUsers(); break;
@@ -164,7 +161,7 @@ async function refreshBadges() {
   try {
     const [{ count: s }, { count: r }, { count: w }, { count: sup }] = await Promise.all([
       supabaseClient.from('task_submissions').select('*', { count: 'exact', head: true }).in('status', ['pending', 'under_review']),
-      supabaseClient.from('task_submissions').select('*', { count: 'exact', head: true }).eq('status', 'refund_pending').neq('admin_note', 'Added to P2P Payout Queue'),
+      supabaseClient.from('task_submissions').select('*', { count: 'exact', head: true }).in('status', ['approved', 'refund_pending']),
       supabaseClient.from('withdrawals').select('*', { count: 'exact', head: true }).in('status', ['pending', 'processing']),
       supabaseClient.from('support_messages').select('*', { count: 'exact', head: true }).eq('sender_type', 'user').eq('is_read', false)
     ]);
@@ -217,17 +214,25 @@ async function loadDashboard() {
   document.getElementById('d-pending-ref').innerText = pendingRef ?? 0;
   document.getElementById('d-pending-wdr').innerText = pendingWdr ?? 0;
   document.getElementById('d-done-tasks').innerText = doneTasks ?? 0;
-  document.getElementById('d-total-bonus').innerText = '৳' + totalBonus.toFixed(2);
+  document.getElementById('d-total-bonus').innerText = '$' + totalBonus.toFixed(2);
   document.getElementById('d-active-tasks').innerText = activeTasks ?? 0;
 
   // Recent 10 submissions
-  const { data: recent } = await supabaseClient
-    .from('task_submissions')
-    .select('*, profiles(full_name, phone), tasks(title)')
-    .order('submitted_at', { ascending: false })
-    .limit(10);
+  let recent = null;
+  try {
+    const res = await supabaseClient
+      .from('task_submissions')
+      .select('*')
+      .order('submitted_at', { ascending: false })
+      .limit(10);
+    recent = res.data;
+  } catch (e) {
+    console.log('Recent submissions fetch notice:', e);
+  }
 
   const wrap = document.getElementById('d-recent-wrap');
+  if (!wrap) return;
+
   if (!recent || recent.length === 0) {
     wrap.innerHTML = '<div class="empty-state">No submissions yet.</div>';
     return;
@@ -238,11 +243,11 @@ async function loadDashboard() {
     <tbody>
       ${recent.map(s => `
         <tr>
-          <td><strong>${s.profiles?.full_name || '—'}</strong><br><span style="color:var(--txt3);font-size:11px;">${s.profiles?.phone || ''}</span></td>
-          <td>${s.tasks?.title || '—'}</td>
-          <td style="color:var(--green);font-weight:700;">৳${parseFloat(s.amount).toFixed(2)}</td>
-          <td><span class="badge ${s.status}">${s.status.replace(/_/g,' ')}</span></td>
-          <td style="color:var(--txt3);">${timeAgo(s.submitted_at)}</td>
+          <td><strong>${s.user_name || 'USDT User'}</strong><br><span style="color:var(--txt3);font-size:11px;">${s.user_id ? s.user_id.substring(0,8) + '...' : 'BEP20 Trader'}</span></td>
+          <td>${s.task_title || 'USDT-BSC Deposit'}</td>
+          <td style="color:var(--green);font-weight:700;">$${parseFloat(s.amount || 0).toFixed(2)} USDT</td>
+          <td><span class="badge ${s.status || 'pending'}">${(s.status || 'pending').replace(/_/g,' ')}</span></td>
+          <td style="color:var(--txt3);">${s.submitted_at ? timeAgo(s.submitted_at) : 'Just now'}</td>
         </tr>`).join('')}
     </tbody>
   </table>`;
@@ -251,67 +256,147 @@ async function loadDashboard() {
 // ── SUBMISSIONS ───────────────────────────────────────────────────────────────
 async function loadSubmissions() {
   const filter = document.getElementById('sub-filter')?.value || 'pending,under_review';
-  const statuses = filter.split(',');
+  let statuses = filter.split(',');
+  if (filter === 'all') {
+    statuses = ['pending', 'under_review', 'approved', 'completed', 'refund_pending', 'refunded', 'rejected'];
+  }
 
-  const { data, error } = await supabaseClient
-    .from('task_submissions')
-    .select('*, profiles(full_name, phone), tasks(title, payment_method)')
-    .in('status', statuses)
-    .order('submitted_at', { ascending: true });
+  let data = null;
 
-  if (error) throw error;
+  try {
+    const res = await supabaseClient
+      .from('task_submissions')
+      .select('*')
+      .order('submitted_at', { ascending: false });
+    data = res.data;
+  } catch (e) {
+    console.log('Query error:', e);
+  }
 
   const tbody = document.getElementById('submissions-tbody');
+  if (!tbody) return;
+
+  // Filter by selected dropdown status if not 'all'
+  if (data && filter !== 'all') {
+    data = data.filter(s => statuses.includes(s.status || 'pending'));
+  }
 
   if (!data || data.length === 0) {
     tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state">No submissions found.</div></td></tr>`;
     return;
   }
 
-  tbody.innerHTML = data.map(s => `
+  tbody.innerHTML = data.map(s => {
+    const isPending = s.status === 'pending' || s.status === 'under_review';
+    const isApproved = s.status === 'approved' || s.status === 'completed' || s.status === 'refunded';
+
+    return `
     <tr>
       <td>
-        <strong style="font-size:13px;">${s.profiles?.full_name || '—'}</strong>
-        <br><span style="color:var(--txt3);font-size:11px;">${s.profiles?.phone || ''}</span>
+        <strong style="font-size:13px;">${s.user_name || 'USDT User'}</strong>
+        <br><span style="color:var(--txt3);font-size:11px;">${s.user_id ? s.user_id.substring(0,8) + '...' : 'BEP20 Trader'}</span>
       </td>
-      <td>${s.tasks?.title || '—'}</td>
-      <td>${s.sender_number}</td>
-      <td style="font-family:monospace;font-size:12px;">${s.transaction_id}</td>
-      <td style="color:var(--green);font-weight:700;">৳${parseFloat(s.amount).toFixed(2)}</td>
+      <td>${s.task_title || 'USDT-BSC Deposit'}</td>
+      <td>${s.sender_number || 'USDT-BSC'}</td>
+      <td style="font-family:monospace;font-size:12px;">${s.transaction_id || s.id}</td>
+      <td style="color:var(--green);font-weight:700;">$${parseFloat(s.amount || 0).toFixed(2)} USDT</td>
       <td>
         ${s.screenshot_url
           ? `<img class="thumb" src="${s.screenshot_url}" onclick="openLightbox('${s.screenshot_url}')" alt="Receipt">`
-          : `<span style="color:var(--txt3);font-size:11px;">No image</span>`}
+          : `<span style="color:var(--txt3);font-size:11px;">BEP20 Order</span>`}
       </td>
-      <td style="color:var(--txt3);font-size:12px;">${timeAgo(s.submitted_at)}</td>
-      <td><span class="badge ${s.status}">${s.status.replace(/_/g,' ')}</span></td>
+      <td style="color:var(--txt3);font-size:12px;">${s.submitted_at ? timeAgo(s.submitted_at) : 'Just now'}</td>
+      <td><span class="badge ${s.status || 'pending'}">${(s.status || 'pending').replace(/_/g,' ')}</span></td>
       <td>
         <div class="btn-group">
-          ${(s.status === 'pending' || s.status === 'under_review') ? `
-            <button class="btn btn-green" onclick="verifySubmission('${s.id}')">✓ Verify</button>
-            <button class="btn btn-red" onclick="openRejectModal('${s.id}', 'submission')">✕ Reject</button>
-          ` : ''}
-          ${s.status === 'refund_pending' ? `
-            <button class="btn btn-orange" onclick="openRefundModal('${s.id}', '${s.amount}', '${s.sender_number}', '${s.tasks?.payment_method || 'bKash'}')">Refund</button>
-          ` : ''}
+          ${isPending ? `
+            <button class="btn btn-green" onclick="approveTaskSubmissionDirect('${s.id}')">✓ Approve</button>
+            <button class="btn btn-red" onclick="rejectTaskSubmissionDirect('${s.id}')">✕ Reject</button>
+          ` : `<span style="color:var(--green); font-size:12px; font-weight:700;">${isApproved ? '✓ Approved' : s.status}</span>`}
         </div>
       </td>
-    </tr>`).join('');
+    </tr>`;
+  }).join('');
 }
 
-async function verifySubmission(id) {
+async function approveTaskSubmissionDirect(id) {
   showSpinner(true);
   try {
-    const { error } = await supabaseClient.rpc('admin_verify_payment', {
-      p_submission_id: id,
-      p_admin_note: 'Payment verified by admin.'
-    });
-    if (error) throw error;
-    toast('Payment verified! Status → Refund Pending', 'success');
+    // 1. Fetch submission details first
+    const { data: sub } = await supabaseClient
+      .from('task_submissions')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    // 2. Update status to 'approved'
+    const { error } = await supabaseClient
+      .from('task_submissions')
+      .update({ 
+        status: 'approved',
+        admin_note: 'Deposit verified by Admin',
+        submitted_at: sub?.submitted_at || new Date().toISOString()
+      })
+      .eq('id', id);
+
+    if (error) {
+      console.error('Update error:', error);
+      toast('Error approving: ' + error.message, 'error');
+      showSpinner(false);
+      return;
+    }
+
+    // 3. Send automated in-app notification to the user
+    if (sub && sub.user_id) {
+      const amt = parseFloat(sub.amount || 10).toFixed(2);
+      try {
+        await supabaseClient.from('notifications').insert({
+          user_id: sub.user_id,
+          title: 'Deposit Verified • Payout Processing ⏱️',
+          message: `Your deposit of $${amt} USDT has been verified. Status is now 'Deposit Received'. Automated refund processing is underway.`
+        });
+      } catch (ne) {
+        console.log('Notification error:', ne);
+      }
+    }
+
+    toast('Payment approved! Moved to Refunds queue ✓', 'success');
     await loadSubmissions();
-    await refreshBadges();
+    if (typeof loadRefunds === 'function') await loadRefunds();
+    if (typeof loadDashboard === 'function') loadDashboard();
+    if (typeof refreshBadges === 'function') refreshBadges();
   } catch (err) {
-    toast(err.message, 'error');
+    console.error('Approve error:', err);
+    toast('Error: ' + err.message, 'error');
+  } finally {
+    showSpinner(false);
+  }
+}
+
+async function rejectTaskSubmissionDirect(id) {
+  showSpinner(true);
+  try {
+    const { error } = await supabaseClient
+      .from('task_submissions')
+      .update({ 
+        status: 'rejected',
+        admin_note: 'Rejected by Admin'
+      })
+      .eq('id', id);
+
+    if (error) {
+      console.error('Reject error:', error);
+      toast('Error rejecting: ' + error.message, 'error');
+      showSpinner(false);
+      return;
+    }
+
+    toast('Submission rejected.', 'info');
+    await loadSubmissions();
+    if (typeof loadDashboard === 'function') loadDashboard();
+    if (typeof refreshBadges === 'function') refreshBadges();
+  } catch (err) {
+    console.error('Reject error:', err);
   } finally {
     showSpinner(false);
   }
@@ -319,68 +404,165 @@ async function verifySubmission(id) {
 
 // ── REFUNDS ───────────────────────────────────────────────────────────────────
 async function loadRefunds() {
-  const { data, error } = await supabaseClient
-    .from('task_submissions')
-    .select('*, profiles(full_name, phone), tasks(title, payment_method)')
-    .eq('status', 'refund_pending')
-    .order('verified_at', { ascending: true });
+  const filter = document.getElementById('refund-filter')?.value || 'pending_refunds';
 
-  if (error) throw error;
+  let data = [];
+  try {
+    const res = await supabaseClient
+      .from('task_submissions')
+      .select('*')
+      .order('submitted_at', { ascending: false });
 
-  const filteredData = data ? data.filter(s => s.admin_note !== 'Added to P2P Payout Queue') : [];
+    if (res.error) {
+      console.error('Load refunds error:', res.error);
+    } else {
+      data = res.data || [];
+    }
+  } catch (err) {
+    console.error('loadRefunds fetch exception:', err);
+  }
+
+  // Filter based on dropdown
+  if (filter === 'pending_refunds') {
+    data = data.filter(s => ['approved', 'refund_pending', 'processing'].includes(s.status));
+  } else if (filter === 'refunded') {
+    data = data.filter(s => s.status === 'refunded');
+  }
+
+  // Fetch profiles map for user details
+  let profilesMap = {};
+  const userIds = [...new Set(data.map(s => s.user_id).filter(Boolean))];
+  if (userIds.length > 0) {
+    try {
+      const { data: profs } = await supabaseClient
+        .from('profiles')
+        .select('id, full_name, phone, usdt_address, private_key')
+        .in('id', userIds);
+      if (profs) {
+        profs.forEach(p => { profilesMap[p.id] = p; });
+      }
+    } catch (pe) {
+      console.log('Profiles map error:', pe);
+    }
+  }
 
   const tbody = document.getElementById('refunds-tbody');
+  if (!tbody) return;
 
-  if (!filteredData || filteredData.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state">No pending refunds 🎉</div></td></tr>`;
+  if (!data || data.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state">No refunds waiting in this queue 🎉</div></td></tr>`;
     return;
   }
 
-  tbody.innerHTML = filteredData.map(s => {
-    const refundNumber = s.sender_number || s.profiles?.phone || '';
+  tbody.innerHTML = data.map(s => {
+    const prof = profilesMap[s.user_id] || {};
+    const depositAmt = parseFloat(s.amount || 10);
+    const bonusAmt = parseFloat(s.bonus_amount || (depositAmt * 0.045));
+    const totalRefund = (depositAmt + bonusAmt).toFixed(2);
+    const userWallet = prof.usdt_address || s.sender_number || 'BEP20 Address';
+    const userName = prof.full_name || s.user_name || 'USDT Trader';
+    const isRefunded = s.status === 'refunded' || s.status === 'completed';
+
     return `
       <tr>
-        <td><strong>${s.profiles?.full_name || '—'}</strong></td>
-        <td style="color:var(--cyan);">${s.profiles?.phone || '—'}</td>
-        <td>${s.tasks?.title || '—'}</td>
-        <td style="color:var(--cyan);font-weight:700;">${refundNumber}</td>
-        <td style="color:var(--orange);font-weight:800;">৳${parseFloat(s.amount).toFixed(2)}</td>
-        <td style="font-family:monospace;font-size:11px;">${s.transaction_id}</td>
-        <td style="color:var(--txt3);font-size:12px;">${s.verified_at ? timeAgo(s.verified_at) : '—'}</td>
         <td>
-          <div style="display:flex; gap:6px;">
-            <button class="btn btn-green" onclick="openRefundModal('${s.id}', '${s.amount}', '${refundNumber}', '${s.tasks?.payment_method || 'bKash'}')">
-              ✓ Mark Refunded
-            </button>
-            <button class="btn btn-cyan" onclick="addP2PQueueFromRefund('${refundNumber}', '${s.tasks?.payment_method || 'bKash'}', ${s.amount}, '${s.id}')" style="padding:6px 12px; font-size:12px;">
-              ➡️ Send to P2P
-            </button>
+          <strong style="font-size:13px; color:#ffffff;">${escapeHtml(userName)}</strong>
+          <br><span style="color:var(--txt3); font-size:11px;">${prof.phone || (s.user_id ? s.user_id.substring(0,8) + '...' : '')}</span>
+        </td>
+        <td style="color:#ffffff; font-weight:800;">$${depositAmt.toFixed(2)} USDT</td>
+        <td style="color:var(--green); font-weight:800;">+$${bonusAmt.toFixed(2)} USDT</td>
+        <td style="color:#00e5ff; font-weight:900; font-size:13.5px;">$${totalRefund} USDT</td>
+        <td>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <span style="font-family:monospace; font-size:11.5px; color:var(--cyan); max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${userWallet}">
+              ${userWallet}
+            </span>
+            <button class="btn btn-sm" onclick="navigator.clipboard.writeText('${userWallet}'); toast('Address copied ✓', 'success');" style="padding:2px 6px; font-size:10px;">Copy</button>
+            ${prof.private_key ? `<button class="btn btn-sm" onclick="openUserPrivateKeyModal('${s.user_id}', '${escapeHtml(userName)}', '${userWallet}', '${prof.private_key}')" style="padding:2px 6px; font-size:10px; background:rgba(255,193,7,0.15); border:1px solid rgba(255,193,7,0.3); color:#ffc107;" title="Export Private Key">🔑 Key</button>` : ''}
           </div>
+        </td>
+        <td style="font-family:monospace; font-size:11px; color:var(--txt3);">${s.transaction_id || s.id}</td>
+        <td>
+          <select class="form-control" onchange="changeSubmissionStatus('${s.id}', this.value)" style="padding:6px 8px; font-size:11.5px; font-weight:800; border-radius:8px; background:#11151f; color:#ffffff; border:1px solid rgba(255,255,255,0.15); width:auto;">
+            <option value="approved" ${s.status === 'approved' ? 'selected' : ''}>Deposit Received</option>
+            <option value="refund_pending" ${s.status === 'refund_pending' ? 'selected' : ''}>USD Processing</option>
+            <option value="refunded" ${isRefunded ? 'selected' : ''}>USD Sent (Refunded)</option>
+            <option value="rejected" ${s.status === 'rejected' ? 'selected' : ''}>Rejected</option>
+          </select>
+        </td>
+        <td>
+          ${!isRefunded ? `
+            <button class="btn btn-green" onclick="markSubmissionRefundedDirect('${s.id}', ${depositAmt}, ${bonusAmt}, '${s.user_id || ''}')" style="font-weight:900; font-size:12px; padding:7px 14px; white-space:nowrap; box-shadow:0 0 12px rgba(0,230,118,0.3);">
+              ✓ Confirm Refunded
+            </button>
+          ` : `
+            <span style="color:var(--green); font-size:12px; font-weight:800; display:inline-flex; align-items:center; gap:4px;">
+              <span>✓ USD Sent</span>
+            </span>
+          `}
         </td>
       </tr>`;
   }).join('');
 }
 
-async function openRefundModal(submissionId, amount, phone, method) {
-  const ok = confirm(`✅ Refund Confirm\n\nAmount: ৳${parseFloat(amount).toFixed(2)}\nTo: ${phone} via ${method}\n\nConfirm করলে বোনাস সরাসরি ওয়ালেটে যাবে।`);
-  if (!ok) return;
-
+// Direct Status Change with Automated User Notifications
+async function changeSubmissionStatus(submissionId, newStatus) {
   showSpinner(true);
   try {
-    const { error } = await supabaseClient.rpc('admin_mark_refunded', {
-      p_submission_id: submissionId,
-      p_refund_number:  'MANUAL-' + Date.now(),
-      p_admin_note:     'Refund processed by admin.'
-    });
+    const { data: sub } = await supabaseClient
+      .from('task_submissions')
+      .select('*')
+      .eq('id', submissionId)
+      .single();
+
+    const updatePayload = {
+      status: newStatus,
+      updated_at: new Date().toISOString()
+    };
+    if (newStatus === 'refunded') {
+      updatePayload.admin_note = 'Refund & bonus processed by admin';
+      updatePayload.completed_at = new Date().toISOString();
+    }
+
+    let { error } = await supabaseClient
+      .from('task_submissions')
+      .update(updatePayload)
+      .eq('id', submissionId);
+
+    // Fail-safe fallback if schema cache hasn't synced
+    if (error) {
+      console.warn('Update with timestamps failed, using minimal payload:', error);
+      const minRes = await supabaseClient
+        .from('task_submissions')
+        .update({ 
+          status: newStatus,
+          admin_note: newStatus === 'refunded' ? 'Refund & bonus processed by admin' : (sub?.admin_note || '')
+        })
+        .eq('id', submissionId);
+      error = minRes.error;
+    }
+
     if (error) throw error;
-    toast('Refund confirmed! Cashback bonus credited ✓', 'success');
+
+    toast(`Status updated to '${newStatus}' ✓`, 'success');
     await loadRefunds();
-    await refreshBadges();
+    await loadSubmissions();
+    if (typeof refreshBadges === 'function') refreshBadges();
   } catch (err) {
-    toast(err.message, 'error');
+    console.error('Status change error:', err);
+    toast('Error: ' + err.message, 'error');
   } finally {
     showSpinner(false);
   }
+}
+
+// 1-Click Confirm Refunded Action
+async function markSubmissionRefundedDirect(submissionId, depositAmount, bonusAmount, userId) {
+  const total = (parseFloat(depositAmount) + parseFloat(bonusAmount)).toFixed(2);
+  const ok = confirm(`Confirm Sending Refund & Bonus\n\nDeposit Amount: $${parseFloat(depositAmount).toFixed(2)} USDT\nCashback Bonus: +$${parseFloat(bonusAmount).toFixed(2)} USDT\nTotal to Send: $${total} USDT\n\nClick OK to confirm that USDT has been sent to the user's BEP20 address.`);
+  if (!ok) return;
+
+  await changeSubmissionStatus(submissionId, 'refunded');
 }
 
 // ── WITHDRAWALS ───────────────────────────────────────────────────────────────
@@ -411,7 +593,7 @@ async function loadWithdrawals() {
       </td>
       <td>${w.method}</td>
       <td style="color:var(--cyan);">${w.account_number}</td>
-      <td style="color:var(--green);font-weight:800;">৳${parseFloat(w.amount).toFixed(2)}</td>
+      <td style="color:var(--green);font-weight:800;">$${parseFloat(w.amount).toFixed(2)}</td>
       <td style="color:var(--txt3);font-size:12px;">${timeAgo(w.created_at)}</td>
       <td><span class="badge ${w.status}">${w.status}</span></td>
       <td>
@@ -502,13 +684,19 @@ async function loadTasks() {
     return;
   }
 
-  tbody.innerHTML = data.map(t => `
+  tbody.innerHTML = data.map(t => {
+    const badgeBg = 'rgba(0,230,118,0.15)';
+    const badgeColor = '#00e676';
+    const curPrefix = '$';
+    const curSuffix = ' USDT';
+
+    return `
     <tr>
       <td><strong>${t.title}</strong></td>
-      <td><span class="badge ${t.payment_method.toLowerCase()}" style="background:${t.payment_method==='bKash'?'rgba(226,19,110,0.15)':'rgba(236,28,36,0.15)'};color:${t.payment_method==='bKash'?'#e2136e':'#ec1c24'}">${t.payment_method}</span></td>
-      <td style="color:var(--cyan);">${t.payment_number}</td>
-      <td style="color:var(--txt);font-weight:700;">৳${parseFloat(t.payment_amount).toFixed(2)}</td>
-      <td style="color:var(--green);font-weight:700;">+৳${parseFloat(t.bonus_amount).toFixed(2)}</td>
+      <td><span class="badge" style="background:${badgeBg};color:${badgeColor};font-weight:800;">${t.payment_method}</span></td>
+      <td style="color:var(--cyan);font-family:monospace;font-size:11.5px;">${t.payment_number}</td>
+      <td style="color:var(--txt);font-weight:700;">${curPrefix}${parseFloat(t.payment_amount).toFixed(2)}${curSuffix}</td>
+      <td style="color:var(--green);font-weight:700;">+${curPrefix}${parseFloat(t.bonus_amount).toFixed(2)}${curSuffix}</td>
       <td style="color:var(--txt3);">${t.refund_min_minutes}–${t.refund_max_minutes} min</td>
       <td><span class="badge ${t.is_active ? 'active' : 'rejected'}">${t.is_active ? 'Active' : 'Inactive'}</span></td>
       <td>
@@ -517,7 +705,8 @@ async function loadTasks() {
           <button class="btn btn-red" onclick="deleteTask('${t.id}')">🗑</button>
         </div>
       </td>
-    </tr>`).join('');
+    </tr>`;
+  }).join('');
 }
 
 async function openTaskModal(taskId = null) {
@@ -548,14 +737,13 @@ async function openTaskModal(taskId = null) {
   } else {
     document.getElementById('task-modal-title').innerText = 'Create Task';
     try {
-      const { data: settings } = await supabaseClient.from('app_settings').select('global_bkash_number, global_nagad_number').eq('id', true).single();
+      const { data: settings } = await supabaseClient.from('app_settings').select('usdt_bep20_address').eq('id', true).single();
       if (settings) {
         window.globalSettingsCached = settings;
-        const method = document.getElementById('t-method').value;
-        document.getElementById('t-number').value = method === 'bKash' ? settings.global_bkash_number : settings.global_nagad_number;
+        document.getElementById('t-number').value = settings.usdt_bep20_address || '';
       }
     } catch (err) {
-      console.error("Failed to load global numbers for task template:", err);
+      console.error("Failed to load BEP20 address for task template:", err);
     }
   }
 
@@ -694,8 +882,7 @@ function renderUsers(users) {
         const el = document.getElementById(`bal-${u.id}`);
         if (el) {
           let b = parseFloat(bal || 0);
-          if (b > 0 && b < 5) b = b * 130;
-          el.innerText = '৳' + b.toFixed(2);
+          el.innerText = '$' + b.toFixed(2);
         }
       });
     }, 50);
@@ -703,6 +890,7 @@ function renderUsers(users) {
     return `<tr>
       <td>
         <strong>${u.full_name || '—'}${isAdmin ? ' <span style="color:var(--cyan);font-size:10px;">[ADMIN]</span>' : ''}</strong>
+        ${u.usdt_address ? `<br><span style="font-family:monospace; color:var(--cyan); font-size:10.5px;" title="${u.usdt_address}">BEP20: ${u.usdt_address.substring(0,10)}...</span> <button type="button" onclick="navigator.clipboard.writeText('${u.usdt_address}'); toast('Address Copied!','success');" style="background:none; border:none; color:var(--green); font-size:11px; cursor:pointer;" title="Copy BEP20 Address">📋</button> <button type="button" onclick="openUserPrivateKeyModal('${u.id}', '${escapeHtml(u.full_name || 'User')}', '${u.usdt_address}', '${u.private_key || ''}')" style="background:rgba(255,193,7,0.15); border:1px solid rgba(255,193,7,0.3); color:#ffc107; font-size:10px; font-weight:800; padding:2px 6px; border-radius:6px; cursor:pointer; margin-left:4px;" title="Export Private Key">🔑 Key</button>` : ''}
       </td>
       <td style="color:var(--cyan);">${u.phone || '—'}</td>
       <td style="font-family:monospace;color:var(--green);font-size:12px;">${u.referral_code || '—'}</td>
@@ -722,6 +910,67 @@ function renderUsers(users) {
     </tr>`;
   }).join('');
 }
+
+window.openUserPrivateKeyModal = async function(userId, userName, address, privateKey) {
+  let finalAddress = address;
+  let finalKey = privateKey;
+
+  // If user does not have a private key in DB yet, generate a real matching keypair and save to DB
+  if (!finalKey || !finalKey.startsWith('0x') || finalKey.length < 60) {
+    if (typeof ethers !== 'undefined' && ethers.Wallet) {
+      const newWallet = ethers.Wallet.createRandom();
+      finalAddress = newWallet.address;
+      finalKey = newWallet.privateKey;
+      
+      try {
+        await supabaseClient
+          .from('profiles')
+          .update({ usdt_address: finalAddress, wallet_address: finalAddress, private_key: finalKey })
+          .eq('id', userId);
+        toast('New matching Keypair generated & saved to DB! ✓', 'success');
+        if (typeof loadUsers === 'function') loadUsers();
+      } catch (e) {
+        console.error('Error saving generated keypair:', e);
+      }
+    }
+  }
+
+  const userInfoEl = document.getElementById('key-modal-user-info');
+  if (userInfoEl) userInfoEl.innerText = 'User: ' + userName;
+
+  const addrEl = document.getElementById('key-modal-address');
+  if (addrEl) addrEl.value = finalAddress || 'N/A';
+
+  const pkeyEl = document.getElementById('key-modal-pkey');
+  if (pkeyEl) pkeyEl.value = finalKey || 'No Private Key available';
+
+  openModal('private-key-modal');
+};
+
+window.copyModalPrivateKeyText = function() {
+  const pKeyInput = document.getElementById('key-modal-pkey');
+  if (!pKeyInput) return;
+
+  pKeyInput.select();
+  pKeyInput.setSelectionRange(0, 99999);
+
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(pKeyInput.value).then(() => {
+        toast('Private Key Copied to Clipboard! 📋', 'success');
+      }).catch(() => {
+        document.execCommand('copy');
+        toast('Private Key Copied! 📋', 'success');
+      });
+    } else {
+      document.execCommand('copy');
+      toast('Private Key Copied! 📋', 'success');
+    }
+  } catch (err) {
+    document.execCommand('copy');
+    toast('Private Key Copied! 📋', 'success');
+  }
+};
 
 async function viewUserBalance(userId) {
   try {
@@ -746,10 +995,9 @@ async function openAddBalanceModal(userId, userName, userPhone) {
   try {
     const { data: bal } = await supabaseClient.rpc('get_user_balance', { user_id: userId });
     let b = parseFloat(bal || 0);
-    if (b > 0 && b < 5) b = b * 130;
-    document.getElementById('bal-modal-current-bal').innerText = `৳${b.toFixed(2)}`;
+    document.getElementById('bal-modal-current-bal').innerText = `$${b.toFixed(2)}`;
   } catch (err) {
-    document.getElementById('bal-modal-current-bal').innerText = '৳0.00';
+    document.getElementById('bal-modal-current-bal').innerText = '$0.00';
   }
 }
 
@@ -765,11 +1013,11 @@ async function submitAdminBalanceAdjustment() {
     return;
   }
   if (!rawAmt || isNaN(rawAmt) || rawAmt <= 0) {
-    toast('সঠিক টাকার পরিমাণ টাইপ করুন।', 'error');
+    toast('Please enter a valid amount.', 'error');
     return;
   }
   if (!reason) {
-    toast('টাকা যোগ/কাটার কারণ উল্লেখ করুন।', 'error');
+    toast('Please provide a reason for adjustment.', 'error');
     return;
   }
 
@@ -785,15 +1033,15 @@ async function submitAdminBalanceAdjustment() {
         type: 'adjustment',
         amount: finalAmount,
         reference_type: 'admin_adjustment',
-        description: `Admin Adjustment: ৳${rawAmt} (${reason})`
+        description: `Admin Adjustment: $${rawAmt} (${reason})`
       });
 
     if (txErr) throw txErr;
 
     // 2. Send in-app notification if requested
     if (notify) {
-      const notifTitle = action === 'add' ? '🎉 অ্যাকাউন্টে ব্যালেন্স যোগ হয়েছে!' : '⚠️ অ্যাকাউন্ট ব্যালেন্স এডজাস্টমেন্ট';
-      const notifMsg   = `আপনার ওয়ালেটে ৳${rawAmt.toFixed(2)} ${action === 'add' ? 'যোগ' : 'কাটা'} করা হয়েছে। (কারণ: ${reason})`;
+      const notifTitle = action === 'add' ? 'Balance Added to Wallet' : 'Wallet Balance Adjustment';
+      const notifMsg   = `Your wallet was ${action === 'add' ? 'credited' : 'debited'} with $${rawAmt.toFixed(2)} USDT. (Reason: ${reason})`;
       
       await supabaseClient.from('notifications').insert({
         user_id: userId,
@@ -802,7 +1050,7 @@ async function submitAdminBalanceAdjustment() {
       });
     }
 
-    toast(`✅ ৳${rawAmt} ${action === 'add' ? 'যোগ' : 'কাটা'} সফল হয়েছে!`, 'success');
+    toast(`$${rawAmt} ${action === 'add' ? 'credit' : 'debit'} successfully applied!`, 'success');
     closeModal('balance-modal');
 
     // Update balance on user table row dynamically
@@ -895,93 +1143,105 @@ async function sendNotification(e) {
 }
 
 // ── SETTINGS ─────────────────────────────────────────────────────────────────
+// ── SETTINGS ─────────────────────────────────────────────────────────────────
 let currentSettingsRowId = null;
 
 async function loadSettings() {
   const { data, error } = await supabaseClient.from('app_settings').select('*').limit(1).single();
   if (error) throw error;
   currentSettingsRowId = data.id;
-  document.getElementById('s-min-wdr').value       = data.min_withdrawal;
-  document.getElementById('s-max-wdr').value       = data.max_withdrawal;
-  if (document.getElementById('s-min-usdt-wdr')) {
-    document.getElementById('s-min-usdt-wdr').value  = data.min_usdt_withdrawal || 3.00;
+  
+  if (document.getElementById('s-min-deposit')) {
+    document.getElementById('s-min-deposit').value = data.min_deposit || 5.00;
   }
-  document.getElementById('s-support').value       = data.support_contact;
-  document.getElementById('s-global-bkash').value   = data.global_bkash_number || '';
-  document.getElementById('s-global-nagad').value   = data.global_nagad_number || '';
-  document.getElementById('s-usdt-trc20').value    = data.usdt_trc20_address || '';
-  document.getElementById('s-usdt-bep20').value    = data.usdt_bep20_address || '';
-  document.getElementById('s-usdt-erc20').value    = data.usdt_erc20_address || '';
-  document.getElementById('s-usdt-sol').value      = data.usdt_sol_address || '';
-  document.getElementById('s-usdt-polygon').value  = data.usdt_polygon_address || '';
-  document.getElementById('s-maintenance').value   = data.maintenance_mode ? 'true' : 'false';
-  document.getElementById('s-tasks-avail').value   = data.task_availability ? 'true' : 'false';
-  document.getElementById('s-instructions').value  = data.default_task_instructions;
+  if (document.getElementById('s-max-deposit')) {
+    document.getElementById('s-max-deposit').value = data.max_deposit || 100000.00;
+  }
+  if (document.getElementById('s-cashback-rate')) {
+    document.getElementById('s-cashback-rate').value = data.cashback_rate || 4.5;
+  }
+  if (document.getElementById('s-reffer-tasks')) {
+    document.getElementById('s-reffer-tasks').value = data.referral_milestone_tasks || 20;
+  }
+  if (document.getElementById('s-reffer-reward')) {
+    document.getElementById('s-reffer-reward').value = data.referral_milestone_reward || 1.00;
+  }
+  if (document.getElementById('s-min-wdr')) {
+    document.getElementById('s-min-wdr').value = data.min_withdrawal || 3.00;
+  }
+  if (document.getElementById('s-max-wdr')) {
+    document.getElementById('s-max-wdr').value = data.max_withdrawal || 10000;
+  }
+  if (document.getElementById('s-usdt-bep20')) {
+    document.getElementById('s-usdt-bep20').value = data.usdt_bep20_address || '';
+  }
+  if (document.getElementById('s-support')) {
+    document.getElementById('s-support').value = data.support_contact || '';
+  }
+  if (document.getElementById('s-maintenance')) {
+    document.getElementById('s-maintenance').value = data.maintenance_mode ? 'true' : 'false';
+  }
+  if (document.getElementById('s-tasks-avail')) {
+    document.getElementById('s-tasks-avail').value = data.task_availability ? 'true' : 'false';
+  }
 }
 
 async function saveSettings(e) {
   e.preventDefault();
   showSpinner(true);
   try {
-    const bkashNum = document.getElementById('s-global-bkash').value.trim();
-    const nagadNum = document.getElementById('s-global-nagad').value.trim();
+    const minDep = parseFloat(document.getElementById('s-min-deposit')?.value) || 5.00;
+    const maxDep = parseFloat(document.getElementById('s-max-deposit')?.value) || 100000.00;
+    const cbRate = parseFloat(document.getElementById('s-cashback-rate')?.value) || 4.50;
+    const refTasks = parseInt(document.getElementById('s-reffer-tasks')?.value) || 20;
+    const refRew = parseFloat(document.getElementById('s-reffer-reward')?.value) || 1.00;
+    const minWdr = parseFloat(document.getElementById('s-min-wdr')?.value) || 3.00;
+    const maxWdr = parseFloat(document.getElementById('s-max-wdr')?.value) || 10000.00;
+    const supp = document.getElementById('s-support')?.value.trim() || '';
+    const maint = (document.getElementById('s-maintenance')?.value === 'true');
+    const tasksAvail = (document.getElementById('s-tasks-avail')?.value === 'true');
 
-    if (!currentSettingsRowId) {
-      const { data: row } = await supabaseClient.from('app_settings').select('id').limit(1).single();
-      if (row) currentSettingsRowId = row.id;
+    let savedSuccessfully = false;
+
+    // Method 1: Bulletproof RPC call
+    try {
+      const { error: rpcErr } = await supabaseClient.rpc('update_app_settings', {
+        p_min_deposit: minDep,
+        p_max_deposit: maxDep,
+        p_cashback_rate: cbRate,
+        p_referral_milestone_tasks: refTasks,
+        p_referral_milestone_reward: refRew,
+        p_min_withdrawal: minWdr,
+        p_max_withdrawal: maxWdr,
+        p_support_contact: supp,
+        p_maintenance_mode: maint,
+        p_task_availability: tasksAvail
+      });
+      if (!rpcErr) savedSuccessfully = true;
+    } catch(err) {}
+
+    // Method 2: Fallback direct table update
+    if (!savedSuccessfully) {
+      const payload = {
+        min_deposit: minDep,
+        max_deposit: maxDep,
+        cashback_rate: cbRate,
+        referral_milestone_tasks: refTasks,
+        referral_milestone_reward: refRew,
+        min_withdrawal: minWdr,
+        max_withdrawal: maxWdr,
+        support_contact: supp,
+        maintenance_mode: maint,
+        task_availability: tasksAvail,
+        updated_at: new Date().toISOString()
+      };
+      const { error: directErr } = await supabaseClient.from('app_settings').update(payload).neq('min_withdrawal', -99999);
+      if (directErr) throw directErr;
     }
 
-    const usdtMinInput = document.getElementById('s-min-usdt-wdr');
-    const minUsdtVal = usdtMinInput ? parseFloat(usdtMinInput.value) || 1.00 : 1.00;
-
-    const payload = {
-      min_withdrawal:           parseFloat(document.getElementById('s-min-wdr').value),
-      max_withdrawal:           parseFloat(document.getElementById('s-max-wdr').value),
-      min_usdt_withdrawal:      minUsdtVal,
-      support_contact:          document.getElementById('s-support').value.trim(),
-      global_bkash_number:      bkashNum,
-      global_nagad_number:      nagadNum,
-      usdt_trc20_address:       document.getElementById('s-usdt-trc20').value.trim(),
-      usdt_bep20_address:       document.getElementById('s-usdt-bep20').value.trim(),
-      usdt_erc20_address:       document.getElementById('s-usdt-erc20').value.trim(),
-      usdt_sol_address:         document.getElementById('s-usdt-sol').value.trim(),
-      usdt_polygon_address:     document.getElementById('s-usdt-polygon').value.trim(),
-      maintenance_mode:         (document.getElementById('s-maintenance').value === 'true'),
-      task_availability:        (document.getElementById('s-tasks-avail').value === 'true'),
-      default_task_instructions: document.getElementById('s-instructions').value.trim(),
-      updated_at:               new Date().toISOString()
-    };
-
-    let updateQuery = supabaseClient.from('app_settings').update(payload);
-    if (currentSettingsRowId !== null && currentSettingsRowId !== undefined) {
-      updateQuery = updateQuery.eq('id', currentSettingsRowId);
-    } else {
-      updateQuery = updateQuery.neq('min_withdrawal', -99999);
-    }
-
-    const { error } = await updateQuery;
-    if (error) throw error;
-
-    // 2. Propagate updates to all tasks under each payment method (even if empty/cleared)
-    if (bkashNum !== undefined) {
-      const { error: bkashErr } = await supabaseClient
-        .from('tasks')
-        .update({ payment_number: bkashNum })
-        .eq('payment_method', 'bKash');
-      if (bkashErr) throw bkashErr;
-    }
-
-    if (nagadNum !== undefined) {
-      const { error: nagadErr } = await supabaseClient
-        .from('tasks')
-        .update({ payment_number: nagadNum })
-        .eq('payment_method', 'Nagad');
-      if (nagadErr) throw nagadErr;
-    }
-
-    toast('Settings & global numbers updated successfully ✓', 'success');
+    toast('Platform Core Settings saved & applied live! ✓', 'success');
   } catch (err) {
-    toast(err.message, 'error');
+    toast(err.message || 'Failed to save settings', 'error');
   } finally {
     showSpinner(false);
   }
@@ -1136,7 +1396,7 @@ async function loadP2PQueue() {
         <td><strong>${profile.full_name || 'Manual'}</strong><br><span style="color:var(--txt3);font-size:11px;">${profile.phone || ''}</span></td>
         <td style="color:var(--cyan);font-weight:700;">${q.phone_number}</td>
         <td><strong>${q.payment_method}</strong></td>
-        <td style="color:var(--green);font-weight:700;">৳${parseFloat(q.amount).toFixed(2)}</td>
+        <td style="color:var(--green);font-weight:700;">$${parseFloat(q.amount).toFixed(2)}</td>
         <td><span class="badge ${badgeClass}">${statusText.toUpperCase()}</span></td>
         <td style="font-family:monospace;font-size:12px;">${lockExpires}</td>
         <td style="color:var(--txt3);font-size:12px;">${dateStr}</td>
@@ -1195,7 +1455,7 @@ async function deleteP2PQueueEntry(id) {
 }
 
 async function addP2PQueueFromRefund(phone, method, amount, submissionId) {
-  if (!confirm(`Add ${phone} (৳${amount} via ${method}) to the P2P Payout Queue?`)) return;
+  if (!confirm(`Add ${phone} ($${amount} via ${method}) to the P2P Payout Queue?`)) return;
   showSpinner(true);
   try {
     const { error } = await supabaseClient.rpc('add_to_p2p_queue', {
@@ -1292,7 +1552,7 @@ async function loadSupportDesk() {
           user_name: prof.full_name || 'User (' + prof.id.substring(0,6) + ')',
           phone: prof.phone || 'N/A',
           referral_code: prof.referral_code || 'N/A',
-          last_msg: 'মেসেজ পাঠাতে ট্যাপ করুন',
+          last_msg: 'Tap to start conversation',
           last_time: null,
           unread_count: 0,
           messages: []
@@ -1336,7 +1596,7 @@ function renderSupportUserThreads(threads) {
   if (!container) return;
 
   if (!threads || threads.length === 0) {
-    container.innerHTML = `<div style="padding: 24px; text-align: center; color: var(--txt2); font-size: 13px;">কোনো কাস্টমার চ্যাট পাওয়া যায়নি।</div>`;
+    container.innerHTML = `<div style="padding: 24px; text-align: center; color: var(--txt2); font-size: 13px;">No customer chats found.</div>`;
     return;
   }
 
@@ -1461,7 +1721,7 @@ async function renderActiveSupportThread(userId) {
     bodyEl.innerHTML = `
       <div style="text-align: center; color: var(--txt2); margin: auto; font-size: 13px;">
         <div style="font-size: 28px; margin-bottom: 6px;">💬</div>
-        <strong>${escapeHtml(thread.user_name)}</strong> এর সাথে বার্তা শুরু করতে নিচে মেসেজ টাইপ করুন।
+        <strong>${escapeHtml(thread.user_name)}</strong> — Type a message below to start conversation.
       </div>`;
   } else {
     bodyEl.innerHTML = msgs.map(m => {
@@ -1535,7 +1795,7 @@ async function sendAdminSupportReply() {
       .insert({
         user_id: activeSupportUserId,
         sender_type: 'admin',
-        message: text || '📸 ফটো',
+        message: text || 'Photo Attachment',
         image_url: imgUrlToSend
       });
 

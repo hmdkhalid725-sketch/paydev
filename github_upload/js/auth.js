@@ -109,18 +109,18 @@ async function checkMaintenanceModeOnAllPages() {
             <span style="font-size: 42px;">🚀</span>
           </div>
           <div>
-            <h2 style="font-weight: 900; color: #ffffff; font-size: 22px; margin: 0 0 8px 0; letter-spacing: 0.5px;">সিস্টেম আপডেট চলছে...</h2>
-            <span style="background: rgba(0, 230, 118, 0.15); color: #00e676; border: 1px solid rgba(0, 230, 118, 0.3); font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 20px; display: inline-block;">⚡ খুব দ্রুততম সময়ে কাজ শেষ হচ্ছে</span>
+            <h2 style="font-weight: 900; color: #ffffff; font-size: 22px; margin: 0 0 8px 0; letter-spacing: 0.5px;">System Upgrade in Progress...</h2>
+            <span style="background: rgba(0, 230, 118, 0.15); color: #00e676; border: 1px solid rgba(0, 230, 118, 0.3); font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 20px; display: inline-block;">Resuming Very Shortly</span>
           </div>
           <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; padding: 18px; max-width: 340px; margin: 0 auto;">
             <p style="color: #e0e0e0; font-size: 13.5px; line-height: 1.7; margin: 0; font-weight: 500;">
-              সম্মানিত ব্যবহারকারী, আমাদের সিস্টেমে নতুন আপডেট ও উন্নতির কাজ চলছে। অনুগ্রহ করে কিছুক্ষণ পর আবারও আসুন। আমরা খুব দ্রুত কাজ শেষ করে পুনরায় চালু করছি। 
+              Dear user, scheduled system improvements and blockchain node updates are underway. Please check back shortly.
               <br><br>
-              ধন্যবাদ আমাদের সাথে থাকার জন্য! ❤️
+              Thank you for choosing our platform!
             </p>
           </div>
           <div style="font-size: 12px; color: #a0a5b5; font-weight: 700; margin-top: 8px;">
-            DevPay Official Platform • Always Secure
+            US - Link Official Platform • Always Secure
           </div>
         `;
         document.body.appendChild(overlay);

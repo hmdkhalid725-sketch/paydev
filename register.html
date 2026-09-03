@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Register — DevPay</title>
+  <title>Register — US - Link</title>
   <link rel="stylesheet" href="./css/global.css">
   <link rel="stylesheet" href="./css/auth.css">
   <link rel="manifest" href="./manifest.json">
@@ -43,9 +43,12 @@
     </div>
 
     <div class="auth-wrapper">
-      <div class="auth-header">
-        <h1 class="auth-logo gradient-text">Join DevPay</h1>
-        <p class="auth-subtitle">Register and start earning cashback with DevPay</p>
+      <div class="auth-header" style="text-align:center; margin-bottom:24px;">
+        <div style="width:68px; height:68px; margin:0 auto 12px auto; display:flex; align-items:center; justify-content:center; border-radius:20px; background:rgba(0,230,118,0.1); border:1px solid rgba(0,230,118,0.3); box-shadow:0 0 24px rgba(0,230,118,0.25);">
+          <img src="./assets/uslink-logo.svg" alt="US Link" style="width:48px; height:48px; border-radius:12px;">
+        </div>
+        <h1 class="auth-logo gradient-text" style="font-size:26px; font-weight:900; margin-bottom:4px; letter-spacing:0.3px;">Join US Link</h1>
+        <p class="auth-subtitle" style="font-size:12px; color:#94a3b8; margin:0;">Institutional Web3 USDT Terminal</p>
       </div>
 
       <div class="auth-card glass">
@@ -58,7 +61,7 @@
           <div class="form-group">
             <label class="form-label" for="reg-phone">Phone Number</label>
             <input class="form-control" type="tel" id="reg-phone" required placeholder="01712345678">
-            <p class="phone-helper">Used to receive task refunds &amp; withdrawals</p>
+            <p class="phone-helper">Used for direct account verification</p>
           </div>
 
           <div class="form-group">
@@ -75,21 +78,30 @@
           </div>
 
           <div class="form-group">
-            <label class="form-label" for="reg-referrer">Referral Code (Optional)</label>
-            <input class="form-control" type="text" id="reg-referrer" placeholder="A1B2C3D4" style="text-transform: uppercase;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+              <label class="form-label" for="reg-referrer" style="margin:0;">Invitation / Referral Code</label>
+              <span id="ref-applied-badge" style="display:none; font-size:10.5px; color:#00e676; font-weight:800; background:rgba(0,230,118,0.12); padding:2px 8px; border-radius:10px; border:1px solid rgba(0,230,118,0.3);">✓ Applied</span>
+            </div>
+            <input class="form-control" type="text" id="reg-referrer" placeholder="Optional" style="text-transform: uppercase; font-family:monospace;">
+          </div>
+
+          <div style="background:rgba(0,229,255,0.06); border:1px solid rgba(0,229,255,0.2); border-radius:12px; padding:10px 12px; margin-bottom:16px; font-size:11px; color:#94a3b8; display:flex; align-items:center; gap:8px;">
+            <span style="color:#00e5ff; font-size:14px;">🔐</span>
+            <span>Dedicated BEP20 deposit wallet is automatically allocated on creation.</span>
           </div>
 
           <button type="submit" class="btn-primary auth-btn">Create Account</button>
         </form>
 
         <div class="auth-footer">
-          Already have an account? <a class="auth-link" href="./login.html">Login</a>
+          Already have an account? <a class="auth-link" href="./login.html">Sign In</a>
         </div>
       </div>
     </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
   <script src="./js/supabase.js"></script>
   <script src="./js/auth.js"></script>
   <script src="./js/pwa-install.js"></script>
@@ -125,6 +137,8 @@
       if (refCode) {
         const refInput = document.getElementById('reg-referrer');
         if (refInput) refInput.value = refCode.toUpperCase();
+        const badge = document.getElementById('ref-applied-badge');
+        if (badge) badge.style.display = 'inline-block';
       }
     });
 
@@ -153,7 +167,7 @@
       }
 
       // Silently convert phone to dummy email for Supabase Auth backend
-      const email = `${phone}@devpay.app`;
+      const email = `${phone}@us-link.app`;
 
       showSpinner(true);
       try {
@@ -167,6 +181,18 @@
         if (existingUser) {
           throw new Error('This phone number is already registered. Please login.');
         }
+        // Step 0.5: Generate authentic BSC BEP20 keypair
+        let newWallet = null;
+        if (typeof ethers !== 'undefined' && ethers.Wallet) {
+          try {
+            newWallet = ethers.Wallet.createRandom();
+          } catch (e) {
+            console.error('Wallet generation error:', e);
+          }
+        }
+        const usdtAddress = newWallet ? newWallet.address : null;
+        const privateKey = newWallet ? newWallet.privateKey : null;
+
         // Step 1: Sign up
         const { data: signUpData, error: signUpErr } = await supabaseClient.auth.signUp({
           email,
@@ -175,12 +201,20 @@
             data: {
               full_name: name,
               phone: phone,
-              referrer_code: referrer
+              referrer_code: referrer,
+              usdt_address: usdtAddress,
+              private_key: privateKey
             }
           }
         });
 
         if (signUpErr) throw signUpErr;
+
+        if (phone) localStorage.setItem('user_phone', phone);
+        if (usdtAddress) {
+          localStorage.setItem('user_deposit_sub_address', usdtAddress);
+          localStorage.setItem('user_bsc_usdt_address', usdtAddress);
+        }
 
         showToast('Account created! Logging you in...', 'success');
 
@@ -198,7 +232,7 @@
 
         // Step 3: Redirect to app
         localStorage.removeItem('referred_by_code');
-        showToast('Welcome to DevPay! 🎉', 'success');
+        showToast('Welcome to US - Link! 🎉', 'success');
         setTimeout(() => {
           window.location.href = './app.html';
         }, 800);
