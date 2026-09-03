@@ -885,7 +885,7 @@
       </section>
 
       <!-- 6. DEDICATED FULL-PAGE SUPPORT CHAT TAB (NO POPUP MODAL) -->
-      <section id="tab-support" class="tab-content" style="padding-bottom: 95px;">
+      <section id="tab-support" class="tab-content" style="padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));">
         <!-- Top Verified Helpdesk Header Bar -->
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; background:#11151f; padding:12px 14px; border-radius:16px; border:1px solid rgba(255,255,255,0.08); box-shadow:0 4px 16px rgba(0,0,0,0.4);">
           <div style="display:flex; align-items:center; gap:10px;">
@@ -923,7 +923,7 @@
         </div>
 
         <!-- Chat Container Box -->
-        <div style="background:#11151f; border:1px solid rgba(255,255,255,0.08); border-radius:18px; overflow:hidden; display:flex; flex-direction:column; height:calc(100vh - 280px); min-height:400px; box-shadow:0 6px 20px rgba(0,0,0,0.5);">
+        <div style="background:#11151f; border:1px solid rgba(255,255,255,0.08); border-radius:18px; overflow:hidden; display:flex; flex-direction:column; height:calc(100dvh - 165px); min-height:360px; box-shadow:0 6px 20px rgba(0,0,0,0.5);">
           <!-- Chat Messages List -->
           <div id="support-chat-messages" style="flex:1; padding:16px; overflow-y:auto; display:flex; flex-direction:column; gap:12px; background:#0b0e14;">
             <div style="text-align:center; color:#64748b; font-size:10.5px; margin:8px 0; font-weight:700;">

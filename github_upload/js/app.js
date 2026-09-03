@@ -140,10 +140,15 @@ async function switchTab(tabId) {
     }
   });
 
-  // Automatically hide floating support button when viewing support tab
+  // Automatically hide floating support button and bottom nav when viewing support chat
   const floatingSupportBtn = document.getElementById('floating-support-btn');
   if (floatingSupportBtn) {
     floatingSupportBtn.style.display = (tabId === 'support') ? 'none' : 'flex';
+  }
+
+  const bottomNav = document.querySelector('.bottom-nav');
+  if (bottomNav) {
+    bottomNav.style.display = (tabId === 'support') ? 'none' : 'flex';
   }
 
   // Load target tab data

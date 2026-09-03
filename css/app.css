@@ -130,6 +130,9 @@
   justify-content: space-around !important;
   padding: 0 8px !important;
   z-index: 999999 !important;
+  -webkit-touch-callout: none !important;
+  -webkit-user-select: none !important;
+  user-select: none !important;
 }
 
 .bottom-nav .nav-item {
@@ -147,6 +150,9 @@
   text-decoration: none;
   position: relative;
   height: 100%;
+  -webkit-touch-callout: none !important;
+  -webkit-user-select: none !important;
+  user-select: none !important;
 }
 
 .bottom-nav .nav-item svg {

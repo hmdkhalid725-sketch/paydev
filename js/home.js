@@ -33,45 +33,40 @@ async function loadHomeData() {
       if (avatarEl) avatarEl.innerText = initial;
     }
 
-    // 2. Load User's Approved Task Submissions (Deposits confirmed by admin, awaiting refund transfer)
-    const { data: approvedSubs } = await sb
+    // 2. Load all task submissions for this user in a single robust query
+    const { data: allSubs, error: subsErr } = await sb
       .from('task_submissions')
-      .select('amount, bonus_amount')
-      .eq('user_id', user.id)
-      .in('status', ['approved', 'refund_pending']);
+      .select('id, amount, status, bonus_amount')
+      .eq('user_id', user.id);
+
+    if (subsErr) {
+      console.warn("Task submissions fetch warning:", subsErr.message);
+    }
 
     let totalPortfolioBalance = 0;
     let pendingBonus = 0;
     let activeTaskCount = 0;
-    if (approvedSubs && approvedSubs.length > 0) {
-      activeTaskCount = approvedSubs.length;
-      approvedSubs.forEach(sub => {
+    let refundedCashback = 0;
+    let refundedCount = 0;
+
+    if (allSubs && allSubs.length > 0) {
+      allSubs.forEach(sub => {
         const amt = parseFloat(sub.amount || 0);
         const b = parseFloat(sub.bonus_amount || (amt * 0.041));
-        totalPortfolioBalance += amt;
-        pendingBonus += b;
+        const status = (sub.status || '').toLowerCase();
+
+        if (status === 'approved' || status === 'refund_pending') {
+          totalPortfolioBalance += amt;
+          pendingBonus += b;
+          activeTaskCount++;
+        } else if (status === 'refunded' || status === 'completed') {
+          refundedCashback += b;
+          refundedCount++;
+        }
       });
     }
 
     animateCounter('home-balance', totalPortfolioBalance, '$');
-
-    // 3. Load Lifetime Cashback Bonuses Received across all refunded tasks
-    const { data: refundedSubs } = await sb
-      .from('task_submissions')
-      .select('amount, bonus_amount')
-      .eq('user_id', user.id)
-      .in('status', ['refunded', 'completed']);
-
-    let refundedCashback = 0;
-    let refundedCount = 0;
-    if (refundedSubs && refundedSubs.length > 0) {
-      refundedCount = refundedSubs.length;
-      refundedSubs.forEach(sub => {
-        const amt = parseFloat(sub.amount || 0);
-        const b = parseFloat(sub.bonus_amount || (amt * 0.041));
-        refundedCashback += b;
-      });
-    }
 
     // Total Cashback Bonus = Active Pending Bonus + Already Refunded Bonus!
     const totalCashbackBonus = pendingBonus + refundedCashback;
@@ -106,8 +101,42 @@ async function loadHomeData() {
     // 6. Load Task History & Live Progress
     await loadTaskHistory(user.id);
 
+    // 7. Start Realtime Auto-Sync for instant balance updates upon admin approval
+    startHomeRealtimeSync(user.id);
+
   } catch (err) {
     console.error("Home loader error:", err);
+  }
+}
+
+// Start Realtime Auto-Sync for Task Submissions on Home Tab
+let homeRealtimeChannel = null;
+function startHomeRealtimeSync(userId) {
+  const sb = window.supabaseClient;
+  if (!sb || !userId || homeRealtimeChannel) return;
+
+  try {
+    homeRealtimeChannel = sb
+      .channel('public:task_submissions_home_' + userId)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'task_submissions', filter: `user_id=eq.${userId}` },
+        () => {
+          loadHomeData();
+        }
+      )
+      .subscribe();
+  } catch (e) {
+    console.warn("Realtime channel warning:", e);
+  }
+
+  // 8-second background polling while active on home tab
+  if (!window._homePollInterval) {
+    window._homePollInterval = setInterval(() => {
+      if (typeof currentActiveTab !== 'undefined' && currentActiveTab === 'home') {
+        loadHomeData();
+      }
+    }, 8000);
   }
 }
 

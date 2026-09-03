@@ -50,6 +50,14 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+input, textarea, [contenteditable="true"], .selectable-text {
+  -webkit-user-select: text !important;
+  user-select: text !important;
 }
 
 /* Mobile-first wrapper constraints for Desktop viewports */
