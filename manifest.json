@@ -45,15 +45,15 @@
   ],
   "screenshots": [
     {
-      "src": "/assets/icons/icon-512.png",
-      "sizes": "512x512",
+      "src": "/assets/icons/screenshot-narrow.png",
+      "sizes": "540x960",
       "type": "image/png",
       "form_factor": "narrow",
       "label": "US Link Mobile Terminal"
     },
     {
-      "src": "/assets/icons/icon-512.png",
-      "sizes": "512x512",
+      "src": "/assets/icons/screenshot-wide.png",
+      "sizes": "1280x720",
       "type": "image/png",
       "form_factor": "wide",
       "label": "US Link Web3 Platform"
@@ -67,8 +67,9 @@
       "url": "/app.html",
       "icons": [
         {
-          "src": "/assets/icons/icon-192.png",
-          "sizes": "192x192"
+          "src": "/assets/icons/shortcut-96.png",
+          "sizes": "96x96",
+          "type": "image/png"
         }
       ]
     },
@@ -79,10 +80,19 @@
       "url": "/app.html",
       "icons": [
         {
-          "src": "/assets/icons/icon-192.png",
-          "sizes": "192x192"
+          "src": "/assets/icons/shortcut-96.png",
+          "sizes": "96x96",
+          "type": "image/png"
         }
       ]
     }
-  ]
+  ],
+  "display_override": [
+    "window-controls-overlay",
+    "standalone",
+    "minimal-ui"
+  ],
+  "launch_handler": {
+    "client_mode": "auto"
+  }
 }
