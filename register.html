@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Register — US - Link</title>
   <link rel="stylesheet" href="./css/global.css">
   <link rel="stylesheet" href="./css/auth.css">
@@ -35,7 +35,7 @@
     .eye-btn svg { width: 20px; height: 20px; }
   </style>
 </head>
-<body>
+<body class="auth-page">
   <!-- Dynamic Ambient Animated Background -->
   <div class="auth-bg-canvas">
     <div class="auth-orb auth-orb-1"></div>
@@ -43,7 +43,7 @@
     <div class="auth-orb auth-orb-3"></div>
   </div>
 
-  <div id="app-container" style="background:transparent; position:relative; z-index:1;">
+  <div id="app-container" style="background:transparent; position:relative; z-index:1; overflow-y:auto; -webkit-overflow-scrolling:touch; min-height:100vh; min-height:100dvh;">
     <div id="toast-container"></div>
     <div id="spinner-overlay" class="spinner-overlay">
       <div class="spinner"></div>
