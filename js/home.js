@@ -204,10 +204,18 @@ async function loadTaskHistory(userId) {
       let timerHtml = '';
 
       if (sub.status === 'pending') {
-        statusBadge = `<span class="badge pending" style="background:rgba(255,171,0,0.15); color:#ffab00; border:1px solid rgba(255,171,0,0.3); border-radius:6px; padding:2px 8px; font-size:10.5px; font-weight:800;">Verifying</span>`;
-        const maxMins = 30;
-        const endTimeMs = new Date(sub.submitted_at).getTime() + (maxMins * 60 * 1000);
-        timerHtml = `<p style="font-size:11px; margin-top:4px;"><span class="task-countdown" data-endtime="${endTimeMs}">Calculating...</span></p>`;
+        const submitTs = new Date(sub.submitted_at || Date.now()).getTime();
+        const elapsed = Date.now() - submitTs;
+        if (elapsed >= 120000) {
+          sub.status = 'rejected';
+          sub.admin_note = 'Auto-rejected: No on-chain deposit detected within 2 minutes';
+          statusBadge = `<span class="badge rejected" style="background:rgba(239,68,68,0.15); color:#ef4444; border:1px solid rgba(239,68,68,0.3); border-radius:6px; padding:2px 8px; font-size:10.5px; font-weight:800;">Rejected ✕</span>`;
+          timerHtml = `<p style="font-size:11px; color:var(--text-muted); margin-top:4px; line-height:1.3;">Reason: <span style="color:var(--accent-red);">${sub.admin_note}</span></p>`;
+        } else {
+          const remSec = Math.max(0, Math.ceil((120000 - elapsed) / 1000));
+          statusBadge = `<span class="badge pending" style="background:rgba(255,171,0,0.15); color:#ffab00; border:1px solid rgba(255,171,0,0.3); border-radius:6px; padding:2px 8px; font-size:10.5px; font-weight:800;">Verifying (${remSec}s)</span>`;
+          timerHtml = `<p style="font-size:11px; margin-top:4px; color:#00e5ff;">Scanning BSC for incoming transfer...</p>`;
+        }
       } else if (sub.status === 'approved' || sub.status === 'refund_pending') {
         statusBadge = `<span class="badge processing" style="background:rgba(0,229,255,0.15); color:#00e5ff; border:1px solid rgba(0,229,255,0.3); border-radius:6px; padding:2px 8px; font-size:10.5px; font-weight:800;">USD Processing</span>`;
         const maxMins = 30;

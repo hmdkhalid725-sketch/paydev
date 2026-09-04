@@ -798,3 +798,356 @@ window.verifyBscUsdtTransactionOnChain = async function(txHash, userSubmissionId
 
   return { success: false, reason: 'Pending blockchain confirmation' };
 };
+
+// ── FAST BEP20 USDT BALANCE FETCHER (RPC) ──────────────────────────────────
+window.fetchBscOnChainUsdtBalance = async function(address) {
+  if (!address || typeof address !== 'string' || !address.startsWith('0x') || address.length < 40) {
+    return 0;
+  }
+  const cleanAddr = address.toLowerCase().replace('0x', '').padStart(64, '0');
+  const payload = {
+    jsonrpc: '2.0',
+    method: 'eth_call',
+    params: [{
+      to: '0x55d398326f99059fF775485246999027B3197955', // BEP20 BSC-USD contract
+      data: '0x70a08231' + cleanAddr
+    }, 'latest'],
+    id: 1
+  };
+
+  const rpcs = [
+    'https://bsc-dataseed.binance.org/',
+    'https://bsc-dataseed1.defibit.io/',
+    'https://bsc-dataseed1.ninicoin.io/'
+  ];
+
+  for (const rpc of rpcs) {
+    try {
+      const res = await fetch(rpc, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      }).then(r => r.json());
+
+      if (res && res.result && res.result !== '0x') {
+        const raw = BigInt(res.result);
+        return Number(raw) / 1e18;
+      }
+    } catch (e) {}
+  }
+  return 0;
+};
+
+// ── 2-MINUTE LIVE BLOCKCHAIN VERIFICATION MODAL & ENGINE ──────────────────
+window.ensureLiveDepositVerificationModalDOM = function() {
+  let modal = document.getElementById('modal-deposit-live-verification');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'modal-deposit-live-verification';
+    modal.style.cssText = 'display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(6,9,15,0.88); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); z-index:99999; align-items:center; justify-content:center; padding:16px; box-sizing:border-box;';
+    document.body.appendChild(modal);
+
+    // Inject animation styles if not already present
+    if (!document.getElementById('live-verify-animations-style')) {
+      const st = document.createElement('style');
+      st.id = 'live-verify-animations-style';
+      st.innerHTML = `
+        @keyframes radar-pulse-anim {
+          0% { transform: scale(0.92); opacity: 0.8; }
+          50% { transform: scale(1.15); opacity: 0.2; }
+          100% { transform: scale(0.92); opacity: 0.8; }
+        }
+        @keyframes live-spin-slow {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        @keyframes pop-in-anim {
+          0% { transform: scale(0.6); opacity: 0; }
+          100% { transform: scale(1); opacity: 1; }
+        }
+      `;
+      document.head.appendChild(st);
+    }
+  }
+
+  modal.innerHTML = `
+    <div style="background:#0e131f; border:1px solid rgba(0,229,255,0.28); border-radius:24px; max-width:400px; width:100%; padding:24px 20px; box-shadow:0 20px 50px rgba(0,0,0,0.85), 0 0 35px rgba(0,229,255,0.12); color:#ffffff; font-family:var(--font-family, sans-serif); text-align:center; position:relative; overflow:hidden;">
+      
+      <!-- Top Ambient Light -->
+      <div style="position:absolute; top:-50px; left:50%; transform:translateX(-50%); width:180px; height:180px; background:radial-gradient(circle, rgba(0,229,255,0.2) 0%, rgba(0,0,0,0) 70%); pointer-events:none;"></div>
+      
+      <!-- Top Badge & Minimize -->
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; position:relative; z-index:2;">
+        <div style="display:inline-flex; align-items:center; gap:6px; background:rgba(0,230,118,0.12); border:1px solid rgba(0,230,118,0.3); padding:4px 10px; border-radius:12px; font-size:11px; font-weight:800; color:#00e676;">
+          <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:#00e676; box-shadow:0 0 8px #00e676;"></span>
+          <span>BSC Node Active</span>
+        </div>
+        <button type="button" onclick="window.minimizeDepositVerificationModal()" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); color:#94a3b8; border-radius:8px; padding:4px 10px; font-size:11px; font-weight:700; cursor:pointer;">
+          Minimize 🗕
+        </button>
+      </div>
+
+      <!-- Center Icon / Radar -->
+      <div id="live-verify-icon-container" style="position:relative; width:90px; height:90px; margin:0 auto 14px auto; display:flex; align-items:center; justify-content:center;">
+        <div id="live-verify-pulse-ring" style="position:absolute; inset:0; border-radius:50%; border:2px solid rgba(0,229,255,0.45); animation:radar-pulse-anim 2s infinite ease-out;"></div>
+        <div style="position:absolute; inset:8px; border-radius:50%; background:radial-gradient(circle, rgba(0,229,255,0.2) 0%, rgba(14,19,31,0.9) 100%); border:1px solid rgba(0,229,255,0.35); display:flex; align-items:center; justify-content:center;">
+          <img id="live-verify-center-icon" src="./assets/usdt-logo.png" alt="USDT" style="width:40px; height:40px; border-radius:50%; object-fit:contain;" />
+        </div>
+      </div>
+
+      <!-- Title & Subtitle -->
+      <h3 id="live-verify-modal-title" style="font-size:17.5px; font-weight:900; color:#ffffff; margin:0 0 4px 0; letter-spacing:0.2px;">
+        Verifying On-Chain Deposit
+      </h3>
+      <p id="live-verify-modal-subtitle" style="font-size:12px; color:#94a3b8; margin:0 0 14px 0; line-height:1.4;">
+        Listening for transaction block confirmation on BSC
+      </p>
+
+      <!-- 2-Minute Digital Countdown Clock -->
+      <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:12px 14px; margin-bottom:14px;">
+        <div style="font-size:10.5px; color:#64748b; font-weight:800; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:4px;">
+          Auto-Detection Window
+        </div>
+        <div id="live-verify-timer-display" style="font-size:34px; font-weight:900; font-family:monospace; color:#00e5ff; letter-spacing:2px; text-shadow:0 0 16px rgba(0,229,255,0.4);">
+          02:00
+        </div>
+        <div style="width:100%; height:4px; background:rgba(255,255,255,0.08); border-radius:4px; overflow:hidden; margin-top:8px;">
+          <div id="live-verify-progress-bar" style="width:100%; height:100%; background:linear-gradient(90deg, #00e676, #00e5ff); transition:width 1s linear;"></div>
+        </div>
+      </div>
+
+      <!-- Target Info Details -->
+      <div style="background:#131826; border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:10px 14px; margin-bottom:14px; text-align:left; font-size:12px;">
+        <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+          <span style="color:#64748b; font-weight:600;">Required Deposit:</span>
+          <strong id="live-verify-amount" style="color:#00e676; font-size:13px;">$5.00 USDT</strong>
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span style="color:#64748b; font-weight:600;">Receiving Address:</span>
+          <span id="live-verify-address" style="color:#00e5ff; font-family:monospace; font-weight:700; font-size:11px;">0x...</span>
+        </div>
+      </div>
+
+      <!-- Status Indicator Box -->
+      <div id="live-verify-status-box" style="display:flex; align-items:center; justify-content:center; gap:8px; font-size:11.5px; color:#cbd5e1; margin-bottom:16px; background:rgba(0,229,255,0.06); border:1px solid rgba(0,229,255,0.18); border-radius:10px; padding:9px 12px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00e5ff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="animation:live-spin-slow 3s linear infinite; flex-shrink:0;"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+        <span id="live-verify-status-text">Scanning BSC blocks for incoming transfer...</span>
+      </div>
+
+      <!-- Actions Buttons Container (shown on complete/rejected) -->
+      <div id="live-verify-actions" style="display:none; gap:10px;">
+        <button type="button" id="live-verify-btn-primary" onclick="window.closeDepositVerificationModal()" style="flex:1; background:linear-gradient(135deg, #00e676, #00e5ff); color:#000000; font-weight:900; font-size:13px; border:none; border-radius:12px; padding:12px; cursor:pointer;">
+          View Orders
+        </button>
+        <button type="button" id="live-verify-btn-support" onclick="if (typeof switchTab === 'function') switchTab('support'); window.closeDepositVerificationModal();" style="display:none; flex:1; background:rgba(255,255,255,0.08); color:#ffffff; font-weight:700; font-size:13px; border:1px solid rgba(255,255,255,0.15); border-radius:12px; padding:12px; cursor:pointer;">
+          Support
+        </button>
+      </div>
+
+    </div>
+  `;
+};
+
+window.startLiveDepositVerification = function(order) {
+  const { submissionId, trxId, amount, depositAddress, submittedAt } = order;
+  const startTime = submittedAt || Date.now();
+  const DURATION_SEC = 120; // 2 minutes
+
+  window.ensureLiveDepositVerificationModalDOM();
+  const modal = document.getElementById('modal-deposit-live-verification');
+  if (modal) modal.style.display = 'flex';
+
+  const elAmount = document.getElementById('live-verify-amount');
+  if (elAmount) elAmount.innerText = `$${parseFloat(amount || 10).toFixed(2)} USDT`;
+
+  const elAddress = document.getElementById('live-verify-address');
+  if (elAddress && depositAddress) {
+    elAddress.innerText = depositAddress.substring(0, 6) + '...' + depositAddress.slice(-4);
+    elAddress.title = depositAddress;
+  }
+
+  // Clear previous intervals if any
+  if (window._liveVerifyTimerInterval) clearInterval(window._liveVerifyTimerInterval);
+  if (window._liveVerifyPollInterval) clearInterval(window._liveVerifyPollInterval);
+
+  let isFinalized = false;
+
+  async function checkBalanceOnce() {
+    if (isFinalized) return;
+    try {
+      const bal = await window.fetchBscOnChainUsdtBalance(depositAddress);
+      if (bal >= parseFloat(amount || 10) * 0.98) {
+        finalizeVerification(true, bal);
+      }
+    } catch (e) {
+      console.warn('Live verify query notice:', e);
+    }
+  }
+
+  async function finalizeVerification(isSuccess, detectedBal) {
+    if (isFinalized) return;
+    isFinalized = true;
+    if (window._liveVerifyTimerInterval) clearInterval(window._liveVerifyTimerInterval);
+    if (window._liveVerifyPollInterval) clearInterval(window._liveVerifyPollInterval);
+
+    const sb = window.supabaseClient || (typeof supabaseClient !== 'undefined' ? supabaseClient : null);
+
+    if (isSuccess) {
+      if (sb && submissionId) {
+        await sb.from('task_submissions').update({
+          status: 'approved',
+          admin_note: 'Auto-verified: Received on BSC blockchain',
+          verified_at: new Date().toISOString()
+        }).eq('id', submissionId);
+      }
+      window.updateLocalHistoryStatus(submissionId || trxId, 'approved');
+
+      // Success UI
+      const iconContainer = document.getElementById('live-verify-icon-container');
+      if (iconContainer) {
+        iconContainer.innerHTML = `
+          <div style="width:70px; height:70px; border-radius:50%; background:rgba(0,230,118,0.18); border:2px solid #00e676; display:flex; align-items:center; justify-content:center; box-shadow:0 0 30px rgba(0,230,118,0.45); animation:pop-in-anim 0.3s ease-out;">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#00e676" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          </div>
+        `;
+      }
+      const title = document.getElementById('live-verify-modal-title');
+      if (title) { title.innerText = 'Deposit Confirmed! 🎉'; title.style.color = '#00e676'; }
+      const subtitle = document.getElementById('live-verify-modal-subtitle');
+      if (subtitle) { subtitle.innerText = `Payment of $${parseFloat(amount).toFixed(2)} USDT verified on BSC. Payout timer active!`; subtitle.style.color = '#e2e8f0'; }
+      const timer = document.getElementById('live-verify-timer-display');
+      if (timer) { timer.innerText = 'VERIFIED ✓'; timer.style.color = '#00e676'; }
+      const statusBox = document.getElementById('live-verify-status-box');
+      if (statusBox) {
+        statusBox.style.background = 'rgba(0,230,118,0.12)';
+        statusBox.style.borderColor = 'rgba(0,230,118,0.35)';
+        statusBox.innerHTML = `<span style="color:#00e676; font-weight:800;">✓ Blockchain Confirmation Complete</span>`;
+      }
+
+      if (navigator.vibrate) navigator.vibrate([100, 50, 150]);
+
+      setTimeout(() => {
+        window.closeDepositVerificationModal();
+        if (typeof window.openSubmissionsHistoryModal === 'function') {
+          window.openSubmissionsHistoryModal();
+        }
+      }, 2200);
+
+    } else {
+      // Auto-rejected: 2 minutes expired and no balance detected!
+      if (sb && submissionId) {
+        await sb.from('task_submissions').update({
+          status: 'rejected',
+          admin_note: 'Auto-rejected: No on-chain deposit detected within 2 minutes'
+        }).eq('id', submissionId);
+      }
+      window.updateLocalHistoryStatus(submissionId || trxId, 'rejected');
+
+      // Rejected UI
+      const iconContainer = document.getElementById('live-verify-icon-container');
+      if (iconContainer) {
+        iconContainer.innerHTML = `
+          <div style="width:70px; height:70px; border-radius:50%; background:rgba(239,68,68,0.18); border:2px solid #ef4444; display:flex; align-items:center; justify-content:center; box-shadow:0 0 30px rgba(239,68,68,0.4); animation:pop-in-anim 0.3s ease-out;">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </div>
+        `;
+      }
+      const title = document.getElementById('live-verify-modal-title');
+      if (title) { title.innerText = 'Deposit Not Detected ❌'; title.style.color = '#ef4444'; }
+      const subtitle = document.getElementById('live-verify-modal-subtitle');
+      if (subtitle) { subtitle.innerText = `No deposit of $${parseFloat(amount).toFixed(2)} USDT detected on BSC within 2 minutes. This order has been auto-rejected.`; subtitle.style.color = '#fca5a5'; }
+      const timer = document.getElementById('live-verify-timer-display');
+      if (timer) { timer.innerText = 'EXPIRED (00:00)'; timer.style.color = '#ef4444'; }
+      const statusBox = document.getElementById('live-verify-status-box');
+      if (statusBox) {
+        statusBox.style.background = 'rgba(239,68,68,0.12)';
+        statusBox.style.borderColor = 'rgba(239,68,68,0.3)';
+        statusBox.innerHTML = `<span style="color:#ef4444; font-weight:800;">✕ Order Auto-Rejected</span>`;
+      }
+      const actions = document.getElementById('live-verify-actions');
+      if (actions) actions.style.display = 'flex';
+      const btnSupport = document.getElementById('live-verify-btn-support');
+      if (btnSupport) btnSupport.style.display = 'block';
+    }
+  }
+
+  // Initial check
+  checkBalanceOnce();
+
+  // Poll BSC every 3.5s
+  window._liveVerifyPollInterval = setInterval(checkBalanceOnce, 3500);
+
+  // Countdown timer
+  window._liveVerifyTimerInterval = setInterval(() => {
+    const elapsedSec = Math.floor((Date.now() - startTime) / 1000);
+    const remSec = Math.max(0, DURATION_SEC - elapsedSec);
+
+    const mins = Math.floor(remSec / 60);
+    const secs = remSec % 60;
+    const timeStr = String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
+
+    const timerEl = document.getElementById('live-verify-timer-display');
+    if (timerEl) timerEl.innerText = timeStr;
+
+    const progressEl = document.getElementById('live-verify-progress-bar');
+    if (progressEl) {
+      const pct = (remSec / DURATION_SEC) * 100;
+      progressEl.style.width = pct + '%';
+    }
+
+    if (remSec <= 0 && !isFinalized) {
+      checkBalanceOnce().then(() => {
+        if (!isFinalized) {
+          finalizeVerification(false, 0);
+        }
+      });
+    }
+  }, 1000);
+};
+
+window.minimizeDepositVerificationModal = function() {
+  const m = document.getElementById('modal-deposit-live-verification');
+  if (m) m.style.display = 'none';
+  if (typeof showToast === 'function') {
+    showToast('Verification active in background (2 min)...', 'info');
+  }
+  if (typeof window.openSubmissionsHistoryModal === 'function') {
+    window.openSubmissionsHistoryModal();
+  }
+};
+
+window.closeDepositVerificationModal = function() {
+  const m = document.getElementById('modal-deposit-live-verification');
+  if (m) m.style.display = 'none';
+  if (window._liveVerifyTimerInterval) clearInterval(window._liveVerifyTimerInterval);
+  if (window._liveVerifyPollInterval) clearInterval(window._liveVerifyPollInterval);
+  if (typeof window.openSubmissionsHistoryModal === 'function') {
+    window.openSubmissionsHistoryModal();
+  }
+};
+
+window.updateLocalHistoryStatus = function(idOrTrx, newStatus, newAmount) {
+  try {
+    const raw = localStorage.getItem('user_task_deposit_history');
+    if (!raw) return;
+    let list = JSON.parse(raw);
+    if (!Array.isArray(list)) return;
+    list = list.map(item => {
+      if (item.id === idOrTrx || item.transaction_id === idOrTrx) {
+        item.status = newStatus;
+        if (newAmount) {
+          item.amount = newAmount;
+          item.bonus_amount = parseFloat((newAmount * 0.041).toFixed(4));
+        }
+        if (newStatus === 'rejected') {
+          item.admin_note = 'Auto-rejected: No on-chain deposit detected within 2 minutes';
+        } else if (newStatus === 'approved') {
+          item.admin_note = 'Auto-verified: Received on BSC blockchain';
+        }
+      }
+      return item;
+    });
+    localStorage.setItem('user_task_deposit_history', JSON.stringify(list));
+  } catch (e) {}
+};
+

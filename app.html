@@ -1183,13 +1183,13 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
   <script src="./js/supabase.js"></script>
   <script src="./js/auth.js"></script>
-  <script src="./js/notifications.js"></script>
-  <script src="./js/app.js?v=1.2"></script>
-  <script src="./js/home.js"></script>
-  <script src="./js/tasks.js?v=1.2"></script>
-  <script src="./js/profile.js"></script>
-  <script src="./js/wallet.js"></script>
-  <script src="./js/support.js"></script>
+  <script src="./js/notifications.js?v=2.2"></script>
+  <script src="./js/app.js?v=2.2"></script>
+  <script src="./js/home.js?v=2.2"></script>
+  <script src="./js/tasks.js?v=2.2"></script>
+  <script src="./js/profile.js?v=2.2"></script>
+  <script src="./js/wallet.js?v=2.2"></script>
+  <script src="./js/support.js?v=2.2"></script>
 
   <!-- ═══════════════════════════════════════════════════════
        ATTENTION & SECURITY PROTOCOL MODAL (WITH 3S COUNTDOWN)
@@ -1802,6 +1802,109 @@
         } catch (e) {}
       }
 
+      // ── Real-time Blockchain Auto-Detection & Dynamic Amount Adjustment ──
+      const nowTs = Date.now();
+      let userSubWallet = localStorage.getItem('user_deposit_sub_address');
+      if (!userSubWallet && typeof window.getUserUniqueBscDepositAddress === 'function') {
+        try { userSubWallet = await window.getUserUniqueBscDepositAddress(); } catch (e) {}
+      }
+
+      // 1. Calculate how much USDT is already committed to active approved orders for this user (unswept):
+      let alreadyCommittedUsdt = 0;
+      historyItems.forEach(item => {
+        const st = (item.status || '').toLowerCase();
+        if ((st === 'approved' || st === 'refund_pending') && !item.completed_at) {
+          alreadyCommittedUsdt += parseFloat(item.amount || 0);
+        }
+      });
+
+      // 2. Check on-chain balance immediately if user has pending orders
+      let onChainUsdt = null;
+      const hasAnyPending = historyItems.some(i => ['pending', 'under_review'].includes((i.status || '').toLowerCase()));
+      if (hasAnyPending && userSubWallet && typeof window.fetchBscOnChainUsdtBalance === 'function') {
+        try {
+          onChainUsdt = await window.fetchBscOnChainUsdtBalance(userSubWallet);
+        } catch (_) {}
+      }
+
+      // 3. Net available unallocated deposit from blockchain:
+      let unallocatedDeposit = 0;
+      if (onChainUsdt !== null) {
+        unallocatedDeposit = Math.max(0, onChainUsdt - alreadyCommittedUsdt);
+      }
+
+      // 4. Sort pending items newest first (priority to the order user just submitted)
+      const pendingIndices = [];
+      historyItems.forEach((item, idx) => {
+        const st = (item.status || 'pending').toLowerCase();
+        if (st === 'pending' || st === 'under_review') pendingIndices.push(idx);
+      });
+      pendingIndices.sort((a, b) => {
+        const tA = new Date(historyItems[a].submitted_at || historyItems[a].created_at || nowTs).getTime();
+        const tB = new Date(historyItems[b].submitted_at || historyItems[b].created_at || nowTs).getTime();
+        return tB - tA; // Newest first
+      });
+
+      for (let pIdx of pendingIndices) {
+        const item = historyItems[pIdx];
+        const submitTs = new Date(item.submitted_at || item.created_at || nowTs).getTime();
+        const elapsedMs = nowTs - submitTs;
+
+        // Case 1: Unallocated deposit available! Claim it for THIS task only:
+        if (unallocatedDeposit >= 0.1) {
+          const detectedAmount = parseFloat(unallocatedDeposit.toFixed(4));
+          const bonusRate = (typeof window.currentCashbackRate === 'number') ? window.currentCashbackRate : 4.1;
+          const newBonus = parseFloat((detectedAmount * (bonusRate / 100)).toFixed(4));
+          const origAmt = parseFloat(item.amount || 0);
+
+          item.amount = detectedAmount;
+          item.bonus_amount = newBonus;
+          item.status = 'approved';
+          item.admin_note = (Math.abs(detectedAmount - origAmt) > 0.05)
+            ? `Auto-verified on BSC ($${detectedAmount} USDT received, order adjusted from $${origAmt})`
+            : `Auto-verified on BSC ($${detectedAmount} USDT received)`;
+
+          if (sb && item.id) {
+            try {
+              await sb.from('task_submissions').update({
+                status: 'approved',
+                amount: detectedAmount,
+                bonus_amount: newBonus,
+                admin_note: item.admin_note,
+                verified_at: new Date().toISOString()
+              }).eq('id', item.id);
+            } catch (_) {}
+          }
+          if (typeof window.updateLocalHistoryStatus === 'function') {
+            window.updateLocalHistoryStatus(item.transaction_id || item.id, 'approved', detectedAmount);
+          }
+
+          // DEDUCT CLAIMED AMOUNT SO OTHER PENDING TASKS CANNOT DOUBLE-CLAIM IT!
+          unallocatedDeposit = Math.max(0, unallocatedDeposit - detectedAmount);
+        }
+        // Case 2: No unallocated deposit left, and 2 minutes have expired -> Auto-Reject!
+        else if (elapsedMs >= 120000) {
+          item.status = 'rejected';
+          item.admin_note = 'Auto-rejected: No on-chain deposit detected within 2 minutes';
+          if (sb && item.id) {
+            try {
+              await sb.from('task_submissions').update({
+                status: 'rejected',
+                admin_note: item.admin_note
+              }).eq('id', item.id);
+            } catch (_) {}
+          }
+          if (typeof window.updateLocalHistoryStatus === 'function') {
+            window.updateLocalHistoryStatus(item.transaction_id || item.id, 'rejected');
+          }
+        }
+      }
+
+      // Keep local history cache 100% in sync with verified statuses
+      try {
+        localStorage.setItem('user_task_deposit_history', JSON.stringify(historyItems.slice(0, 30)));
+      } catch (_) {}
+
       let totalAmt = 0;
       historyItems.forEach(i => totalAmt += parseFloat(i.amount || 0));
 
@@ -1834,6 +1937,7 @@
           const isApproved = rawStatus === 'approved';
           const isRefunded = rawStatus === 'refunded' || rawStatus === 'completed';
           const isRejected = rawStatus === 'rejected' || rawStatus === 'cancelled';
+          const isPending = !isApproved && !isRefunded && !isRejected;
 
           // 30-min countdown calculation
           const submitTs = new Date(item.submitted_at || item.created_at || Date.now()).getTime();
@@ -1842,12 +1946,19 @@
           const mins = Math.floor(remainingMs / 60000);
           const secs = Math.floor((remainingMs % 60000) / 1000);
 
+          // 2-Minute live verification remaining
+          const verifyElapsed = Date.now() - submitTs;
+          const verifyRemSec = Math.max(0, Math.ceil((120000 - verifyElapsed) / 1000));
+          const verifyMin = Math.floor(verifyRemSec / 60);
+          const verifySec = String(verifyRemSec % 60).padStart(2, '0');
+          const verifyTimerStr = `${verifyMin}:${verifySec}`;
+
           // Styling & Logic by user specifications:
-          let statusBadgeText = 'Awaiting Verification';
+          let statusBadgeText = `Verifying (${verifyTimerStr})`;
           let statusBg = 'rgba(240, 185, 11, 0.12)';
           let statusColor = '#f0b90b';
           let statusBorder = 'rgba(240, 185, 11, 0.35)';
-          let subStatusHtml = `<span style="color:#94a3b8;">Verifying Transfer (1-5m)</span>`;
+          let subStatusHtml = `<span class="live-verify-pending-timer" data-endtime="${submitTs + 120000}" style="color:#00e5ff; font-weight:700;">Scanning BSC (${verifyTimerStr})</span>`;
           let cardBorder = 'rgba(255,255,255,0.08)';
 
           if (isRefunded) {
@@ -1873,14 +1984,14 @@
               <span class="live-tracker-timer" data-deadline="${deadline}" style="color:#00e5ff;">${timerLabel}</span>
             `;
           } else if (isRejected) {
-            statusBadgeText = 'Rejected';
+            statusBadgeText = 'Rejected ✕';
             statusBg = 'rgba(239, 68, 68, 0.15)';
             statusColor = '#ef4444';
             statusBorder = 'rgba(239, 68, 68, 0.35)';
             cardBorder = 'rgba(239, 68, 68, 0.2)';
             subStatusHtml = `
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-              <span style="color:#ef4444;">Order Declined</span>
+              <span style="color:#ef4444;">${item.admin_note || 'Auto-rejected (No deposit in 2 min)'}</span>
             `;
           }
 
@@ -1979,12 +2090,16 @@
         if (window.historyTrackerInterval) {
           clearInterval(window.historyTrackerInterval);
         }
+        window._trackerAuditCounter = 0;
         window.historyTrackerInterval = setInterval(() => {
-          const timerEls = document.querySelectorAll('.live-tracker-timer');
-          if (!timerEls || timerEls.length === 0) {
+          const screen = document.getElementById('task-history-standalone-screen');
+          if (!screen || screen.style.display === 'none') {
             clearInterval(window.historyTrackerInterval);
             return;
           }
+
+          // 1. Update 30-min refund timers
+          const timerEls = screen.querySelectorAll('.live-tracker-timer');
           timerEls.forEach(el => {
             const d = parseInt(el.getAttribute('data-deadline') || '0', 10);
             if (d > 0) {
@@ -1998,6 +2113,30 @@
               }
             }
           });
+
+          // 2. Update 2-minute pending verification timers
+          const pendingEls = screen.querySelectorAll('.live-verify-pending-timer');
+          let hasPending = false;
+          pendingEls.forEach(el => {
+            const end = parseInt(el.getAttribute('data-endtime') || '0', 10);
+            if (end > 0) {
+              const diff = Math.max(0, end - Date.now());
+              const remSec = Math.ceil(diff / 1000);
+              const m = Math.floor(remSec / 60);
+              const s = String(remSec % 60).padStart(2, '0');
+              el.innerText = `Scanning BSC (${m}:${s})`;
+              if (diff > 0) hasPending = true;
+            }
+          });
+
+          // 3. If there are pending orders, query BSC every 3 seconds
+          if (hasPending || pendingEls.length > 0) {
+            window._trackerAuditCounter = (window._trackerAuditCounter || 0) + 1;
+            if (window._trackerAuditCounter >= 3) {
+              window._trackerAuditCounter = 0;
+              window.loadTaskHistoryOverlayContent();
+            }
+          }
         }, 1000);
       }
     };
@@ -2078,6 +2217,7 @@
               }
             }
 
+            let insertedSubId = null;
             const { data, error } = await sb
               .from('task_submissions')
               .insert(insertPayload)
@@ -2087,6 +2227,7 @@
               console.error('Supabase deposit order insert error:', error);
             } else {
               console.log('Supabase deposit order inserted successfully:', data);
+              if (data && data[0]) insertedSubId = data[0].id;
             }
           } catch (err) {
             console.error('Task deposit submission exception:', err);
@@ -2121,17 +2262,15 @@
         backToTaskCalculatorView();
       }
 
-      // 5. Show Sleek Dark Web3 Toast
+      // 5. Open Deposit & Refund Tracker directly (no popup on deposit page!)
       if (typeof showInvoiceOverlayToast === 'function') {
-        showInvoiceOverlayToast('Deposit confirmed! Live blockchain tracking initialized ✓');
+        showInvoiceOverlayToast('Deposit submitted! Opening live tracker ✓');
       }
-
-      // 6. Instantly Open Deposit & Refund Tracker
       setTimeout(() => {
         if (typeof openSubmissionsHistoryModal === 'function') {
           openSubmissionsHistoryModal();
         }
-      }, 400);
+      }, 300);
       } finally {
         btns.forEach(b => {
           if (b) {

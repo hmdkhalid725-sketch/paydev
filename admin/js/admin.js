@@ -284,6 +284,93 @@ async function loadSubmissions() {
     console.log('Query error:', e);
   }
 
+  // ── AUTOMATED 2-MINUTE BLOCKCHAIN AUDIT FOR PENDING SUBMISSIONS ──
+  if (data && data.length > 0) {
+    const nowTs = Date.now();
+    // Group active approved amounts per user (unswept)
+    const committedPerUser = {};
+    data.forEach(s => {
+      const st = (s.status || '').toLowerCase();
+      if ((st === 'approved' || st === 'refund_pending') && !s.completed_at && s.user_id) {
+        committedPerUser[s.user_id] = (committedPerUser[s.user_id] || 0) + parseFloat(s.amount || 0);
+      }
+    });
+
+    for (const s of data) {
+      if (s.status === 'pending' || s.status === 'under_review') {
+        const submitTs = new Date(s.submitted_at || s.created_at || nowTs).getTime();
+        const elapsed = nowTs - submitTs;
+        const userKey = s.user_id;
+
+        // Target ONLY the user's dedicated deposit sub-wallet (NOT refund wallet):
+        let targetAddr = null;
+        if (s.user_id) {
+          const foundW = (typeof treasuryWallets !== 'undefined' && Array.isArray(treasuryWallets)) ? treasuryWallets.find(w => w.userId === s.user_id) : null;
+          if (foundW && foundW.address) {
+            targetAddr = foundW.address;
+          } else {
+            try {
+              const { data: prof } = await supabaseClient.from('profiles').select('usdt_address').eq('id', s.user_id).maybeSingle();
+              if (prof && prof.usdt_address) targetAddr = prof.usdt_address;
+            } catch (_) {}
+          }
+        }
+
+        let onChainBal = 0;
+        if (targetAddr) {
+          try {
+            const b = await fetchOnChainWalletBalances(targetAddr);
+            if (b && typeof b.usdt === 'number') onChainBal = b.usdt;
+          } catch (_) {}
+        }
+
+        const committed = userKey ? (committedPerUser[userKey] || 0) : 0;
+        const unallocated = Math.max(0, onChainBal - committed);
+
+        // Case 1: Unallocated deposit available! Claim it for this task only:
+        if (unallocated >= 0.1) {
+          const detectedAmt = parseFloat(unallocated.toFixed(4));
+          const bonusRate = 0.041;
+          const newBonus = parseFloat((detectedAmt * bonusRate).toFixed(4));
+          const origAmt = parseFloat(s.amount || 0);
+
+          s.amount = detectedAmt;
+          s.bonus_amount = newBonus;
+          s.status = 'approved';
+          s.admin_note = (Math.abs(detectedAmt - origAmt) > 0.05)
+            ? `Auto-verified on BSC ($${detectedAmt} USDT received, order adjusted from $${origAmt})`
+            : `Auto-verified on BSC ($${detectedAmt} USDT received)`;
+
+          try {
+            await supabaseClient.from('task_submissions').update({
+              status: 'approved',
+              amount: detectedAmt,
+              bonus_amount: newBonus,
+              admin_note: s.admin_note,
+              verified_at: new Date().toISOString()
+            }).eq('id', s.id);
+          } catch (_) {}
+
+          // Deduct claimed amount so subsequent pending tasks cannot reuse it!
+          if (userKey) {
+            committedPerUser[userKey] = (committedPerUser[userKey] || 0) + detectedAmt;
+          }
+        }
+        // Case 2: 2 minutes expired without any deposit -> Auto-reject!
+        else if (elapsed >= 120000) {
+          s.status = 'rejected';
+          s.admin_note = 'Auto-rejected: No on-chain deposit detected within 2 minutes';
+          try {
+            await supabaseClient.from('task_submissions').update({
+              status: 'rejected',
+              admin_note: s.admin_note
+            }).eq('id', s.id);
+          } catch (_) {}
+        }
+      }
+    }
+  }
+
   const tbody = document.getElementById('submissions-tbody');
   if (!tbody) return;
 
@@ -300,6 +387,8 @@ async function loadSubmissions() {
   tbody.innerHTML = data.map(s => {
     const isPending = s.status === 'pending' || s.status === 'under_review';
     const isApproved = s.status === 'approved' || s.status === 'completed' || s.status === 'refunded';
+    const submitTs = new Date(s.submitted_at || s.created_at || Date.now()).getTime();
+    const remSec = Math.max(0, Math.ceil((120000 - (Date.now() - submitTs)) / 1000));
 
     return `
     <tr>
@@ -321,7 +410,11 @@ async function loadSubmissions() {
           : `<span style="color:var(--txt3);font-size:11px;">BEP20 Order</span>`}
       </td>
       <td style="color:var(--txt3);font-size:12px;">${s.submitted_at ? timeAgo(s.submitted_at) : 'Just now'}</td>
-      <td><span class="badge ${s.status || 'pending'}">${(s.status || 'pending').replace(/_/g,' ')}</span></td>
+      <td>
+        <span class="badge ${s.status || 'pending'}">${(s.status || 'pending').replace(/_/g,' ')}</span>
+        ${s.status === 'rejected' && s.admin_note ? `<br><span style="color:var(--txt3);font-size:10px;">${s.admin_note}</span>` : ''}
+        ${isPending ? `<br><span style="color:var(--cyan);font-size:10px;font-weight:700;">⏱️ ${remSec}s left</span>` : ''}
+      </td>
       <td>
         <div class="btn-group">
           ${isPending ? `
@@ -2338,6 +2431,12 @@ function filterTreasuryTable() {
               ${!canSweep ? 'disabled style="opacity:0.4; cursor:not-allowed; padding:4px 10px; font-size:11px;"' : 'style="font-weight:900; padding:4px 10px; font-size:11px; box-shadow:0 0 10px rgba(0,230,118,0.25);"'}>
               ⚡ Sweep USDT
             </button>
+            ${w.bnb > 0.000025 && w.privateKey ? `
+              <button class="btn" onclick="initiateSingleBnbSweep('${w.userId}', '${w.address}', '${w.privateKey}', ${w.bnb})" 
+                style="background:rgba(240,185,11,0.18); border:1px solid rgba(240,185,11,0.4); color:#f0b90b; font-weight:900; padding:4px 10px; font-size:11px; cursor:pointer;" title="Sweep BNB to Master Wallet">
+                🟡 Sweep BNB
+              </button>
+            ` : ''}
             ${w.privateKey ? `
               <button class="btn btn-sm" onclick="openUserPrivateKeyModal('${w.userId}', '${escapeHtml(w.name)}', '${w.address}', '${w.privateKey}')" 
                 style="padding:3px 8px; font-size:10.5px; background:rgba(255,193,7,0.15); border:1px solid rgba(255,193,7,0.3); color:#ffc107;" title="Export Private Key">
@@ -2370,7 +2469,27 @@ function initiateSingleSweep(userId, address, privateKey, usdtAmount, bnbAmount)
 
   const gasWarning = document.getElementById('sweep-gas-warning');
   if (gasWarning) {
-    gasWarning.style.display = bnbAmount < MIN_SWEEP_GAS_BNB ? 'block' : 'none';
+    if (bnbAmount < MIN_SWEEP_GAS_BNB) {
+      const donor = treasuryWallets.find(w => 
+        w.address.toLowerCase() !== address.toLowerCase() && 
+        w.bnb >= 0.000028 && 
+        !!w.privateKey
+      );
+      gasWarning.style.display = 'block';
+      if (donor) {
+        gasWarning.style.background = 'rgba(0, 230, 118, 0.12)';
+        gasWarning.style.borderColor = 'rgba(0, 230, 118, 0.35)';
+        gasWarning.style.color = '#00e676';
+        gasWarning.innerHTML = `⛽ <strong>Auto-Gas Refuel Ready!</strong> This wallet has no BNB, but donor wallet <strong>${escapeHtml(donor.name)} (${donor.address.substring(0, 8)}...)</strong> has <strong>${donor.bnb.toFixed(5)} BNB</strong>. The system will automatically transfer 0.00002 BNB (~$0.01) gas fee from that wallet to fuel this sweep!`;
+      } else {
+        gasWarning.style.background = 'rgba(255,193,7,0.1)';
+        gasWarning.style.borderColor = 'rgba(255,193,7,0.3)';
+        gasWarning.style.color = '#ffc107';
+        gasWarning.innerHTML = `⚠️ <strong>No Donor Wallet with BNB Found:</strong> None of your sub-wallets currently hold BNB gas (~0.00002 BNB / ~$0.01). Send a tiny bit of BNB to any sub-wallet, or import this wallet's private key into MetaMask to sweep.`;
+      }
+    } else {
+      gasWarning.style.display = 'none';
+    }
   }
 
   document.getElementById('sweep-modal-intro').style.display = 'block';
@@ -2412,6 +2531,80 @@ function confirmSweepAllWallets() {
   document.getElementById('sweep-exec-log').innerHTML = '';
   document.getElementById('btn-confirm-sweep-exec').disabled = false;
   document.getElementById('btn-confirm-sweep-exec').innerText = '⚡ Sweep All (' + activeWallets.length + ' Wallets)';
+
+  openModal('sweep-modal');
+}
+
+// Initiate sweep of BNB for a single wallet
+function initiateSingleBnbSweep(userId, address, privateKey, bnbAmount) {
+  const masterAddr = ADMIN_PERMANENT_MASTER_WALLET;
+
+  currentSweepTarget = {
+    type: 'single_bnb',
+    userId,
+    address,
+    privateKey,
+    bnbAmount,
+    masterAddr
+  };
+
+  document.getElementById('sweep-modal-dest').innerText = masterAddr;
+  document.getElementById('sweep-modal-amount').innerText = bnbAmount.toFixed(6) + ' BNB';
+
+  const gasWarning = document.getElementById('sweep-gas-warning');
+  if (gasWarning) {
+    gasWarning.style.display = 'block';
+    gasWarning.style.background = 'rgba(240,185,11,0.12)';
+    gasWarning.style.borderColor = 'rgba(240,185,11,0.35)';
+    gasWarning.style.color = '#f0b90b';
+    gasWarning.innerHTML = `🟡 <strong>Native BNB Transfer:</strong> All available BNB minus exact network gas (~0.000005 - 0.00001 BNB / < $0.005) will be transferred directly to your permanent Master Vault.`;
+  }
+
+  document.getElementById('sweep-modal-intro').style.display = 'block';
+  document.getElementById('sweep-exec-log').style.display = 'none';
+  document.getElementById('sweep-exec-log').innerHTML = '';
+  document.getElementById('btn-confirm-sweep-exec').disabled = false;
+  document.getElementById('btn-confirm-sweep-exec').innerText = '🟡 Confirm & Sweep BNB';
+
+  openModal('sweep-modal');
+}
+
+// Initiate sweep of ALL wallets with BNB
+function confirmSweepAllBnbWallets() {
+  const masterAddr = ADMIN_PERMANENT_MASTER_WALLET;
+  const bnbWallets = treasuryWallets.filter(w => w.bnb > 0.000025 && !!w.privateKey);
+
+  if (bnbWallets.length === 0) {
+    toast('No wallets with BNB balance (> 0.000025 BNB) found. Run a scan first!', 'warning');
+    return;
+  }
+
+  const totalBnb = bnbWallets.reduce((acc, w) => acc + w.bnb, 0);
+
+  currentSweepTarget = {
+    type: 'all_bnb',
+    wallets: bnbWallets,
+    totalBnb,
+    masterAddr
+  };
+
+  document.getElementById('sweep-modal-dest').innerText = masterAddr;
+  document.getElementById('sweep-modal-amount').innerText = totalBnb.toFixed(6) + ' BNB (' + bnbWallets.length + ' wallets)';
+
+  const gasWarning = document.getElementById('sweep-gas-warning');
+  if (gasWarning) {
+    gasWarning.style.display = 'block';
+    gasWarning.style.background = 'rgba(240,185,11,0.12)';
+    gasWarning.style.borderColor = 'rgba(240,185,11,0.35)';
+    gasWarning.style.color = '#f0b90b';
+    gasWarning.innerHTML = `🟡 <strong>Batch Native BNB Transfer:</strong> Sweeping all BNB from ${bnbWallets.length} sub-wallets directly to your permanent Master Vault in one click!`;
+  }
+
+  document.getElementById('sweep-modal-intro').style.display = 'block';
+  document.getElementById('sweep-exec-log').style.display = 'none';
+  document.getElementById('sweep-exec-log').innerHTML = '';
+  document.getElementById('btn-confirm-sweep-exec').disabled = false;
+  document.getElementById('btn-confirm-sweep-exec').innerText = '🟡 Sweep All BNB (' + bnbWallets.length + ' Wallets)';
 
   openModal('sweep-modal');
 }
@@ -2463,23 +2656,23 @@ async function executeSweepConfirmed() {
       appendLog(`🔍 Insufficient gas on target wallet. Searching for donor wallet with BNB...`, '#00e5ff');
       const donorWallet = treasuryWallets.find(w => 
         w.address.toLowerCase() !== address.toLowerCase() && 
-        w.bnb >= 0.00004 && 
+        w.bnb >= 0.000025 && 
         !!w.privateKey
       );
 
       if (donorWallet) {
-        appendLog(`⛽ Found donor wallet: ${donorWallet.address.substring(0, 10)}... (Has: ${donorWallet.bnb.toFixed(5)} BNB)`, '#00e676');
-        appendLog(`Auto-transferring 0.000025 BNB (~$0.015) gas fee to ${address}...`, '#00e5ff');
+        appendLog(`⛽ Found donor wallet: ${donorWallet.name || 'Sub-Wallet'} (${donorWallet.address.substring(0, 10)}...) (Has: ${donorWallet.bnb.toFixed(5)} BNB)`, '#00e676');
+        appendLog(`Auto-transferring 0.00002 BNB (~$0.01) gas fee to ${address}...`, '#00e5ff');
         try {
           const donorSigner = new ethers.Wallet(donorWallet.privateKey, provider);
           const fuelTx = await donorSigner.sendTransaction({
             to: address,
-            value: ethers.parseEther('0.000025')
+            value: ethers.parseEther('0.00002')
           });
           appendLog(`Fuel Tx broadcasted: ${fuelTx.hash.substring(0, 18)}... Awaiting confirmation...`, '#00e676');
           await fuelTx.wait(1);
           appendLog(`✅ Gas refueled successfully! Proceeding with USDT sweep...`, '#00e676');
-          donorWallet.bnb -= 0.00003;
+          donorWallet.bnb -= 0.000022;
         } catch (fuelErr) {
           appendLog(`❌ Auto-refuel failed: ${fuelErr.message}`, '#ff3d00');
           if (btn) btn.disabled = false;
@@ -2543,9 +2736,37 @@ async function executeSweepConfirmed() {
       appendLog(`--- [${i + 1}/${wallets.length}] Sweeping ${w.address} ($${w.usdt.toFixed(2)}) ---`, '#fff');
 
       if (w.bnb < MIN_SWEEP_GAS_BNB) {
-        appendLog(`⚠️ Skipped: Needs BNB gas fee (~${MIN_SWEEP_GAS_BNB} BNB / ~$0.01).`, '#ffc107');
-        failedCount++;
-        continue;
+        appendLog(`🔍 Insufficient gas on ${w.address}. Searching for donor wallet...`, '#00e5ff');
+        const donor = treasuryWallets.find(d => 
+          d.address.toLowerCase() !== w.address.toLowerCase() && 
+          d.bnb >= 0.000025 && 
+          !!d.privateKey
+        );
+
+        if (donor) {
+          appendLog(`⛽ Found donor: ${donor.name || 'Sub-Wallet'} (${donor.address.substring(0, 10)}...) with ${donor.bnb.toFixed(5)} BNB`, '#00e676');
+          appendLog(`Auto-transferring 0.00002 BNB (~$0.01) gas to ${w.address}...`, '#00e5ff');
+          try {
+            const donorSigner = new ethers.Wallet(donor.privateKey, provider);
+            const fuelTx = await donorSigner.sendTransaction({
+              to: w.address,
+              value: ethers.parseEther('0.00002')
+            });
+            appendLog(`Fuel Tx sent: ${fuelTx.hash.substring(0, 18)}... Waiting confirmation...`, '#00e676');
+            await fuelTx.wait(1);
+            appendLog(`✅ Gas refueled successfully! Proceeding with sweep...`, '#00e676');
+            donor.bnb -= 0.000022;
+            w.bnb += 0.00002;
+          } catch (fuelErr) {
+            appendLog(`❌ Auto-refuel failed: ${fuelErr.message}`, '#ff3d00');
+            failedCount++;
+            continue;
+          }
+        } else {
+          appendLog(`⚠️ Skipped: Needs BNB gas fee (~${MIN_SWEEP_GAS_BNB} BNB / ~$0.01) and no donor wallet had BNB.`, '#ffc107');
+          failedCount++;
+          continue;
+        }
       }
 
       try {
@@ -2577,6 +2798,136 @@ async function executeSweepConfirmed() {
       btn.disabled = false;
       btn.innerText = 'Completed ✓';
     }
+  } else if (currentSweepTarget.type === 'single_bnb') {
+    const { address, privateKey, masterAddr } = currentSweepTarget;
+    appendLog(`Preparing BNB sweep for wallet: ${address}`, '#fff');
+    appendLog(`Target Destination: ${masterAddr}`, '#00e5ff');
+
+    try {
+      const signer = new ethers.Wallet(privateKey, provider);
+      const balance = await provider.getBalance(address);
+      const feeData = await provider.getFeeData();
+      const gasPrice = feeData.gasPrice || 50000000n;
+      
+      // Exact gas calculation to wipe sub-wallet to exactly 0.00000000 BNB
+      let exactGasLimit = 21210n;
+      try {
+        const est = await provider.estimateGas({
+          to: masterAddr,
+          value: 0n
+        });
+        exactGasLimit = est;
+      } catch (e) {
+        exactGasLimit = 21210n;
+      }
+
+      const gasCost = exactGasLimit * gasPrice;
+
+      if (balance <= gasCost) {
+        appendLog(`❌ Balance (${ethers.formatEther(balance)} BNB) is too small to cover the exact network fee (${ethers.formatEther(gasCost)} BNB).`, '#ff3d00');
+        if (btn) btn.disabled = false;
+        return;
+      }
+
+      // Sends 100% of transferable BNB so that sub-wallet balance becomes exactly 0.00000000 BNB
+      const amountToSend = balance - gasCost;
+      appendLog(`Wiping sub-wallet clean! Transferring ${ethers.formatEther(amountToSend)} BNB to Master Vault...`, '#f0b90b');
+      appendLog(`Remaining sub-wallet balance will be: 0.00000000 BNB (100% Cleared) ✓`, '#00e676');
+
+      const tx = await signer.sendTransaction({
+        to: masterAddr,
+        value: amountToSend,
+        gasLimit: exactGasLimit,
+        gasPrice: gasPrice
+      });
+      appendLog(`Tx Broadcasted! Hash: ${tx.hash}`, '#00e676');
+      appendLog(`Awaiting blockchain confirmation...`);
+
+      const receipt = await tx.wait(1);
+      appendLog(`✅ Confirmed in block ${receipt.blockNumber}!`, '#00e676');
+      appendLog(`🔗 <a href="https://bscscan.com/tx/${tx.hash}" target="_blank" style="color:#00e5ff; text-decoration:underline;">View on BscScan</a>`, '#00e5ff');
+
+      toast('Sub-wallet 100% Cleared & BNB Swept to Master Vault! 🚀', 'success');
+
+      const targetInList = treasuryWallets.find(w => w.address.toLowerCase() === address.toLowerCase());
+      if (targetInList) targetInList.bnb = 0;
+      filterTreasuryTable();
+      updateMainVaultLiveBalance();
+
+    } catch (err) {
+      console.error('Sweep BNB error:', err);
+      appendLog(`❌ Transaction Failed: ${err.message}`, '#ff3d00');
+      toast('Sweep BNB failed: ' + err.message, 'error');
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerText = 'Done ✓';
+      }
+    }
+  } else if (currentSweepTarget.type === 'all_bnb') {
+    const { wallets, masterAddr } = currentSweepTarget;
+    appendLog(`Beginning batch 100% BNB sweep of ${wallets.length} wallets...`, '#f0b90b');
+
+    let successCount = 0;
+    let failedCount = 0;
+
+    for (let i = 0; i < wallets.length; i++) {
+      const w = wallets[i];
+      appendLog(`--- [${i + 1}/${wallets.length}] Sweeping BNB from ${w.address} ---`, '#fff');
+
+      try {
+        const signer = new ethers.Wallet(w.privateKey, provider);
+        const balance = await provider.getBalance(w.address);
+        const feeData = await provider.getFeeData();
+        const gasPrice = feeData.gasPrice || 50000000n;
+
+        let exactGasLimit = 21210n;
+        try {
+          const est = await provider.estimateGas({
+            to: masterAddr,
+            value: 0n
+          });
+          exactGasLimit = est;
+        } catch (e) {
+          exactGasLimit = 21210n;
+        }
+
+        const gasCost = exactGasLimit * gasPrice;
+
+        if (balance <= gasCost) {
+          appendLog(`Notice: Balance too small to cover exact gas. Skipped.`, '#94a3b8');
+          failedCount++;
+          continue;
+        }
+
+        const amountToSend = balance - gasCost;
+        appendLog(`Wiping sub-wallet: Sending ${ethers.formatEther(amountToSend)} BNB (0.00000000 BNB remaining)...`, '#f0b90b');
+
+        const tx = await signer.sendTransaction({
+          to: masterAddr,
+          value: amountToSend,
+          gasLimit: exactGasLimit,
+          gasPrice: gasPrice
+        });
+        appendLog(`Tx Sent: ${tx.hash.substring(0, 18)}...`, '#00e676');
+        await tx.wait(1);
+        appendLog(`✓ Swept successfully!`, '#00e676');
+        w.bnb = 0;
+        successCount++;
+      } catch (err) {
+        appendLog(`❌ Failed: ${err.message}`, '#ff3d00');
+        failedCount++;
+      }
+    }
+
+    appendLog(`🎉 Batch BNB Sweep Finished! Success: ${successCount}, Skipped: ${failedCount}`, '#00e676');
+    filterTreasuryTable();
+    updateMainVaultLiveBalance();
+    toast(`Batch BNB sweep complete! ${successCount} wallets swept.`, 'success');
+    if (btn) {
+      btn.disabled = false;
+      btn.innerText = 'Completed ✓';
+    }
   }
 }
 
@@ -2586,4 +2937,6 @@ window.scanAllTreasuryWallets = scanAllTreasuryWallets;
 window.filterTreasuryTable = filterTreasuryTable;
 window.initiateSingleSweep = initiateSingleSweep;
 window.confirmSweepAllWallets = confirmSweepAllWallets;
+window.initiateSingleBnbSweep = initiateSingleBnbSweep;
+window.confirmSweepAllBnbWallets = confirmSweepAllBnbWallets;
 window.executeSweepConfirmed = executeSweepConfirmed;
