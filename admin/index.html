@@ -107,6 +107,11 @@
         Withdrawals
         <span class="nav-badge" id="badge-withdrawals" style="display:none">0</span>
       </div>
+      <div class="nav-link" data-page="treasury">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+        Treasury & Sweeper
+        <span class="nav-badge" id="badge-treasury" style="display:none; background:var(--green); color:#000;">0</span>
+      </div>
 
       <div class="nav-section-label">Management</div>
       <div class="nav-link" data-page="users">
@@ -153,6 +158,10 @@
       </button>
       <span id="page-title">Dashboard</span>
       <div class="topbar-actions">
+        <button type="button" id="topbar-task-toggle" onclick="toggleTaskAvailability()" style="font-weight:800; font-size:12px; padding:7px 14px; border-radius:8px; display:flex; align-items:center; gap:6px; cursor:pointer; border:1px solid rgba(0,230,118,0.3); background:rgba(0,230,118,0.12); color:#00e676; transition:all 0.2s;">
+          <span id="topbar-task-icon">⚡</span>
+          <span id="topbar-task-text">Tasks: Active</span>
+        </button>
         <button class="refresh-btn" onclick="reloadCurrentPage()">
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
           <span>Refresh</span>
@@ -304,8 +313,135 @@
         </div>
       </div>
 
+      <!-- ─── PAGE: TREASURY & SWEEPER ───────────────── -->
+      <div class="admin-page" id="page-treasury">
+        <!-- Top Master Stats Grid -->
+        <div class="stats-grid" style="margin-bottom: 20px;">
+          <div class="stat-card">
+            <div class="stat-card-label">Monitored Wallets</div>
+            <div class="stat-card-value" id="t-total-wallets">—</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-label">Active (Balance > $0)</div>
+            <div class="stat-card-value orange" id="t-active-wallets">—</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-label">Total On-Chain USDT</div>
+            <div class="stat-card-value green" id="t-total-usdt" style="font-size:22px;">$0.00 USDT</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-label">Total BNB Gas Ready</div>
+            <div class="stat-card-value" id="t-total-bnb" style="color:var(--cyan); font-size:19px;">0.0000 BNB</div>
+          </div>
+        </div>
+
+        <!-- Master Wallet & Action Hub Card -->
+        <div style="background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:18px 20px; margin-bottom:22px; box-shadow:var(--shadow);">
+          <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:16px; margin-bottom:12px;">
+            <div style="flex:1; min-width:300px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                <label style="display:block; font-size:11px; font-weight:800; color:var(--txt3); text-transform:uppercase; margin:0; letter-spacing:0.5px;">
+                  Permanent Admin Master Vault (All Funds Auto-Sweep Here)
+                </label>
+                <span id="main-vault-live-balance" style="font-size:12px; font-family:monospace; color:var(--cyan); font-weight:800;">
+                  Live Vault: Checking...
+                </span>
+              </div>
+              <div style="display:flex; align-items:center; gap:8px; background:#07090e; border:1px solid rgba(0,230,118,0.3); border-radius:10px; padding:8px 12px;">
+                <span style="color:#00e676; font-size:13px;">🔒</span>
+                <span id="treasury-master-address-display" style="font-family:monospace; font-size:13px; font-weight:800; color:#00e676; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;">
+                  0x155070856B0dcfC2e20B9284a54eecedeE7Bc14D
+                </span>
+                <button type="button" class="btn btn-sm" onclick="navigator.clipboard.writeText('0x155070856B0dcfC2e20B9284a54eecedeE7Bc14D'); toast('Main Wallet Copied! ✓', 'success');" style="padding:3px 8px; font-size:11px;">
+                  Copy
+                </button>
+                <a href="https://bscscan.com/address/0x155070856B0dcfC2e20B9284a54eecedeE7Bc14D" target="_blank" style="color:var(--cyan); font-size:11px; text-decoration:none; font-weight:700;" title="View Vault on BscScan">↗</a>
+              </div>
+            </div>
+
+            <div style="display:flex; gap:10px; align-items:flex-end;">
+              <button type="button" class="btn btn-ghost" onclick="scanAllTreasuryWallets()" id="btn-scan-treasury" style="font-weight:800; padding:10px 18px; display:flex; align-items:center; gap:8px; border-color:rgba(0,229,255,0.3); color:var(--cyan);">
+                <span id="scan-btn-icon">🔄</span>
+                <span id="scan-btn-text">Scan On-Chain Balances</span>
+              </button>
+              <button type="button" class="btn btn-green" onclick="confirmSweepAllWallets()" id="btn-sweep-all" style="font-weight:900; padding:10px 20px; display:flex; align-items:center; gap:8px; box-shadow:0 0 16px rgba(0,230,118,0.3);">
+                <span>⚡ Sweep All Funds</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Scanning / Status Banner -->
+          <div id="treasury-status-banner" style="display:none; background:rgba(0,229,255,0.08); border:1px solid rgba(0,229,255,0.25); border-radius:10px; padding:10px 14px; font-size:12px; color:var(--cyan); margin-top:10px; align-items:center; justify-content:space-between;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="spinner" style="width:14px; height:14px; border-width:2px;"></span>
+              <span id="treasury-status-text">Scanning blockchain...</span>
+            </div>
+            <span id="treasury-status-pct" style="font-family:monospace; font-weight:800;">0%</span>
+          </div>
+        </div>
+
+        <!-- Table Controls Filter & Search -->
+        <div class="section-header" style="margin-bottom:12px;">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <h3 style="margin:0; font-size:16px;">Live Deposit Wallets</h3>
+              <span style="font-size:11px; color:#00e676; font-weight:700; display:inline-flex; align-items:center; gap:5px; background:rgba(0,230,118,0.1); border:1px solid rgba(0,230,118,0.25); padding:2px 8px; border-radius:12px;">
+                <span style="width:6px; height:6px; border-radius:50%; background:#00e676; box-shadow:0 0 6px #00e676;"></span>
+                Auto-syncing (30s)
+              </span>
+            </div>
+            <select class="form-control" id="treasury-filter" style="width:auto; padding:6px 12px; font-size:12.5px;" onchange="filterTreasuryTable()">
+              <option value="active" selected>Wallets with Balance > $0 (USDT or BNB)</option>
+              <option value="all">All Wallets</option>
+            </select>
+          </div>
+          <input type="text" id="treasury-search" class="form-control" placeholder="Search by name, phone or 0x..." style="width:240px; font-size:12px; padding:6px 12px;" oninput="filterTreasuryTable()">
+        </div>
+
+        <!-- Wallets Data Table -->
+        <div class="data-table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>User Details</th>
+                <th>BEP20 Deposit Address</th>
+                <th>Live USDT</th>
+                <th>BNB Gas</th>
+                <th>Gas Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="treasury-tbody">
+              <tr><td colspan="6"><div class="empty-state">Click "Scan On-Chain Balances" to read live blockchain funds.</div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       <!-- ─── PAGE: TASKS ─────────────────────────────── -->
       <div class="admin-page" id="page-tasks">
+        <!-- Global Task Master Switch Card -->
+        <div style="background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:18px 20px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px; box-shadow:var(--shadow);">
+          <div style="display:flex; align-items:center; gap:14px;">
+            <div id="admin-task-status-indicator" style="width:44px; height:44px; border-radius:12px; background:rgba(0,230,118,0.12); border:1px solid rgba(0,230,118,0.3); display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0;">
+              ⚡
+            </div>
+            <div>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <h4 style="font-size:15px; font-weight:900; color:#ffffff; margin:0;">User Deposit Terminal Status</h4>
+                <span id="admin-task-status-badge" style="font-size:11px; font-weight:800; background:rgba(0,230,118,0.15); color:#00e676; border:1px solid rgba(0,230,118,0.3); padding:2px 8px; border-radius:6px;">ACTIVE</span>
+              </div>
+              <p style="font-size:12px; color:var(--txt3); margin:3px 0 0 0;" id="admin-task-status-desc">
+                Users can currently calculate and submit USDT task deposits.
+              </p>
+            </div>
+          </div>
+          <button type="button" id="btn-toggle-task-lock" class="btn" onclick="toggleTaskAvailability()" style="font-weight:900; font-size:12.5px; padding:10px 20px; display:flex; align-items:center; gap:8px; background:rgba(255,193,7,0.15); border:1px solid rgba(255,193,7,0.35); color:#ffc107; cursor:pointer;">
+            <span id="btn-toggle-task-icon">🔒</span>
+            <span id="btn-toggle-task-text">Lock Tasks (Pause Deposits)</span>
+          </button>
+        </div>
+
         <div class="section-header">
           <h3>Task Management</h3>
           <button class="btn btn-green" onclick="openTaskModal()">+ Create Task</button>
@@ -766,10 +902,51 @@
     </div>
   </div>
 
+  <!-- ═══════════════════════ ON-CHAIN SWEEP FUNDS MODAL -->
+  <div class="modal-backdrop" id="sweep-modal">
+    <div class="modal" style="max-width: 520px;">
+      <div class="modal-header">
+        <span class="modal-title" style="color:var(--green);">⚡ On-Chain USDT Sweeper</span>
+        <button class="modal-close" onclick="closeModal('sweep-modal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="sweep-modal-intro">
+          <p style="font-size:13px; color:var(--txt2); line-height:1.5; margin-top:0;">
+            Transfer funds securely from user deposit wallet(s) directly to your configured Admin Master Wallet.
+          </p>
+          <div style="background:rgba(0,0,0,0.35); border:1px solid var(--border); border-radius:12px; padding:14px; margin-bottom:14px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:12px;">
+              <span style="color:var(--txt3);">Sweep Destination:</span>
+              <span id="sweep-modal-dest" style="font-family:monospace; color:var(--cyan); font-weight:700;">0x...</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; font-size:13px;">
+              <span style="color:var(--txt3);">Total USDT to Sweep:</span>
+              <span id="sweep-modal-amount" style="color:var(--green); font-weight:900; font-size:16px;">$0.00 USDT</span>
+            </div>
+          </div>
+          
+          <div id="sweep-gas-warning" style="display:none; background:rgba(255,193,7,0.1); border:1px solid rgba(255,193,7,0.3); border-radius:10px; padding:12px; font-size:11.5px; color:#ffc107; margin-bottom:14px; line-height:1.4;">
+            ⚠️ <strong>Gas Notice:</strong> The wallet has less than 0.00002 BNB for BSC network transfer fees (~$0.01). You can send a tiny bit of BNB to it or import the private key into MetaMask/Trust Wallet to sweep manually.
+          </div>
+        </div>
+
+        <!-- Live Log Output during execution -->
+        <div id="sweep-exec-log" style="display:none; background:#07090e; border:1px solid rgba(255,255,255,0.1); border-radius:10px; padding:12px; max-height:220px; overflow-y:auto; font-family:monospace; font-size:11.5px; line-height:1.6; color:#a0a5b5;">
+        </div>
+      </div>
+      <div class="modal-footer" id="sweep-modal-footer">
+        <button class="btn btn-ghost" onclick="closeModal('sweep-modal')">Cancel</button>
+        <button class="btn btn-green" id="btn-confirm-sweep-exec" onclick="executeSweepConfirmed()" style="padding:10px 20px; font-weight:900;">
+          ⚡ Confirm & Sweep Now
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
   <script src="./js/supabase.js"></script>
-  <script src="./js/admin.js"></script>
+  <script src="./js/admin.js?v=1.5"></script>
 </body>
 </html>

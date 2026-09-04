@@ -103,9 +103,67 @@ async function loadProfileData() {
       newBtn.addEventListener('click', (e) => copyToClipboard(inviteLink, e.target));
     }
 
+    // Load and display Connected BEP20 Receiving / Refund Wallet
+    const walletEl = document.getElementById('profile-wallet-address');
+    if (walletEl) {
+      const savedWallet = profile.wallet_address || localStorage.getItem('user_refund_payout_address');
+      if (savedWallet && savedWallet.startsWith('0x') && savedWallet.length >= 40) {
+        walletEl.innerText = savedWallet;
+        walletEl.style.color = '#00e676';
+        localStorage.setItem('user_refund_payout_address', savedWallet);
+      } else {
+        walletEl.innerText = '⚠️ No receiving wallet connected';
+        walletEl.style.color = '#eab308';
+      }
+    }
+
   } catch (err) {
     console.error("Profile load error:", err);
     showToast("Failed to fetch profile.", "error");
+  }
+}
+
+// ── Wallet Management in Profile ──
+function copyProfileWallet() {
+  const el = document.getElementById('profile-wallet-address');
+  if (el && el.innerText && el.innerText.startsWith('0x')) {
+    navigator.clipboard.writeText(el.innerText);
+    showToast('Receiving Wallet Address copied! ✓', 'success');
+  } else {
+    openEditWalletModal();
+  }
+}
+
+async function openEditWalletModal() {
+  const current = localStorage.getItem('user_refund_payout_address') || '';
+  const newAddr = prompt('Enter your 42-character BEP20 (BSC) USDT receiving wallet address (starts with 0x):', current);
+  if (newAddr === null) return;
+  const clean = newAddr.trim();
+  const isEvm = /^0x[a-fA-F0-9]{40}$/.test(clean);
+  if (!isEvm) {
+    alert('Invalid BEP20 address! It must start with 0x and be 42 characters long.');
+    return;
+  }
+  
+  localStorage.setItem('user_refund_payout_address', clean);
+  const el = document.getElementById('profile-wallet-address');
+  if (el) {
+    el.innerText = clean;
+    el.style.color = '#00e676';
+  }
+  if (typeof userBscAddress !== 'undefined') userBscAddress = clean;
+  if (typeof setBscAddressUI === 'function') setBscAddressUI(clean);
+
+  if (supabaseClient) {
+    try {
+      const { data: { user } } = await supabaseClient.auth.getUser();
+      if (user) {
+        await supabaseClient.from('profiles').update({ wallet_address: clean }).eq('id', user.id);
+        showToast('BEP20 Receiving Wallet updated & saved to database! ✓', 'success');
+      }
+    } catch (e) {
+      console.error('Save wallet error:', e);
+    }
   }
 }
 

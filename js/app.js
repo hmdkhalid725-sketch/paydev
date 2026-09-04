@@ -120,6 +120,10 @@ async function switchTab(tabId) {
 
   currentActiveTab = tabId;
 
+  if (tabId === 'tasks' && typeof window.checkGlobalTaskAvailability === 'function') {
+    window.checkGlobalTaskAvailability();
+  }
+
   // Update active state in navigation
   const navItems = document.querySelectorAll('.bottom-nav .nav-item');
   navItems.forEach(nav => {

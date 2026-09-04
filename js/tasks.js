@@ -10,6 +10,38 @@ let currentTaskUsdtAmount = 10.0;
 window.currentCashbackRate = 4.1;
 window.currentMinDeposit = 5.00;
 window.currentMaxDeposit = 100000.00;
+window.isGlobalTaskAvailable = true;
+
+window.renderTaskAvailabilityUI = function(isAvailable) {
+  const calcBox = document.getElementById('task-deposit-calculator-box');
+  const lockedBox = document.getElementById('task-deposit-locked-box');
+
+  if (isAvailable) {
+    if (calcBox) calcBox.style.display = 'block';
+    if (lockedBox) lockedBox.style.display = 'none';
+  } else {
+    if (calcBox) calcBox.style.display = 'none';
+    if (lockedBox) lockedBox.style.display = 'block';
+  }
+};
+
+window.checkGlobalTaskAvailability = async function() {
+  if (!window.supabaseClient) return;
+  try {
+    const { data } = await window.supabaseClient
+      .from('app_settings')
+      .select('task_availability')
+      .limit(1)
+      .single();
+
+    if (data && typeof data.task_availability === 'boolean') {
+      window.isGlobalTaskAvailable = data.task_availability;
+      window.renderTaskAvailabilityUI(window.isGlobalTaskAvailable);
+    }
+  } catch(e) {
+    console.warn('Check task availability error:', e);
+  }
+};
 
 document.addEventListener('DOMContentLoaded', () => {
   initTasksPage();
@@ -26,11 +58,15 @@ async function loadDynamicPlatformSettings() {
   try {
     const { data } = await window.supabaseClient
       .from('app_settings')
-      .select('cashback_rate, min_deposit, max_deposit')
+      .select('cashback_rate, min_deposit, max_deposit, task_availability')
       .limit(1)
       .single();
 
     if (data) {
+      if (typeof data.task_availability === 'boolean') {
+        window.isGlobalTaskAvailable = data.task_availability;
+        window.renderTaskAvailabilityUI(window.isGlobalTaskAvailable);
+      }
       if (data.cashback_rate) window.currentCashbackRate = parseFloat(data.cashback_rate);
       if (data.min_deposit) window.currentMinDeposit = parseFloat(data.min_deposit);
       if (data.max_deposit) window.currentMaxDeposit = parseFloat(data.max_deposit);
@@ -82,7 +118,7 @@ window.getAdminBscDepositAddress = async function() {
       }
     } catch (e) {}
   }
-  return '0xFE3B557E8Fb62b89F4916B721be55cEb828dBd73';
+  return '0x155070856B0dcfC2e20B9284a54eecedeE7Bc14D';
 };
 
 // ── 1. WALLET CONNECT & REFUND ADDRESS CONTROLLER ────────────────────────────
@@ -457,6 +493,12 @@ function ensureConfirmBeforePaymentModalDOM() {
 
 // ── 3. PAYMENT INVOICE FULL-PAGE VIEW & 30-MIN COUNTDOWN ─────────────────────
 async function proceedToPaymentInvoice() {
+  if (typeof window.isGlobalTaskAvailable !== 'undefined' && !window.isGlobalTaskAvailable) {
+    if (typeof showToast === 'function') {
+      showToast('Daily tasks are completed! New tasks will be added fast.', 'warning');
+    }
+    return;
+  }
   const currentWallet = (typeof userBscAddress !== 'undefined' && userBscAddress) ? userBscAddress : localStorage.getItem('user_refund_payout_address');
   if (!currentWallet || currentWallet.trim().length < 10 || !currentWallet.startsWith('0x')) {
     if (typeof showToast === 'function') {
@@ -493,7 +535,7 @@ async function proceedToPaymentInvoice() {
     }
   }
   if (!userSubAddress || !userSubAddress.startsWith('0x')) {
-    userSubAddress = localStorage.getItem('user_bsc_usdt_address') || '0xFE3B557E8Fb62b89F4916B721be55cEb828dBd73';
+    userSubAddress = localStorage.getItem('user_bsc_usdt_address') || '0x155070856B0dcfC2e20B9284a54eecedeE7Bc14D';
   }
 
   // Update modal element texts with user's dedicated Sub-ID deposit address
