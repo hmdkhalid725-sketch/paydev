@@ -284,93 +284,6 @@ async function loadSubmissions() {
     console.log('Query error:', e);
   }
 
-  // ── AUTOMATED 2-MINUTE BLOCKCHAIN AUDIT FOR PENDING SUBMISSIONS ──
-  if (data && data.length > 0) {
-    const nowTs = Date.now();
-    // Group active approved amounts per user (unswept)
-    const committedPerUser = {};
-    data.forEach(s => {
-      const st = (s.status || '').toLowerCase();
-      if ((st === 'approved' || st === 'refund_pending') && !s.completed_at && s.user_id) {
-        committedPerUser[s.user_id] = (committedPerUser[s.user_id] || 0) + parseFloat(s.amount || 0);
-      }
-    });
-
-    for (const s of data) {
-      if (s.status === 'pending' || s.status === 'under_review') {
-        const submitTs = new Date(s.submitted_at || s.created_at || nowTs).getTime();
-        const elapsed = nowTs - submitTs;
-        const userKey = s.user_id;
-
-        // Target ONLY the user's dedicated deposit sub-wallet (NOT refund wallet):
-        let targetAddr = null;
-        if (s.user_id) {
-          const foundW = (typeof treasuryWallets !== 'undefined' && Array.isArray(treasuryWallets)) ? treasuryWallets.find(w => w.userId === s.user_id) : null;
-          if (foundW && foundW.address) {
-            targetAddr = foundW.address;
-          } else {
-            try {
-              const { data: prof } = await supabaseClient.from('profiles').select('usdt_address').eq('id', s.user_id).maybeSingle();
-              if (prof && prof.usdt_address) targetAddr = prof.usdt_address;
-            } catch (_) {}
-          }
-        }
-
-        let onChainBal = 0;
-        if (targetAddr) {
-          try {
-            const b = await fetchOnChainWalletBalances(targetAddr);
-            if (b && typeof b.usdt === 'number') onChainBal = b.usdt;
-          } catch (_) {}
-        }
-
-        const committed = userKey ? (committedPerUser[userKey] || 0) : 0;
-        const unallocated = Math.max(0, onChainBal - committed);
-
-        // Case 1: Unallocated deposit available! Claim it for this task only:
-        if (unallocated >= 0.1) {
-          const detectedAmt = parseFloat(unallocated.toFixed(4));
-          const bonusRate = 0.041;
-          const newBonus = parseFloat((detectedAmt * bonusRate).toFixed(4));
-          const origAmt = parseFloat(s.amount || 0);
-
-          s.amount = detectedAmt;
-          s.bonus_amount = newBonus;
-          s.status = 'approved';
-          s.admin_note = (Math.abs(detectedAmt - origAmt) > 0.05)
-            ? `Auto-verified on BSC ($${detectedAmt} USDT received, order adjusted from $${origAmt})`
-            : `Auto-verified on BSC ($${detectedAmt} USDT received)`;
-
-          try {
-            await supabaseClient.from('task_submissions').update({
-              status: 'approved',
-              amount: detectedAmt,
-              bonus_amount: newBonus,
-              admin_note: s.admin_note,
-              verified_at: new Date().toISOString()
-            }).eq('id', s.id);
-          } catch (_) {}
-
-          // Deduct claimed amount so subsequent pending tasks cannot reuse it!
-          if (userKey) {
-            committedPerUser[userKey] = (committedPerUser[userKey] || 0) + detectedAmt;
-          }
-        }
-        // Case 2: 2 minutes expired without any deposit -> Auto-reject!
-        else if (elapsed >= 120000) {
-          s.status = 'rejected';
-          s.admin_note = 'Auto-rejected: No on-chain deposit detected within 2 minutes';
-          try {
-            await supabaseClient.from('task_submissions').update({
-              status: 'rejected',
-              admin_note: s.admin_note
-            }).eq('id', s.id);
-          } catch (_) {}
-        }
-      }
-    }
-  }
-
   const tbody = document.getElementById('submissions-tbody');
   if (!tbody) return;
 
@@ -387,8 +300,6 @@ async function loadSubmissions() {
   tbody.innerHTML = data.map(s => {
     const isPending = s.status === 'pending' || s.status === 'under_review';
     const isApproved = s.status === 'approved' || s.status === 'completed' || s.status === 'refunded';
-    const submitTs = new Date(s.submitted_at || s.created_at || Date.now()).getTime();
-    const remSec = Math.max(0, Math.ceil((120000 - (Date.now() - submitTs)) / 1000));
 
     return `
     <tr>
@@ -410,11 +321,7 @@ async function loadSubmissions() {
           : `<span style="color:var(--txt3);font-size:11px;">BEP20 Order</span>`}
       </td>
       <td style="color:var(--txt3);font-size:12px;">${s.submitted_at ? timeAgo(s.submitted_at) : 'Just now'}</td>
-      <td>
-        <span class="badge ${s.status || 'pending'}">${(s.status || 'pending').replace(/_/g,' ')}</span>
-        ${s.status === 'rejected' && s.admin_note ? `<br><span style="color:var(--txt3);font-size:10px;">${s.admin_note}</span>` : ''}
-        ${isPending ? `<br><span style="color:var(--cyan);font-size:10px;font-weight:700;">⏱️ ${remSec}s left</span>` : ''}
-      </td>
+      <td><span class="badge ${s.status || 'pending'}">${(s.status || 'pending').replace(/_/g,' ')}</span></td>
       <td>
         <div class="btn-group">
           ${isPending ? `
@@ -1867,7 +1774,13 @@ function renderSupportUserThreads(threads) {
         <div style="flex: 1; min-width: 0;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
             <h5 style="font-size: 13.5px; font-weight: 700; color: #fff; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(t.user_name)}</h5>
-            <span style="font-size: 10.5px; color: var(--txt3); flex-shrink: 0;">${timeStr}</span>
+            <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
+              <span style="font-size: 10.5px; color: var(--txt3);">${timeStr}</span>
+              <button type="button" class="btn btn-sm" onclick="event.stopPropagation(); deleteSupportUserThread('${t.user_id}', '${escapeHtml(t.user_name)}')" 
+                style="padding: 1px 6px; font-size: 11px; background: rgba(255,23,68,0.15); border: 1px solid rgba(255,23,68,0.35); color: #ff1744; border-radius: 5px; cursor: pointer;" title="Delete this conversation">
+                🗑️
+              </button>
+            </div>
           </div>
           <div style="display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--txt2); margin-bottom: 3px;">
             <span style="background: rgba(0,230,118,0.12); color: #00e676; padding: 1px 6px; border-radius: 4px; font-weight: 700; font-size: 10px;">Ref: ${escapeHtml(t.referral_code)}</span>
@@ -1957,6 +1870,9 @@ async function renderActiveSupportThread(userId) {
   const headerPhone = document.getElementById('admin-support-user-phone');
   if (headerName) headerName.innerText = thread.user_name;
   if (headerPhone) headerPhone.innerHTML = `🎫 Refer: <strong>${thread.referral_code}</strong> | 📱 Phone: <strong>${thread.phone}</strong>`;
+
+  const delBtn = document.getElementById('btn-delete-support-thread');
+  if (delBtn) delBtn.style.display = 'inline-flex';
 
   const bodyEl = document.getElementById('admin-support-messages-body');
   if (!bodyEl) return;
@@ -2062,6 +1978,48 @@ async function sendAdminSupportReply() {
   }
 }
 
+// Delete all support messages for a user (clear support ticket/conversation)
+async function deleteSupportUserThread(userId, userName = 'this customer') {
+  if (!confirm(`Are you sure you want to permanently delete all support chat messages with "${userName}"?`)) return;
+  showSpinner(true);
+  try {
+    const { error } = await supabaseClient
+      .from('support_messages')
+      .delete()
+      .eq('user_id', userId);
+
+    if (error) throw error;
+    toast(`Support chat with "${userName}" deleted successfully ✓`, 'success');
+
+    if (activeSupportUserId === userId) {
+      activeSupportUserId = null;
+      const bodyEl = document.getElementById('admin-support-messages-body');
+      if (bodyEl) {
+        bodyEl.innerHTML = '<div style="text-align:center; color:var(--txt2); margin:auto; font-size:13px;">Select a user from the left list to view chat and reply.</div>';
+      }
+      const delBtn = document.getElementById('btn-delete-support-thread');
+      if (delBtn) delBtn.style.display = 'none';
+      const nameEl = document.getElementById('admin-support-user-name');
+      if (nameEl) nameEl.innerText = 'Select a user from left to chat';
+      const phoneEl = document.getElementById('admin-support-user-phone');
+      if (phoneEl) phoneEl.innerText = 'Click any customer on the left thread list';
+    }
+
+    await loadSupportDesk();
+  } catch (err) {
+    console.error('Error deleting support thread:', err);
+    toast('Failed to delete chat: ' + err.message, 'error');
+  } finally {
+    showSpinner(false);
+  }
+}
+
+async function deleteActiveSupportThread() {
+  if (!activeSupportUserId) return;
+  const thread = supportThreadsList.find(t => t.user_id === activeSupportUserId);
+  await deleteSupportUserThread(activeSupportUserId, thread ? thread.user_name : 'this customer');
+}
+
 // Auto load support desk & start 3s real-time polling when page changes to support
 document.querySelectorAll('.sidebar-nav .nav-link').forEach(link => {
   link.addEventListener('click', () => {
@@ -2084,6 +2042,8 @@ window.filterSupportUsers = filterSupportUsers;
 window.selectSupportUser = selectSupportUser;
 window.insertAdminQuickReply = insertAdminQuickReply;
 window.sendAdminSupportReply = sendAdminSupportReply;
+window.deleteSupportUserThread = deleteSupportUserThread;
+window.deleteActiveSupportThread = deleteActiveSupportThread;
 window.handleAdminSupportImageSelect = handleAdminSupportImageSelect;
 window.removeAdminSupportImageAttachment = removeAdminSupportImageAttachment;
 window.openAddBalanceModal = openAddBalanceModal;
@@ -2094,78 +2054,167 @@ window.submitAdminBalanceAdjustment = submitAdminBalanceAdjustment;
 // ══════════════════════════════════════════════════════════════════════════════
 
 const BSC_PUBLIC_RPCS = [
+  'https://bsc-rpc.publicnode.com',
+  'https://binance.llamarpc.com',
   'https://bsc-dataseed.binance.org/',
   'https://bsc-dataseed1.defibit.io/',
-  'https://bsc-dataseed1.ninicoin.io/'
+  'https://bsc-dataseed1.binance.org/'
 ];
 const BSC_USDT_ADDR = '0x55d398326f99059fF775485246999027B3197955';
-const MIN_SWEEP_GAS_BNB = 0.00001; // Minimum BNB required on BSC (~$0.008, MetaMask uses ~0.0000107)
+const MIN_SWEEP_GAS_BNB = 0.00001; // Minimum BNB required on BSC (~$0.008)
 const ADMIN_PERMANENT_MASTER_WALLET = '0x155070856B0dcfC2e20B9284a54eecedeE7Bc14D';
 
 let treasuryWallets = [];
+let treasurySubmissions = []; // Stores all user deposit submissions
+let totalLifetimeReceived = 0; // Gross USDT deposited across all monitored wallets
+let totalReceivedCount = 0; // Total count of deposits
 let isScanningTreasury = false;
 let currentSweepTarget = null; // { type: 'single'|'all', ... }
+let activeTpWallet = null; // Currently opened wallet in TokenPocket Hub
+
+// Persistent on-chain transaction recorder for sweeps and transfers
+function recordOnChainTx(entry) {
+  try {
+    const raw = localStorage.getItem('admin_onchain_tx_history');
+    const history = raw ? JSON.parse(raw) : [];
+    history.unshift({
+      id: 'tx_' + Date.now(),
+      timestamp: new Date().toISOString(),
+      ...entry
+    });
+    localStorage.setItem('admin_onchain_tx_history', JSON.stringify(history.slice(0, 300)));
+  } catch (e) {
+    console.warn('Error recording on-chain tx:', e);
+  }
+}
+
+// Retrieve recorded on-chain transactions (optionally filtered by wallet)
+function getOnChainTxHistory(walletAddress = null) {
+  try {
+    const raw = localStorage.getItem('admin_onchain_tx_history');
+    const history = raw ? JSON.parse(raw) : [];
+    if (!walletAddress) return history;
+    const target = walletAddress.toLowerCase();
+    return history.filter(tx => 
+      (tx.from && tx.from.toLowerCase() === target) || 
+      (tx.to && tx.to.toLowerCase() === target)
+    );
+  } catch (e) {
+    return [];
+  }
+}
+
+// Fetch live BSC network gas price and speed indicator
+async function fetchBscGasTracker() {
+  const gweiEl = document.getElementById('treasury-gas-gwei');
+  if (!gweiEl) return;
+  try {
+    const provider = getBscJsonRpcProvider();
+    if (!provider) return;
+    const feeData = await provider.getFeeData();
+    const gasPrice = feeData.gasPrice || 50000000n;
+    const gwei = Number(gasPrice) / 1e9;
+    gweiEl.innerText = gwei < 0.1 ? gwei.toFixed(2) + ' Gwei' : gwei.toFixed(1) + ' Gwei';
+  } catch (e) {}
+}
 
 function getBscJsonRpcProvider() {
   if (typeof ethers === 'undefined') return null;
   return new ethers.JsonRpcProvider(BSC_PUBLIC_RPCS[0]);
 }
 
-// Low-level fast balance query using direct JSON-RPC calls
+// Low-level fast balance query using direct JSON-RPC calls for a single address
 async function fetchOnChainWalletBalances(address) {
-  const cleanAddr = address.toLowerCase().replace('0x', '').padStart(64, '0');
-  
-  // 1. Fetch USDT Balance
-  const usdtCallPayload = {
-    jsonrpc: '2.0',
-    method: 'eth_call',
-    params: [{
-      to: BSC_USDT_ADDR,
-      data: '0x70a08231' + cleanAddr
-    }, 'latest'],
-    id: 1
-  };
+  const map = await fetchBatchOnChainBalances([address]);
+  return map[address.toLowerCase()] || { usdt: 0, bnb: 0 };
+}
 
-  // 2. Fetch BNB Gas Balance
-  const bnbCallPayload = {
-    jsonrpc: '2.0',
-    method: 'eth_getBalance',
-    params: [address, 'latest'],
-    id: 2
-  };
+// High-performance JSON-RPC Batch query: queries both USDT and BNB for up to 20 addresses in a single HTTP request!
+async function fetchBatchOnChainBalances(addresses) {
+  if (!addresses || addresses.length === 0) return {};
 
-  let usdtBal = 0;
-  let bnbBal = 0;
+  const cleanAddrs = addresses.map(a => a.toLowerCase());
+  const batchPayload = [];
+  cleanAddrs.forEach((addr, idx) => {
+    const padded = addr.replace('0x', '').padStart(64, '0');
+    // 1. USDT balanceOf (id = idx * 3 + 1)
+    batchPayload.push({
+      jsonrpc: '2.0',
+      id: idx * 3 + 1,
+      method: 'eth_call',
+      params: [{
+        to: BSC_USDT_ADDR,
+        data: '0x70a08231' + padded
+      }, 'latest']
+    });
+    // 2. BNB eth_getBalance (id = idx * 3 + 2)
+    batchPayload.push({
+      jsonrpc: '2.0',
+      id: idx * 3 + 2,
+      method: 'eth_getBalance',
+      params: [addr, 'latest']
+    });
+    // 3. Nonce eth_getTransactionCount (id = idx * 3 + 3)
+    batchPayload.push({
+      jsonrpc: '2.0',
+      id: idx * 3 + 3,
+      method: 'eth_getTransactionCount',
+      params: [addr, 'latest']
+    });
+  });
 
   for (let rpc of BSC_PUBLIC_RPCS) {
     try {
-      const [resUsdt, resBnb] = await Promise.all([
-        fetch(rpc, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(usdtCallPayload)
-        }).then(r => r.json()),
-        fetch(rpc, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(bnbCallPayload)
-        }).then(r => r.json())
-      ]);
+      const response = await fetch(rpc, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(batchPayload),
+        signal: AbortSignal.timeout(5000)
+      }).then(r => r.json());
 
-      if (resUsdt && resUsdt.result && resUsdt.result !== '0x') {
-        const raw = BigInt(resUsdt.result);
-        usdtBal = Number(raw) / 1e18;
+      if (Array.isArray(response)) {
+        const resultMap = {};
+        response.forEach(item => {
+          if (item && item.id != null) resultMap[item.id] = item.result;
+        });
+
+        const balances = {};
+        cleanAddrs.forEach((addr, idx) => {
+          let usdtBal = 0;
+          let bnbBal = 0;
+          let nonce = 0;
+          const usdtHex = resultMap[idx * 3 + 1];
+          const bnbHex = resultMap[idx * 3 + 2];
+          const nonceHex = resultMap[idx * 3 + 3];
+
+          if (usdtHex && usdtHex !== '0x') {
+            try {
+              usdtBal = Number(BigInt(usdtHex)) / 1e18;
+            } catch (e) {}
+          }
+          if (bnbHex && bnbHex !== '0x') {
+            try {
+              bnbBal = Number(BigInt(bnbHex)) / 1e18;
+            } catch (e) {}
+          }
+          if (nonceHex && nonceHex !== '0x') {
+            try {
+              nonce = Number(BigInt(nonceHex));
+            } catch (e) {}
+          }
+          balances[addr] = { usdt: usdtBal, bnb: bnbBal, nonce: nonce };
+        });
+        return balances;
       }
-      if (resBnb && resBnb.result && resBnb.result !== '0x') {
-        const rawBnb = BigInt(resBnb.result);
-        bnbBal = Number(rawBnb) / 1e18;
-      }
-      return { usdt: usdtBal, bnb: bnbBal };
     } catch (e) {
-      console.warn('RPC failover on:', rpc, e.message);
+      console.warn('Batch RPC failover on:', rpc, e.message);
     }
   }
-  return { usdt: 0, bnb: 0 };
+
+  // Fallback if batching fails
+  const fallback = {};
+  cleanAddrs.forEach(a => { fallback[a] = { usdt: 0, bnb: 0, nonce: 0 }; });
+  return fallback;
 }
 
 // Fetch and display live on-chain balance of the Admin Master Vault
@@ -2180,9 +2229,68 @@ async function updateMainVaultLiveBalance() {
   }
 }
 
-// Load Treasury page initial state
+// Calculate & update the top cards on Treasury page in real-time
+function updateTreasuryStatsSummary() {
+  let totalSubLiveUsdt = 0;
+  let totalUserLiveUsdt = 0;
+  let totalLiveBnb = 0;
+  let activeBalanceCount = 0;
+  let onChainActivityCount = 0;
+
+  treasuryWallets.forEach(w => {
+    const u = w.usdt || 0;
+    const b = w.bnb || 0;
+    const uu = w.userUsdt || 0;
+    const ub = w.userBnb || 0;
+    totalSubLiveUsdt += u;
+    totalUserLiveUsdt += uu;
+    totalLiveBnb += (b + ub);
+
+    const hasFunds = (u > 0.01 || b > 0.00001 || uu > 0.01 || ub > 0.00001);
+    if (hasFunds) activeBalanceCount++;
+
+    const hasActivity = hasFunds || (w.nonce || 0) > 0 || (w.userNonce || 0) > 0 || (w.swept || 0) > 0;
+    if (hasActivity) onChainActivityCount++;
+  });
+
+  const totalEl = document.getElementById('t-total-wallets');
+  if (totalEl) totalEl.innerText = treasuryWallets.length;
+
+  const activeEl = document.getElementById('t-active-wallets');
+  if (activeEl) activeEl.innerText = activeBalanceCount;
+  const badgeOnChainEl = document.getElementById('t-active-onchain-badge');
+  if (badgeOnChainEl) badgeOnChainEl.innerText = `${activeBalanceCount} Active on BSC`;
+
+  // Top Card: User Web3 Wallets Live USDT
+  const recEl = document.getElementById('t-total-received');
+  if (recEl) {
+    recEl.innerText = '$' + totalUserLiveUsdt.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' USDT';
+  }
+  const countEl = document.getElementById('t-total-received-count');
+  if (countEl) {
+    countEl.innerText = `● Live in User Wallets (${activeBalanceCount} Funded)`;
+  }
+
+  // Sub-Wallets Live USDT
+  const usdtEl = document.getElementById('t-total-usdt');
+  if (usdtEl) usdtEl.innerText = '$' + totalSubLiveUsdt.toFixed(2) + ' USDT';
+
+  // Sub-Wallets + User Wallets Total BNB Gas
+  const bnbEl = document.getElementById('t-total-bnb');
+  if (bnbEl) bnbEl.innerText = totalLiveBnb.toFixed(4) + ' BNB';
+
+  const badgeEl = document.getElementById('badge-treasury');
+  if (badgeEl) {
+    badgeEl.innerText = activeBalanceCount;
+    badgeEl.style.display = activeBalanceCount > 0 ? 'inline-block' : 'none';
+  }
+}
+
+// Load Treasury page initial state with local cache for zero delay
 async function loadTreasury() {
   updateMainVaultLiveBalance();
+  fetchBscGasTracker();
+
   // 1. Load Admin Master Receiver Address
   try {
     const { data: settings } = await supabaseClient
@@ -2193,44 +2301,98 @@ async function loadTreasury() {
 
     const masterInput = document.getElementById('treasury-master-address');
     if (masterInput) {
-      const saved = settings?.usdt_bep20_address || localStorage.getItem('admin_master_sweep_wallet') || '0xFE3B557E8Fb62b89F4916B721be55cEb828dBd73';
+      const saved = settings?.usdt_bep20_address || localStorage.getItem('admin_master_sweep_wallet') || ADMIN_PERMANENT_MASTER_WALLET;
       masterInput.value = saved;
     }
   } catch (e) {
     console.error('Error loading master address:', e);
   }
 
-  // 2. Fetch all monitored deposit wallets from profiles
+  // 2. Fetch all monitored deposit wallets AND deposit submissions simultaneously
   try {
-    const { data: profs, error } = await supabaseClient
-      .from('profiles')
-      .select('id, full_name, phone, usdt_address, private_key, created_at')
-      .not('usdt_address', 'is', null)
-      .order('created_at', { ascending: false });
+    const [profsRes, subsRes] = await Promise.all([
+      supabaseClient
+        .from('profiles')
+        .select('id, full_name, phone, usdt_address, wallet_address, private_key, created_at')
+        .not('usdt_address', 'is', null)
+        .order('created_at', { ascending: false }),
+      supabaseClient
+        .from('task_submissions')
+        .select('*')
+        .order('submitted_at', { ascending: false })
+    ]);
 
-    if (error) throw error;
+    if (profsRes.error) throw profsRes.error;
+    const profs = profsRes.data || [];
+    treasurySubmissions = subsRes.data || [];
 
-    treasuryWallets = (profs || []).map(p => ({
-      userId: p.id,
-      name: p.full_name || 'USDT Trader',
-      phone: p.phone || 'N/A',
-      address: p.usdt_address,
-      privateKey: p.private_key || '',
-      usdt: 0,
-      bnb: 0,
-      scanned: false
-    }));
+    // Map submissions by user_id and calculate gross received
+    const userSubsMap = {};
+    const userProfileMap = {};
+    profs.forEach(p => { userProfileMap[p.id] = p; });
 
-    const totalEl = document.getElementById('t-total-wallets');
-    if (totalEl) totalEl.innerText = treasuryWallets.length;
+    let grossAll = 0;
+    treasurySubmissions.forEach(s => {
+      const amt = parseFloat(s.amount || 0);
+      grossAll += amt;
+      s.profile = userProfileMap[s.user_id] || null;
+      const uid = s.user_id;
+      if (uid) {
+        if (!userSubsMap[uid]) userSubsMap[uid] = [];
+        userSubsMap[uid].push(s);
+      }
+    });
+    totalLifetimeReceived = grossAll;
+    totalReceivedCount = treasurySubmissions.length;
 
-    // Render initial table
+    // Load cached balances for immediate display
+    let cachedBalances = {};
+    try {
+      const rawCache = localStorage.getItem('admin_cached_wallet_balances');
+      if (rawCache) cachedBalances = JSON.parse(rawCache);
+    } catch (e) {}
+
+    const onchainHistory = getOnChainTxHistory();
+    treasuryWallets = profs.map(p => {
+      const subAddrLower = (p.usdt_address || '').toLowerCase();
+      const userAddrLower = (p.wallet_address || '').toLowerCase();
+      const cachedSub = cachedBalances[subAddrLower];
+      const cachedUser = userAddrLower ? cachedBalances[userAddrLower] : null;
+      const userSubs = userSubsMap[p.id] || [];
+      const walletReceived = userSubs.reduce((sum, s) => sum + parseFloat(s.amount || 0), 0);
+      const walletSweeps = onchainHistory
+        .filter(tx => tx.from && tx.from.toLowerCase() === subAddrLower && tx.asset === 'USDT')
+        .reduce((sum, tx) => sum + (parseFloat(tx.amount) || 0), 0);
+
+      return {
+        userId: p.id,
+        name: p.full_name || 'USDT Trader',
+        phone: p.phone || 'N/A',
+        address: p.usdt_address,
+        walletAddress: p.wallet_address || '',
+        privateKey: p.private_key || '',
+        usdt: cachedSub ? (cachedSub.usdt || 0) : 0,
+        bnb: cachedSub ? (cachedSub.bnb || 0) : 0,
+        nonce: cachedSub ? (cachedSub.nonce || 0) : 0,
+        userUsdt: cachedUser ? (cachedUser.usdt || 0) : 0,
+        userBnb: cachedUser ? (cachedUser.bnb || 0) : 0,
+        userNonce: cachedUser ? (cachedUser.nonce || 0) : 0,
+        swept: walletSweeps,
+        totalReceived: walletReceived,
+        depositsCount: userSubs.length,
+        submissions: userSubs,
+        scanned: !!(cachedSub || cachedUser)
+      };
+    });
+
+    // Immediate zero-latency UI display
+    updateTreasuryStatsSummary();
     filterTreasuryTable();
 
-    // Auto-trigger scan if not scanned yet
+    // Auto-trigger background batch scan
     startTreasuryAutoPoll();
     if (treasuryWallets.length > 0) {
-      setTimeout(() => scanAllTreasuryWallets(true), 200);
+      setTimeout(() => scanAllTreasuryWallets(true), 50);
     }
   } catch (err) {
     console.error('loadTreasury error:', err);
@@ -2238,16 +2400,27 @@ async function loadTreasury() {
   }
 }
 
-// Background silent poller: scans all wallets and main vault silently every 30s
+// Background real-time poller: scans all wallets silently every 15s
 let adminTreasuryPollInterval = null;
 
 function startTreasuryAutoPoll() {
   if (!adminTreasuryPollInterval) {
     adminTreasuryPollInterval = setInterval(() => {
       if (currentPage === 'treasury') {
-        scanAllTreasuryWallets(true);
+        fetchBscGasTracker();
+        const dot = document.getElementById('treasury-sync-dot');
+        if (dot) {
+          dot.style.background = '#00e5ff';
+          dot.style.boxShadow = '0 0 10px #00e5ff';
+        }
+        scanAllTreasuryWallets(true).finally(() => {
+          if (dot) {
+            dot.style.background = '#00e676';
+            dot.style.boxShadow = '0 0 6px #00e676';
+          }
+        });
       }
-    }, 30000); // exactly every 30 seconds
+    }, 15000); // 15 seconds real-time cycle
   }
 }
 
@@ -2284,7 +2457,7 @@ async function saveTreasuryMasterAddress() {
   }
 }
 
-// Scan all monitored wallets on the BSC blockchain (silent mode for 30s background auto-scan)
+// Scan all monitored wallets using high-speed JSON-RPC Batching
 async function scanAllTreasuryWallets(silent = false) {
   if (isScanningTreasury || treasuryWallets.length === 0) return;
   isScanningTreasury = true;
@@ -2301,67 +2474,1104 @@ async function scanAllTreasuryWallets(silent = false) {
     if (icon) icon.innerText = '⏳';
   }
 
-  const total = treasuryWallets.length;
+  // Collect all unique addresses (both deposit sub-wallets and user personal wallets)
+  const addressSet = new Set();
+  treasuryWallets.forEach(w => {
+    if (w.address && w.address.startsWith('0x')) addressSet.add(w.address.toLowerCase());
+    if (w.walletAddress && w.walletAddress.startsWith('0x')) addressSet.add(w.walletAddress.toLowerCase());
+  });
+  const allAddrs = Array.from(addressSet);
+
+  const total = allAddrs.length;
   let completed = 0;
-  let totalUsdt = 0;
-  let totalBnb = 0;
-  let activeCount = 0;
+  const batchSize = 20; // 20 addresses per batch call
 
-  // Process in concurrent batches of 4
-  const batchSize = 4;
+  const balanceMap = {};
+
   for (let i = 0; i < total; i += batchSize) {
-    const chunk = treasuryWallets.slice(i, i + batchSize);
-    await Promise.all(chunk.map(async (w) => {
-      try {
-        const bal = await fetchOnChainWalletBalances(w.address);
-        w.usdt = bal.usdt;
-        w.bnb = bal.bnb;
-        w.scanned = true;
+    const chunk = allAddrs.slice(i, i + batchSize);
+    try {
+      const chunkMap = await fetchBatchOnChainBalances(chunk);
+      Object.assign(balanceMap, chunkMap);
 
-        totalUsdt += bal.usdt;
-        totalBnb += bal.bnb;
-        if (bal.usdt > 0.01 || bal.bnb > 0.00001) activeCount++;
-      } catch (e) {
-        console.warn('Scan wallet error:', w.address, e);
-      } finally {
-        completed++;
-        if (!silent) {
-          const pct = Math.round((completed / total) * 100);
-          if (statusPct) statusPct.innerText = pct + '%';
-          if (statusText) statusText.innerText = `Scanning blockchain (${completed}/${total} wallets checked)...`;
+      // Progressively update table and stats as soon as each batch arrives
+      treasuryWallets.forEach(w => {
+        const subBal = balanceMap[(w.address || '').toLowerCase()];
+        if (subBal) {
+          w.usdt = subBal.usdt;
+          w.bnb = subBal.bnb;
+          w.nonce = subBal.nonce || 0;
         }
+        if (w.walletAddress && w.walletAddress.startsWith('0x')) {
+          const userBal = balanceMap[w.walletAddress.toLowerCase()];
+          if (userBal) {
+            w.userUsdt = userBal.usdt;
+            w.userBnb = userBal.bnb;
+            w.userNonce = userBal.nonce || 0;
+          }
+        }
+        w.scanned = true;
+      });
+
+      updateTreasuryStatsSummary();
+      filterTreasuryTable();
+    } catch (e) {
+      console.warn('Batch scan error:', e);
+    } finally {
+      completed += chunk.length;
+      if (!silent) {
+        const pct = Math.min(100, Math.round((completed / total) * 100));
+        if (statusPct) statusPct.innerText = pct + '%';
+        if (statusText) statusText.innerText = `Scanning BSC blockchain (${completed}/${total} addresses checked)...`;
       }
-    }));
+    }
   }
 
-  // Update Top Stats silently
-  const activeEl = document.getElementById('t-active-wallets');
-  if (activeEl) activeEl.innerText = activeCount;
-
-  const usdtEl = document.getElementById('t-total-usdt');
-  if (usdtEl) usdtEl.innerText = '$' + totalUsdt.toFixed(2) + ' USDT';
-
-  const bnbEl = document.getElementById('t-total-bnb');
-  if (bnbEl) bnbEl.innerText = totalBnb.toFixed(4) + ' BNB';
-
-  const badgeEl = document.getElementById('badge-treasury');
-  if (badgeEl) {
-    badgeEl.innerText = activeCount;
-    badgeEl.style.display = activeCount > 0 ? 'inline-block' : 'none';
-  }
+  // Cache fresh on-chain balances to localStorage
+  try {
+    localStorage.setItem('admin_cached_wallet_balances', JSON.stringify(balanceMap));
+  } catch (e) {}
 
   updateMainVaultLiveBalance();
 
-  // Done scanning
   if (!silent) {
     if (banner) banner.style.display = 'none';
     if (btnScan) btnScan.style.opacity = '1';
     if (icon) icon.innerText = '🔄';
-    toast(`Scan Complete! Found $${totalUsdt.toFixed(2)} USDT across ${activeCount} active wallet(s) 🎉`, 'success');
+    const totalUserUsdt = treasuryWallets.reduce((acc, w) => acc + (w.userUsdt || 0), 0);
+    const activeWalletsCount = treasuryWallets.filter(w => (w.userUsdt || 0) > 0.01 || (w.usdt || 0) > 0.01 || (w.bnb || 0) > 0.00001 || (w.userBnb || 0) > 0.00001).length;
+    toast(`Scan Complete! $${totalUserUsdt.toFixed(2)} USDT live across ${activeWalletsCount} active wallet(s) ✓`, 'success');
   }
   isScanningTreasury = false;
+}
 
-  filterTreasuryTable();
+// Instant on-chain refresh for a single wallet in ~200ms
+async function refreshSingleWalletBalance(address, silent = false) {
+  const w = treasuryWallets.find(x => 
+    (x.address && x.address.toLowerCase() === address.toLowerCase()) ||
+    (x.walletAddress && x.walletAddress.toLowerCase() === address.toLowerCase())
+  );
+  if (!w) return null;
+  if (!silent) toast(`Syncing ${address.substring(0,8)}... with BSC blockchain...`, 'info');
+
+  try {
+    const addrsToSync = [w.address];
+    if (w.walletAddress && w.walletAddress.startsWith('0x') && w.walletAddress.toLowerCase() !== w.address.toLowerCase()) {
+      addrsToSync.push(w.walletAddress);
+    }
+    const balanceMap = await fetchBatchOnChainBalances(addrsToSync);
+    const subBal = balanceMap[(w.address || '').toLowerCase()];
+    if (subBal) {
+      w.usdt = subBal.usdt;
+      w.bnb = subBal.bnb;
+      w.nonce = subBal.nonce || 0;
+    }
+    if (w.walletAddress) {
+      const userBal = balanceMap[w.walletAddress.toLowerCase()];
+      if (userBal) {
+        w.userUsdt = userBal.usdt;
+        w.userBnb = userBal.bnb;
+        w.userNonce = userBal.nonce || 0;
+      }
+    }
+    w.scanned = true;
+
+    // Update cache
+    try {
+      const raw = localStorage.getItem('admin_cached_wallet_balances');
+      const cache = raw ? JSON.parse(raw) : {};
+      if (w.address) cache[w.address.toLowerCase()] = { usdt: w.usdt, bnb: w.bnb, nonce: w.nonce || 0 };
+      if (w.walletAddress) cache[w.walletAddress.toLowerCase()] = { usdt: w.userUsdt, bnb: w.userBnb, nonce: w.userNonce || 0 };
+      localStorage.setItem('admin_cached_wallet_balances', JSON.stringify(cache));
+    } catch (e) {}
+
+    updateTreasuryStatsSummary();
+    filterTreasuryTable();
+
+    // If TokenPocket modal is open for this wallet, update modal UI live
+    if (activeTpWallet && activeTpWallet.address.toLowerCase() === address.toLowerCase()) {
+      updateTokenPocketModalUI(w);
+    }
+
+    if (!silent) toast(`Updated! User: $${(w.userUsdt||0).toFixed(2)} USDT | Sub: $${w.usdt.toFixed(2)} USDT ✓`, 'success');
+  } catch (e) {
+    console.error('Error refreshing single wallet:', e);
+  }
+  return w;
+}
+
+// Open TokenPocket All-In-One Wallet Manager Modal
+function openTokenPocketModal(address) {
+  const w = treasuryWallets.find(x => x.address.toLowerCase() === address.toLowerCase());
+  if (!w) {
+    toast('Wallet not found!', 'error');
+    return;
+  }
+  activeTpWallet = w;
+
+  updateTokenPocketModalUI(w);
+  tpSwitchTab('transfer');
+
+  // Background refresh to guarantee fresh on-chain data
+  refreshSingleWalletBalance(w.address, true);
+
+  openModal('tokenpocket-wallet-modal');
+}
+
+// Update TokenPocket Modal Elements
+function updateTokenPocketModalUI(w) {
+  const subEl = document.getElementById('tp-modal-user-subtitle');
+  if (subEl) subEl.innerText = `${escapeHtml(w.name)} (${escapeHtml(w.phone)})`;
+
+  const addrEl = document.getElementById('tp-card-address');
+  if (addrEl) addrEl.innerText = w.address;
+
+  const bscLink = document.getElementById('tp-card-bscscan-link');
+  if (bscLink) bscLink.href = `https://bscscan.com/address/${w.address}`;
+
+  const usdtEl = document.getElementById('tp-card-usdt');
+  if (usdtEl) usdtEl.innerText = `$${(w.usdt || 0).toFixed(2)} USDT`;
+
+  const bnbEl = document.getElementById('tp-card-bnb');
+  if (bnbEl) bnbEl.innerText = `${(w.bnb || 0).toFixed(5)} BNB`;
+
+  const estNetworth = (w.usdt || 0) + ((w.bnb || 0) * 600);
+  const netEl = document.getElementById('tp-card-networth');
+  if (netEl) netEl.innerText = `$${estNetworth.toFixed(2)}`;
+
+  const hasGas = (w.bnb || 0) >= MIN_SWEEP_GAS_BNB;
+  const gasBadge = document.getElementById('tp-card-gas-badge');
+  if (gasBadge) {
+    gasBadge.innerText = hasGas ? 'Gas Ready ✓' : 'Needs Gas ⚠️';
+    gasBadge.style.color = hasGas ? '#00e676' : '#ffc107';
+    gasBadge.style.background = hasGas ? 'rgba(0,230,118,0.2)' : 'rgba(255,193,7,0.2)';
+  }
+
+  const transferAvail = document.getElementById('tp-transfer-avail-label');
+  const selectedAsset = document.querySelector('input[name="tp-asset"]:checked')?.value || 'USDT';
+  if (transferAvail) {
+    transferAvail.innerText = selectedAsset === 'USDT' 
+      ? `Avail: ${(w.usdt || 0).toFixed(2)} USDT` 
+      : `Avail: ${(w.bnb || 0).toFixed(5)} BNB`;
+  }
+
+  const gasStatus = document.getElementById('tp-gas-check-status');
+  if (gasStatus) {
+    gasStatus.innerText = hasGas ? 'Gas Ready ✓' : 'Low Gas ⚠️';
+    gasStatus.style.color = hasGas ? '#00e676' : '#ffc107';
+  }
+
+  // QR Code Image
+  const qrImg = document.getElementById('tp-qr-img');
+  if (qrImg) {
+    qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(w.address)}`;
+  }
+  const recvAddr = document.getElementById('tp-receive-addr-text');
+  if (recvAddr) recvAddr.innerText = w.address;
+
+  // Donor wallet detection for Gas Refuel tab
+  const donor = treasuryWallets.find(x => 
+    x.address.toLowerCase() !== w.address.toLowerCase() && 
+    x.bnb >= 0.00003 && 
+    !!x.privateKey
+  );
+  const donorNameEl = document.getElementById('tp-donor-wallet-name');
+  const donorBnbEl = document.getElementById('tp-donor-wallet-bnb');
+  if (donorNameEl && donorBnbEl) {
+    if (donor) {
+      donorNameEl.innerText = `${donor.name} (${donor.address.substring(0, 8)}...)`;
+      donorBnbEl.innerText = `${donor.bnb.toFixed(5)} BNB`;
+    } else {
+      donorNameEl.innerText = 'No donor sub-wallet with BNB found';
+      donorBnbEl.innerText = '0.0000 BNB';
+    }
+  }
+
+  // Sweepers Tab Available Amounts
+  const sweepUsdt = document.getElementById('tp-sweep-avail-usdt');
+  if (sweepUsdt) sweepUsdt.innerText = `$${(w.usdt || 0).toFixed(2)} USDT`;
+
+  const sweepBnb = document.getElementById('tp-sweep-avail-bnb');
+  if (sweepBnb) sweepBnb.innerText = `${(w.bnb || 0).toFixed(5)} BNB`;
+
+  const sweepVault = document.getElementById('tp-sweep-vault-addr');
+  if (sweepVault) sweepVault.innerText = ADMIN_PERMANENT_MASTER_WALLET.substring(0, 10) + '...';
+
+  // Private Key Tab
+  const pkeyEl = document.getElementById('tp-key-textarea');
+  if (pkeyEl) pkeyEl.value = w.privateKey || 'No private key stored for this wallet.';
+
+  // History Tab Elements
+  const histInEl = document.getElementById('tp-hist-total-in');
+  if (histInEl) histInEl.innerText = `$${(w.totalReceived || 0).toFixed(2)}`;
+
+  const histLiveEl = document.getElementById('tp-hist-live-bal');
+  if (histLiveEl) histLiveEl.innerText = `$${(w.usdt || 0).toFixed(2)}`;
+
+  const subs = w.submissions || [];
+  const inCountEl = document.getElementById('tp-hist-in-count');
+  if (inCountEl) inCountEl.innerText = subs.length;
+
+  const walletOutgoing = getOnChainTxHistory(w.address).filter(tx => 
+    tx.from && tx.from.toLowerCase() === (w.address || '').toLowerCase()
+  );
+  const totalSweptUsdt = walletOutgoing
+    .filter(tx => tx.asset === 'USDT')
+    .reduce((sum, tx) => sum + (tx.amount || 0), 0);
+  const histOutEl = document.getElementById('tp-hist-total-out');
+  if (histOutEl) histOutEl.innerText = `$${totalSweptUsdt.toFixed(2)}`;
+
+  const outCountEl = document.getElementById('tp-hist-out-count');
+  if (outCountEl) outCountEl.innerText = walletOutgoing.length;
+
+  // Render Incoming deposits
+  const listInEl = document.getElementById('tp-hist-list-in');
+  if (listInEl) {
+    if (subs.length === 0) {
+      listInEl.innerHTML = `<div class="empty-state" style="padding:16px; font-size:11.5px;">No deposit records found for this user.</div>`;
+    } else {
+      listInEl.innerHTML = subs.map(s => {
+        const dateStr = (s.submitted_at || s.created_at) ? new Date(s.submitted_at || s.created_at).toLocaleString() : 'N/A';
+        const st = (s.status || 'pending').toLowerCase();
+        const stColor = st === 'refunded' ? '#00e676' : (st === 'rejected' ? '#ff3d00' : (st === 'approved' ? '#00e5ff' : '#ffc107'));
+        const stLabel = st === 'refunded' ? 'Paid / Refunded' : (s.status || 'Pending');
+        const txProof = s.transaction_id || s.sender_number || 'N/A';
+        return `
+          <div style="background:var(--bg2); border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:8px 10px; display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <div style="display:flex; align-items:center; gap:6px;">
+                <span style="font-weight:800; color:#00e676; font-size:12.5px; font-family:monospace;">+$${parseFloat(s.amount || 0).toFixed(2)} USDT</span>
+                <span style="font-size:9.5px; padding:1px 5px; border-radius:4px; font-weight:700; background:rgba(255,255,255,0.06); color:${stColor}; border:1px solid ${stColor}40;">${escapeHtml(stLabel)}</span>
+              </div>
+              <div style="font-size:10.5px; color:var(--txt3); margin-top:2px; font-family:monospace; max-width:240px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escapeHtml(txProof)}">
+                Proof: ${escapeHtml(txProof)}
+              </div>
+            </div>
+            <div style="text-align:right;">
+              <span style="font-size:10px; color:var(--txt3); display:block;">${escapeHtml(dateStr)}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+  }
+
+  // Render Outgoing sweeps
+  const listOutEl = document.getElementById('tp-hist-list-out');
+  if (listOutEl) {
+    if (walletOutgoing.length === 0) {
+      listOutEl.innerHTML = `<div class="empty-state" style="padding:16px; font-size:11.5px;">No on-chain sweeps recorded for this wallet yet.</div>`;
+    } else {
+      listOutEl.innerHTML = walletOutgoing.map(tx => {
+        const timeStr = tx.timestamp ? new Date(tx.timestamp).toLocaleString() : 'Recent';
+        const typeLabel = tx.type === 'sweep_usdt' ? 'USDT Sweep' : (tx.type === 'sweep_bnb' ? 'BNB Sweep' : (tx.type === 'gas_refuel' ? 'Gas Refuel' : 'Transfer'));
+        const amtStr = tx.asset === 'USDT' ? `$${(tx.amount || 0).toFixed(2)} USDT` : `${(tx.amount || 0).toFixed(5)} BNB`;
+        const bscScanLink = tx.hash ? `https://bscscan.com/tx/${tx.hash}` : null;
+        return `
+          <div style="background:var(--bg2); border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:8px 10px; display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <div style="display:flex; align-items:center; gap:6px;">
+                <span style="font-weight:800; color:#f0b90b; font-size:12px; font-family:monospace;">-${amtStr}</span>
+                <span style="font-size:9.5px; padding:1px 5px; border-radius:4px; font-weight:700; background:rgba(240,185,11,0.1); color:#f0b90b; border:1px solid rgba(240,185,11,0.3);">${escapeHtml(typeLabel)}</span>
+              </div>
+              <div style="font-size:10.5px; color:var(--txt3); margin-top:2px;">
+                To: <span style="font-family:monospace; color:var(--cyan);">${tx.to ? tx.to.substring(0, 10) + '...' : 'Vault'}</span>
+                ${bscScanLink ? `<a href="${bscScanLink}" target="_blank" style="color:var(--cyan); margin-left:6px; text-decoration:none;">View ↗</a>` : ''}
+              </div>
+            </div>
+            <div style="text-align:right;">
+              <span style="font-size:10px; color:var(--txt3); display:block;">${escapeHtml(timeStr)}</span>
+              <span style="font-size:9.5px; color:#00e676; font-weight:700;">Confirmed ✓</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+  }
+
+  // Hide terminal log initially
+  const logEl = document.getElementById('tp-modal-log');
+  if (logEl) {
+    logEl.style.display = 'none';
+    logEl.innerHTML = '';
+  }
+}
+
+// Switch tabs inside TokenPocket modal
+function tpSwitchTab(tabName) {
+  const tabs = ['transfer', 'receive', 'refuel', 'sweepers', 'history', 'key'];
+  tabs.forEach(t => {
+    const btn = document.getElementById(`tp-tab-btn-${t}`);
+    const content = document.getElementById(`tp-tab-content-${t}`);
+    if (t === tabName) {
+      if (btn) {
+        btn.style.background = 'rgba(0,229,255,0.15)';
+        btn.style.color = 'var(--cyan)';
+        btn.style.borderColor = 'rgba(0,229,255,0.4)';
+        btn.style.fontWeight = '800';
+      }
+      if (content) content.style.display = 'block';
+    } else {
+      if (btn) {
+        btn.style.background = 'transparent';
+        btn.style.color = 'var(--txt2)';
+        btn.style.borderColor = 'var(--border)';
+        btn.style.fontWeight = '400';
+      }
+      if (content) content.style.display = 'none';
+    }
+  });
+}
+
+// Switch subtab inside History tab (Incoming deposits vs Outgoing sweeps)
+function tpSwitchHistorySubtab(subtab) {
+  const btnIn = document.getElementById('tp-hist-subtab-in');
+  const btnOut = document.getElementById('tp-hist-subtab-out');
+  const listIn = document.getElementById('tp-hist-list-in');
+  const listOut = document.getElementById('tp-hist-list-out');
+
+  if (subtab === 'in') {
+    if (btnIn) {
+      btnIn.style.background = 'rgba(0,230,118,0.15)';
+      btnIn.style.color = '#00e676';
+      btnIn.style.borderColor = 'rgba(0,230,118,0.3)';
+      btnIn.style.fontWeight = '800';
+    }
+    if (btnOut) {
+      btnOut.style.background = 'transparent';
+      btnOut.style.color = 'var(--txt2)';
+      btnOut.style.borderColor = 'var(--border)';
+      btnOut.style.fontWeight = '400';
+    }
+    if (listIn) listIn.style.display = 'flex';
+    if (listOut) listOut.style.display = 'none';
+  } else {
+    if (btnOut) {
+      btnOut.style.background = 'rgba(240,185,11,0.15)';
+      btnOut.style.color = '#f0b90b';
+      btnOut.style.borderColor = 'rgba(240,185,11,0.3)';
+      btnOut.style.fontWeight = '800';
+    }
+    if (btnIn) {
+      btnIn.style.background = 'transparent';
+      btnIn.style.color = 'var(--txt2)';
+      btnIn.style.borderColor = 'var(--border)';
+      btnIn.style.fontWeight = '400';
+    }
+    if (listIn) listIn.style.display = 'none';
+    if (listOut) listOut.style.display = 'flex';
+  }
+}
+
+// Handle asset radio change in Transfer tab
+function tpOnAssetChange() {
+  if (!activeTpWallet) return;
+  const asset = document.querySelector('input[name="tp-asset"]:checked')?.value || 'USDT';
+  const badge = document.getElementById('tp-transfer-symbol-badge');
+  const avail = document.getElementById('tp-transfer-avail-label');
+  if (badge) badge.innerText = asset;
+  if (avail) {
+    avail.innerText = asset === 'USDT' 
+      ? `Avail: ${(activeTpWallet.usdt || 0).toFixed(2)} USDT` 
+      : `Avail: ${(activeTpWallet.bnb || 0).toFixed(5)} BNB`;
+  }
+}
+
+// Percentage preset buttons (25%, 50%, 75%, 100%)
+function tpSetAmountPct(pct) {
+  if (!activeTpWallet) return;
+  const asset = document.querySelector('input[name="tp-asset"]:checked')?.value || 'USDT';
+  const input = document.getElementById('tp-transfer-amount');
+  if (!input) return;
+
+  if (asset === 'USDT') {
+    const total = activeTpWallet.usdt || 0;
+    const calc = total * pct;
+    input.value = calc <= 0 ? '0' : calc.toFixed(2);
+  } else {
+    // BNB: leave enough for gas
+    const total = activeTpWallet.bnb || 0;
+    const estGas = 0.000025;
+    if (pct === 1.00) {
+      const maxBnb = Math.max(0, total - estGas);
+      input.value = maxBnb.toFixed(6);
+    } else {
+      const calc = (total * pct);
+      input.value = calc <= 0 ? '0' : calc.toFixed(6);
+    }
+  }
+}
+
+// Paste Admin Permanent Master Vault address into recipient field
+function tpPasteMasterVault() {
+  const input = document.getElementById('tp-transfer-to');
+  if (input) {
+    input.value = ADMIN_PERMANENT_MASTER_WALLET;
+    toast('Master Vault address pasted ✓', 'success');
+  }
+}
+
+// Copy deposit address
+function tpCopyAddress() {
+  if (activeTpWallet) {
+    navigator.clipboard.writeText(activeTpWallet.address);
+    toast('Deposit address copied! ✓', 'success');
+  }
+}
+
+// Copy private key
+function tpCopyPrivateKey() {
+  if (activeTpWallet && activeTpWallet.privateKey) {
+    navigator.clipboard.writeText(activeTpWallet.privateKey);
+    toast('Private key copied to clipboard! ✓', 'success');
+  } else {
+    toast('No private key available to copy.', 'error');
+  }
+}
+
+// Single-wallet live refresh button in TokenPocket modal
+function tpRefreshCurrentWallet() {
+  if (activeTpWallet) {
+    const btn = document.getElementById('tp-btn-refresh');
+    if (btn) btn.innerText = 'Syncing...';
+    refreshSingleWalletBalance(activeTpWallet.address).finally(() => {
+      if (btn) btn.innerText = '🔄 Refresh Balance';
+    });
+  }
+}
+
+// Execute custom on-chain transfer directly signed by this wallet's private key
+async function tpExecuteCustomTransfer() {
+  if (!activeTpWallet) return;
+  const { address, privateKey } = activeTpWallet;
+  if (!privateKey) {
+    toast('Private key missing for this wallet! Cannot sign on-chain.', 'error');
+    return;
+  }
+
+  const asset = document.querySelector('input[name="tp-asset"]:checked')?.value || 'USDT';
+  const toAddr = (document.getElementById('tp-transfer-to')?.value || '').trim();
+  const amountStr = (document.getElementById('tp-transfer-amount')?.value || '').trim();
+  const amount = parseFloat(amountStr);
+
+  if (!toAddr || !toAddr.startsWith('0x') || toAddr.length !== 42) {
+    toast('Invalid recipient address! Must start with 0x and be 42 characters.', 'error');
+    return;
+  }
+  if (isNaN(amount) || amount <= 0) {
+    toast('Please enter a valid transfer amount greater than 0.', 'error');
+    return;
+  }
+
+  const confirmMsg = `Transfer ${amount} ${asset} from ${address.substring(0,8)}... to ${toAddr.substring(0,8)}...?\n\nThis transaction will be broadcast directly on the Binance Smart Chain.`;
+  if (!confirm(confirmMsg)) return;
+
+  const logEl = document.getElementById('tp-modal-log');
+  const btn = document.getElementById('tp-btn-send-transfer');
+  if (logEl) {
+    logEl.style.display = 'block';
+    logEl.innerHTML = `<div style="color:var(--cyan);">[${new Date().toLocaleTimeString()}] Initializing ${asset} on-chain transfer...</div>`;
+  }
+  if (btn) btn.disabled = true;
+
+  try {
+    const provider = getBscJsonRpcProvider();
+    const signer = new ethers.Wallet(privateKey, provider);
+
+    if (asset === 'USDT') {
+      if ((activeTpWallet.bnb || 0) < 0.000015) {
+        throw new Error('This wallet has no BNB gas (~0.00002 BNB needed). Refuel gas first!');
+      }
+
+      if (logEl) logEl.innerHTML += `<div style="color:#a0a5b5;">Preparing BEP-20 USDT transfer...</div>`;
+      const tokenContract = new ethers.Contract(BSC_USDT_ADDR, [
+        'function transfer(address to, uint256 amount) returns (bool)'
+      ], signer);
+
+      const amountWei = ethers.parseUnits(amount.toFixed(6), 18);
+      const tx = await tokenContract.transfer(toAddr, amountWei);
+      if (logEl) {
+        logEl.innerHTML += `<div style="color:#00e676;">Tx Broadcasted! Hash: ${tx.hash.substring(0, 20)}...</div>`;
+        logEl.innerHTML += `<div style="color:#a0a5b5;">Awaiting confirmation...</div>`;
+      }
+      await tx.wait(1);
+      recordOnChainTx({
+        type: 'custom_transfer',
+        asset: 'USDT',
+        amount: amount,
+        from: address,
+        to: toAddr,
+        hash: tx.hash,
+        status: 'confirmed'
+      });
+      if (logEl) {
+        logEl.innerHTML += `<div style="color:#00e676; font-weight:800;">✅ Confirmed on BSC!</div>`;
+        logEl.innerHTML += `<div><a href="https://bscscan.com/tx/${tx.hash}" target="_blank" style="color:var(--cyan);">View on BscScan ↗</a></div>`;
+      }
+      toast(`Sent ${amount} USDT successfully! 🚀`, 'success');
+    } else {
+      // BNB Native Transfer
+      if (logEl) logEl.innerHTML += `<div style="color:#a0a5b5;">Preparing BNB transfer...</div>`;
+      const feeData = await provider.getFeeData();
+      const gasPrice = feeData.gasPrice || 50000000n;
+      let exactGas = 21210n;
+      try {
+        exactGas = await provider.estimateGas({ to: toAddr, value: 0n });
+      } catch (e) {
+        exactGas = 21210n;
+      }
+      const gasCost = exactGas * gasPrice;
+
+      const balanceWei = await provider.getBalance(address);
+      let sendWei = ethers.parseEther(amount.toString());
+
+      if (sendWei + gasCost > balanceWei) {
+        // Auto-adjust if close to max
+        if (balanceWei > gasCost) {
+          sendWei = balanceWei - gasCost;
+          if (logEl) logEl.innerHTML += `<div style="color:#ffc107;">Adjusted to max transferable BNB: ${ethers.formatEther(sendWei)} BNB</div>`;
+        } else {
+          throw new Error('Insufficient BNB to cover gas fee and transfer.');
+        }
+      }
+
+      const tx = await signer.sendTransaction({
+        to: toAddr,
+        value: sendWei,
+        gasLimit: exactGas,
+        gasPrice: gasPrice
+      });
+
+      if (logEl) {
+        logEl.innerHTML += `<div style="color:#00e676;">Tx Broadcasted! Hash: ${tx.hash.substring(0, 20)}...</div>`;
+        logEl.innerHTML += `<div style="color:#a0a5b5;">Awaiting confirmation...</div>`;
+      }
+      await tx.wait(1);
+      recordOnChainTx({
+        type: 'custom_transfer',
+        asset: 'BNB',
+        amount: amount,
+        from: address,
+        to: toAddr,
+        hash: tx.hash,
+        status: 'confirmed'
+      });
+      if (logEl) {
+        logEl.innerHTML += `<div style="color:#00e676; font-weight:800;">✅ Confirmed on BSC!</div>`;
+        logEl.innerHTML += `<div><a href="https://bscscan.com/tx/${tx.hash}" target="_blank" style="color:var(--cyan);">View on BscScan ↗</a></div>`;
+      }
+      toast(`Sent ${amount} BNB successfully! 🚀`, 'success');
+    }
+
+    // Refresh balance
+    setTimeout(() => refreshSingleWalletBalance(address, true), 1000);
+  } catch (err) {
+    console.error('Transfer failed:', err);
+    if (logEl) logEl.innerHTML += `<div style="color:#ff3d00;">❌ Failed: ${err.message}</div>`;
+    toast('Transfer failed: ' + err.message, 'error');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+// 1-Click Gas Refuel: transfers 0.00005 BNB from donor sub-wallet to active sub-wallet
+async function tpExecuteRefuelGas() {
+  if (!activeTpWallet) return;
+  const targetAddr = activeTpWallet.address;
+
+  const donor = treasuryWallets.find(x => 
+    x.address.toLowerCase() !== targetAddr.toLowerCase() && 
+    x.bnb >= 0.00003 && 
+    !!x.privateKey
+  );
+
+  if (!donor) {
+    toast('No donor sub-wallet with BNB found to refuel gas from.', 'error');
+    return;
+  }
+
+  const btn = document.getElementById('tp-btn-exec-refuel');
+  const logEl = document.getElementById('tp-modal-log');
+  if (logEl) {
+    logEl.style.display = 'block';
+    logEl.innerHTML = `<div style="color:var(--cyan);">[${new Date().toLocaleTimeString()}] Transferring 0.00005 BNB gas from ${donor.name} (${donor.address.substring(0,8)}...)...</div>`;
+  }
+  if (btn) btn.disabled = true;
+
+  try {
+    const provider = getBscJsonRpcProvider();
+    const donorSigner = new ethers.Wallet(donor.privateKey, provider);
+    const feeData = await provider.getFeeData();
+    const gasPrice = feeData.gasPrice || 50000000n;
+
+    const tx = await donorSigner.sendTransaction({
+      to: targetAddr,
+      value: ethers.parseEther('0.00005'),
+      gasLimit: 21210n,
+      gasPrice: gasPrice
+    });
+
+    if (logEl) logEl.innerHTML += `<div style="color:#00e676;">Tx Sent: ${tx.hash.substring(0, 20)}...</div>`;
+    await tx.wait(1);
+
+    recordOnChainTx({
+      type: 'gas_refuel',
+      asset: 'BNB',
+      amount: 0.00005,
+      from: donor.address,
+      to: targetAddr,
+      hash: tx.hash,
+      status: 'confirmed'
+    });
+
+    if (logEl) logEl.innerHTML += `<div style="color:#00e676; font-weight:800;">✅ Gas Refuel Confirmed! Wallet is ready for transfers.</div>`;
+    toast('Gas Refuel Completed! ✓', 'success');
+
+    refreshSingleWalletBalance(donor.address, true);
+    refreshSingleWalletBalance(targetAddr, true);
+  } catch (err) {
+    console.error('Refuel gas error:', err);
+    if (logEl) logEl.innerHTML += `<div style="color:#ff3d00;">❌ Refuel Error: ${err.message}</div>`;
+    toast('Gas refuel failed: ' + err.message, 'error');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+// Trigger Sweep USDT from TokenPocket modal
+function tpTriggerSweepUsdt() {
+  if (!activeTpWallet) return;
+  closeModal('tokenpocket-wallet-modal');
+  initiateSingleSweep(activeTpWallet.userId, activeTpWallet.address, activeTpWallet.privateKey, activeTpWallet.usdt, activeTpWallet.bnb);
+}
+
+// Trigger Sweep BNB from TokenPocket modal
+function tpTriggerSweepBnb() {
+  if (!activeTpWallet) return;
+  closeModal('tokenpocket-wallet-modal');
+  initiateSingleBnbSweep(activeTpWallet.userId, activeTpWallet.address, activeTpWallet.privateKey, activeTpWallet.bnb);
+}
+
+// Active view mode and wallet filter for history modal
+let currentHistoryViewMode = 'onchain'; // 'onchain' (default) or 'forms'
+let currentHistoryWalletFilter = null;
+
+// Switch between On-Chain Blockchain Ledger and Sub-Wallet Deposits
+function switchHistoryViewMode(mode) {
+  currentHistoryViewMode = mode;
+  const btnOnchain = document.getElementById('hist-tab-btn-onchain');
+  const btnForms = document.getElementById('hist-tab-btn-forms');
+  const bannerOnchain = document.getElementById('hist-banner-onchain');
+  const bannerForms = document.getElementById('hist-banner-forms');
+
+  if (mode === 'onchain') {
+    if (btnOnchain) {
+      btnOnchain.style.background = 'rgba(0,229,255,0.15)';
+      btnOnchain.style.color = 'var(--cyan)';
+      btnOnchain.style.borderColor = 'rgba(0,229,255,0.4)';
+      btnOnchain.style.fontWeight = '800';
+    }
+    if (btnForms) {
+      btnForms.style.background = 'transparent';
+      btnForms.style.color = 'var(--txt2)';
+      btnForms.style.borderColor = 'var(--border)';
+      btnForms.style.fontWeight = '600';
+    }
+    if (bannerOnchain) bannerOnchain.style.display = 'flex';
+    if (bannerForms) bannerForms.style.display = 'none';
+
+    const lbl1 = document.getElementById('hist-modal-lbl-1');
+    if (lbl1) lbl1.innerText = 'Live On-Chain USDT';
+    const lbl2 = document.getElementById('hist-modal-lbl-2');
+    if (lbl2) lbl2.innerText = 'Swept to Master Vault';
+    const lbl3 = document.getElementById('hist-modal-lbl-3');
+    if (lbl3) lbl3.innerText = 'Active On-Chain Wallets';
+  } else {
+    if (btnForms) {
+      btnForms.style.background = 'rgba(0,230,118,0.15)';
+      btnForms.style.color = '#00e676';
+      btnForms.style.borderColor = 'rgba(0,230,118,0.4)';
+      btnForms.style.fontWeight = '800';
+    }
+    if (btnOnchain) {
+      btnOnchain.style.background = 'transparent';
+      btnOnchain.style.color = 'var(--txt2)';
+      btnOnchain.style.borderColor = 'var(--border)';
+      btnOnchain.style.fontWeight = '600';
+    }
+    if (bannerOnchain) bannerOnchain.style.display = 'none';
+    if (bannerForms) bannerForms.style.display = 'flex';
+
+    const lbl1 = document.getElementById('hist-modal-lbl-1');
+    if (lbl1) lbl1.innerText = 'Sub-Wallets Received ($)';
+    const lbl2 = document.getElementById('hist-modal-lbl-2');
+    if (lbl2) lbl2.innerText = 'Refunded / Paid';
+    const lbl3 = document.getElementById('hist-modal-lbl-3');
+    if (lbl3) lbl3.innerText = 'Deposits Count';
+  }
+  filterTreasuryHistoryTable();
+}
+
+// Open the Lifetime Deposit Received History Modal
+function openTreasuryHistoryModal(walletFilter = null, defaultMode = 'onchain') {
+  currentHistoryWalletFilter = walletFilter || null;
+  const searchInput = document.getElementById('hist-modal-search');
+  if (searchInput) {
+    searchInput.value = walletFilter ? walletFilter : '';
+  }
+  const statusFilter = document.getElementById('hist-modal-status-filter');
+  if (statusFilter) {
+    statusFilter.value = 'all';
+  }
+  switchHistoryViewMode(defaultMode);
+  openModal('treasury-history-modal');
+}
+
+// Filter and render the Deposit History Table
+function filterTreasuryHistoryTable() {
+  const query = (document.getElementById('hist-modal-search')?.value || '').trim().toLowerCase();
+  const status = document.getElementById('hist-modal-status-filter')?.value || 'all';
+  const tbody = document.getElementById('hist-modal-tbody');
+  if (!tbody) return;
+
+  const onchainCountEl = document.getElementById('hist-onchain-count');
+  const formsCountEl = document.getElementById('hist-forms-count');
+  if (formsCountEl) formsCountEl.innerText = treasurySubmissions.length;
+
+  if (currentHistoryViewMode === 'onchain') {
+    // ════════════════════════════════════════════════════════════════
+    // ⛓️ MODE 1: PURE ON-CHAIN BLOCKCHAIN VERIFIED LEDGER
+    // ════════════════════════════════════════════════════════════════
+    const onchainTxs = getOnChainTxHistory();
+    const liveFunded = treasuryWallets.filter(w => w.usdt > 0.01 || w.bnb > 0.00001);
+
+    // Build unified on-chain ledger items
+    let onchainItems = [];
+
+    // 1. All recorded on-chain sweeps and transfers
+    onchainTxs.forEach(tx => {
+      const user = treasuryWallets.find(w => w.address.toLowerCase() === (tx.from || '').toLowerCase());
+      onchainItems.push({
+        isLiveBalance: false,
+        timestamp: tx.timestamp || new Date().toISOString(),
+        userName: user ? user.name : 'Sub-Wallet',
+        userPhone: user ? user.phone : 'N/A',
+        walletAddr: tx.from || 'N/A',
+        targetAddr: tx.to || ADMIN_PERMANENT_MASTER_WALLET,
+        type: tx.type === 'sweep_usdt' ? 'USDT Sweep ⚡' : (tx.type === 'sweep_bnb' ? 'BNB Sweep 🟡' : (tx.type === 'gas_refuel' ? 'Gas Refuel ⛽' : 'Custom Transfer')),
+        asset: tx.asset || 'USDT',
+        amount: parseFloat(tx.amount || 0),
+        txHash: tx.hash || '',
+        status: 'confirmed'
+      });
+    });
+
+    // 2. Sub-wallets currently holding live funds on BSC
+    liveFunded.forEach(w => {
+      onchainItems.push({
+        isLiveBalance: true,
+        timestamp: new Date().toISOString(),
+        userName: w.name,
+        userPhone: w.phone,
+        walletAddr: w.address,
+        targetAddr: ADMIN_PERMANENT_MASTER_WALLET,
+        type: 'Live On-Chain Balance',
+        asset: 'USDT',
+        amount: w.usdt,
+        bnbAmount: w.bnb,
+        txHash: '',
+        status: 'live'
+      });
+    });
+
+    if (onchainCountEl) onchainCountEl.innerText = onchainItems.length;
+
+    // Filter by wallet
+    if (currentHistoryWalletFilter) {
+      const target = currentHistoryWalletFilter.toLowerCase();
+      onchainItems = onchainItems.filter(item => item.walletAddr.toLowerCase() === target);
+    }
+
+    // Filter by search query
+    if (query) {
+      onchainItems = onchainItems.filter(item => 
+        item.userName.toLowerCase().includes(query) ||
+        item.userPhone.toLowerCase().includes(query) ||
+        item.walletAddr.toLowerCase().includes(query) ||
+        item.txHash.toLowerCase().includes(query)
+      );
+    }
+
+    // Metric Summary for On-Chain View
+    const totalLiveUsdt = treasuryWallets.reduce((acc, w) => acc + (w.usdt || 0), 0);
+    const totalSweptUsdt = onchainTxs
+      .filter(tx => tx.asset === 'USDT' && (tx.type === 'sweep_usdt' || tx.type === 'custom_transfer'))
+      .reduce((acc, tx) => acc + (parseFloat(tx.amount) || 0), 0);
+    const activeCount = treasuryWallets.filter(w => w.usdt > 0.01 || w.bnb > 0.00001 || (w.nonce || 0) > 0).length;
+
+    const amtEl = document.getElementById('hist-modal-total-amt');
+    if (amtEl) amtEl.innerText = '$' + totalLiveUsdt.toFixed(2) + ' USDT';
+
+    const verEl = document.getElementById('hist-modal-verified-amt');
+    if (verEl) verEl.innerText = '$' + totalSweptUsdt.toFixed(2) + ' USDT';
+
+    const cntEl = document.getElementById('hist-modal-total-count');
+    if (cntEl) cntEl.innerText = activeCount;
+
+    const indEl = document.getElementById('hist-modal-count-indicator');
+    if (indEl) indEl.innerText = `Showing ${onchainItems.length} on-chain blockchain records (${activeCount} active wallets on BSC)`;
+
+    if (onchainItems.length === 0) {
+      tbody.innerHTML = `
+        <tr><td colspan="7">
+          <div class="empty-state" style="padding:24px;">
+            <div style="font-size:24px; margin-bottom:6px;">⛓️</div>
+            <strong>No On-Chain Blockchain Activity Found Yet</strong>
+            <p style="color:var(--txt3); font-size:12px; margin-top:4px;">When sub-wallets receive USDT or are swept to the Master Vault, the verified transactions will appear here with BscScan links.</p>
+          </div>
+        </td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = onchainItems.map(item => {
+      const dateStr = item.isLiveBalance ? '<span style="color:#00e5ff; font-weight:800;">🟢 Live Right Now</span>' : new Date(item.timestamp).toLocaleString();
+      const hasHash = item.txHash && item.txHash.startsWith('0x');
+
+      return `
+        <tr>
+          <td style="font-size:11px; color:var(--txt3); white-space:nowrap;">
+            ${dateStr}
+          </td>
+          <td>
+            <strong style="font-size:12px; color:#fff;">${escapeHtml(item.userName)}</strong>
+            <br><span style="font-size:10.5px; color:var(--txt3);">${escapeHtml(item.userPhone)}</span>
+          </td>
+          <td>
+            <div style="display:flex; align-items:center; gap:4px;">
+              <span style="font-family:monospace; font-size:11px; color:var(--cyan); max-width:110px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${item.walletAddr}">
+                ${item.walletAddr}
+              </span>
+              <button class="btn btn-sm" onclick="navigator.clipboard.writeText('${item.walletAddr}'); toast('Address copied', 'success');" style="padding:1px 5px; font-size:9.5px;">Copy</button>
+            </div>
+          </td>
+          <td>
+            <strong style="font-family:monospace; font-size:13px; color:${item.isLiveBalance ? '#00e676' : '#f0b90b'};">
+              ${item.isLiveBalance ? `+$${item.amount.toFixed(2)} USDT` : `-$${item.amount.toFixed(2)} ${item.asset}`}
+            </strong>
+            ${item.isLiveBalance && item.bnbAmount > 0 ? `<br><span style="font-size:10px; color:var(--txt3); font-family:monospace;">+${item.bnbAmount.toFixed(5)} BNB</span>` : ''}
+          </td>
+          <td>
+            ${hasHash ? `
+              <div style="display:flex; align-items:center; gap:4px;">
+                <span style="font-family:monospace; font-size:11px; color:var(--txt2); max-width:110px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${item.txHash}">
+                  ${item.txHash.substring(0, 10)}...
+                </span>
+                <button class="btn btn-sm" onclick="navigator.clipboard.writeText('${item.txHash}'); toast('TxHash Copied', 'success');" style="padding:1px 5px; font-size:9.5px;">Copy</button>
+                <a href="https://bscscan.com/tx/${item.txHash}" target="_blank" style="color:var(--cyan); font-size:11px; text-decoration:none;" title="View on BscScan">↗</a>
+              </div>
+            ` : item.isLiveBalance ? `
+              <span style="font-size:11px; color:var(--cyan); font-family:monospace;">Scanned via BSC RPC</span>
+            ` : '<span style="color:var(--txt3); font-size:11px;">Internal</span>'}
+          </td>
+          <td>
+            ${item.isLiveBalance ? `
+              <span style="font-size:10.5px; font-weight:800; color:#00e5ff; background:rgba(0,229,255,0.12); padding:2px 7px; border-radius:6px; border:1px solid rgba(0,229,255,0.3);">Live on BSC ⚡</span>
+            ` : `
+              <span style="font-size:10.5px; font-weight:800; color:#00e676; background:rgba(0,230,118,0.12); padding:2px 7px; border-radius:6px; border:1px solid rgba(0,230,118,0.3);">Confirmed on BSC ✓</span>
+            `}
+          </td>
+          <td>
+            <button class="btn btn-sm" onclick="closeModal('treasury-history-modal'); openTokenPocketModal('${item.walletAddr}');" 
+              style="padding:3px 8px; font-size:10.5px; background:linear-gradient(135deg, #1e3a8a, #0284c7); color:#fff; border:none; border-radius:5px; font-weight:700;" title="Open in TokenPocket Hub">
+              📱 Wallet
+            </button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+  } else {
+    // ════════════════════════════════════════════════════════════════
+    // 📝 MODE 2: WEBSITE FORM CLAIMS (UNVERIFIED)
+    // ════════════════════════════════════════════════════════════════
+    let list = [...treasurySubmissions];
+
+    if (status !== 'all') {
+      list = list.filter(s => (s.status || '').toLowerCase() === status.toLowerCase());
+    }
+    if (currentHistoryWalletFilter) {
+      const target = currentHistoryWalletFilter.toLowerCase();
+      list = list.filter(s => s.profile && s.profile.usdt_address && s.profile.usdt_address.toLowerCase() === target);
+    }
+    if (query) {
+      list = list.filter(s => {
+        const name = (s.profile?.full_name || s.user_name || '').toLowerCase();
+        const phone = (s.profile?.phone || s.sender_number || '').toLowerCase();
+        const addr = (s.profile?.usdt_address || '').toLowerCase();
+        const txid = (s.transaction_id || '').toLowerCase();
+        return name.includes(query) || phone.includes(query) || addr.includes(query) || txid.includes(query);
+      });
+    }
+
+    let grossAmt = 0;
+    let verifiedAmt = 0;
+    list.forEach(s => {
+      const amt = parseFloat(s.amount || 0);
+      grossAmt += amt;
+      const st = (s.status || '').toLowerCase();
+      if (st === 'refunded' || st === 'approved') verifiedAmt += amt;
+    });
+
+    const amtEl = document.getElementById('hist-modal-total-amt');
+    if (amtEl) amtEl.innerText = '$' + grossAmt.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    const verEl = document.getElementById('hist-modal-verified-amt');
+    if (verEl) verEl.innerText = '$' + verifiedAmt.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    const cntEl = document.getElementById('hist-modal-total-count');
+    if (cntEl) cntEl.innerText = list.length;
+
+    const indEl = document.getElementById('hist-modal-count-indicator');
+    if (indEl) indEl.innerText = `Showing ${list.length} website form claims (Unverified on-chain)`;
+
+    if (list.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state" style="padding:24px;">No website form submissions found matching filter.</div></td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = list.map(s => {
+      const dateStr = (s.submitted_at || s.created_at) ? new Date(s.submitted_at || s.created_at).toLocaleString() : 'N/A';
+      const userName = s.profile?.full_name || s.user_name || 'USDT Trader';
+      const userPhone = s.profile?.phone || s.sender_number || 'N/A';
+      const walletAddr = s.profile?.usdt_address || 'N/A';
+      const amt = parseFloat(s.amount || 0);
+      const txProof = s.transaction_id || s.sender_number || 'N/A';
+
+      const st = (s.status || 'pending').toLowerCase();
+      let stBadge = '';
+      if (st === 'refunded') {
+        stBadge = `<span style="font-size:10.5px; font-weight:800; color:#00e676; background:rgba(0,230,118,0.12); padding:2px 7px; border-radius:6px; border:1px solid rgba(0,230,118,0.3);">Paid / Refunded ✓</span>`;
+      } else if (st === 'approved') {
+        stBadge = `<span style="font-size:10.5px; font-weight:800; color:#00e5ff; background:rgba(0,229,255,0.12); padding:2px 7px; border-radius:6px; border:1px solid rgba(0,229,255,0.3);">Approved ✓</span>`;
+      } else if (st === 'rejected') {
+        stBadge = `<span style="font-size:10.5px; font-weight:800; color:#ff3d00; background:rgba(255,61,0,0.12); padding:2px 7px; border-radius:6px; border:1px solid rgba(255,61,0,0.3);">Rejected ✕</span>`;
+      } else {
+        stBadge = `<span style="font-size:10.5px; font-weight:800; color:#ffc107; background:rgba(255,193,7,0.12); padding:2px 7px; border-radius:6px; border:1px solid rgba(255,193,7,0.3);">Pending ⏳</span>`;
+      }
+
+      return `
+        <tr>
+          <td style="font-size:11px; color:var(--txt3); white-space:nowrap;">
+            ${escapeHtml(dateStr)}
+          </td>
+          <td>
+            <strong style="font-size:12px; color:#fff;">${escapeHtml(userName)}</strong>
+            <br><span style="font-size:10.5px; color:var(--txt3);">${escapeHtml(userPhone)}</span>
+          </td>
+          <td>
+            ${walletAddr !== 'N/A' ? `
+              <div style="display:flex; align-items:center; gap:4px;">
+                <span style="font-family:monospace; font-size:11px; color:var(--cyan); max-width:110px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${walletAddr}">
+                  ${walletAddr}
+                </span>
+                <button class="btn btn-sm" onclick="navigator.clipboard.writeText('${walletAddr}'); toast('Address copied', 'success');" style="padding:1px 5px; font-size:9.5px;">Copy</button>
+              </div>
+            ` : '<span style="color:var(--txt3); font-size:11px;">N/A</span>'}
+          </td>
+          <td>
+            <strong style="font-family:monospace; font-size:13px; color:#ffc107;">$${amt.toFixed(2)} USDT</strong>
+            <br><span style="font-size:9.5px; color:var(--txt3);">Claimed in Form</span>
+          </td>
+          <td>
+            <div style="display:flex; align-items:center; gap:4px;">
+              <span style="font-family:monospace; font-size:11px; color:var(--txt2); max-width:110px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escapeHtml(txProof)}">
+                ${escapeHtml(txProof)}
+              </span>
+              ${txProof !== 'N/A' ? `<button class="btn btn-sm" onclick="navigator.clipboard.writeText('${escapeHtml(txProof)}'); toast('Copied', 'success');" style="padding:1px 5px; font-size:9.5px;">Copy</button>` : ''}
+            </div>
+          </td>
+          <td>${stBadge}</td>
+          <td>
+            ${walletAddr !== 'N/A' ? `
+              <button class="btn btn-sm" onclick="closeModal('treasury-history-modal'); openTokenPocketModal('${walletAddr}');" 
+                style="padding:3px 8px; font-size:10.5px; background:linear-gradient(135deg, #1e3a8a, #0284c7); color:#fff; border:none; border-radius:5px; font-weight:700;" title="Open in TokenPocket Hub">
+                📱 Wallet
+              </button>
+            ` : '<span style="color:var(--txt3); font-size:11px;">-</span>'}
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+}
+
+// Export the filtered deposit history as a CSV file
+function exportTreasuryHistoryCsv() {
+  if (currentHistoryViewMode === 'onchain') {
+    const onchainTxs = getOnChainTxHistory();
+    const liveFunded = treasuryWallets.filter(w => w.usdt > 0.01 || w.bnb > 0.00001);
+    let items = [];
+    onchainTxs.forEach(tx => {
+      items.push({
+        date: tx.timestamp || '',
+        wallet: tx.from || '',
+        type: tx.type || 'Sweep',
+        amount: (tx.amount || 0) + ' ' + (tx.asset || 'USDT'),
+        txHash: tx.hash || '',
+        status: 'Confirmed on BSC',
+        bscScan: tx.hash ? `https://bscscan.com/tx/${tx.hash}` : ''
+      });
+    });
+    liveFunded.forEach(w => {
+      items.push({
+        date: new Date().toISOString(),
+        wallet: w.address,
+        type: 'Live On-Chain Balance',
+        amount: `$${w.usdt.toFixed(2)} USDT (${w.bnb.toFixed(5)} BNB)`,
+        txHash: 'Live On-Chain',
+        status: 'Live on BSC',
+        bscScan: `https://bscscan.com/address/${w.address}`
+      });
+    });
+
+    const headers = ['Date', 'Wallet Address', 'Type', 'Amount', 'TxHash', 'Status', 'BscScan URL'];
+    const rows = items.map(it => `"${it.date}","${it.wallet}","${it.type}","${it.amount}","${it.txHash}","${it.status}","${it.bscScan}"`);
+    const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + [headers.join(','), ...rows].join('\r\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `onchain_blockchain_ledger_${Date.now()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast(`Exported ${items.length} on-chain records to CSV! ✓`, 'success');
+  } else {
+    if (!treasurySubmissions || treasurySubmissions.length === 0) {
+      toast('No deposit records available to export.', 'error');
+      return;
+    }
+    const headers = ['Date', 'User Name', 'User Phone', 'Deposit Wallet Address', 'Amount (USDT)', 'TxID / Proof', 'Status', 'Admin Note'];
+    const rows = treasurySubmissions.map(s => {
+      const date = (s.submitted_at || s.created_at) ? new Date(s.submitted_at || s.created_at).toISOString() : '';
+      const name = (s.profile?.full_name || s.user_name || '').replace(/"/g, '""');
+      const phone = (s.profile?.phone || s.sender_number || '').replace(/"/g, '""');
+      const addr = (s.profile?.usdt_address || '').replace(/"/g, '""');
+      const amt = parseFloat(s.amount || 0).toFixed(2);
+      const tx = (s.transaction_id || s.sender_number || '').replace(/"/g, '""');
+      const st = (s.status || '').replace(/"/g, '""');
+      const note = (s.admin_note || '').replace(/"/g, '""');
+      return `"${date}","${name}","${phone}","${addr}","${amt}","${tx}","${st}","${note}"`;
+    });
+    const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + [headers.join(','), ...rows].join('\r\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `website_form_claims_${Date.now()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast(`Exported ${treasurySubmissions.length} form records to CSV! ✓`, 'success');
+  }
 }
 
 // Filter and render Treasury table
@@ -2373,9 +3583,11 @@ function filterTreasuryTable() {
 
   let filtered = [...treasuryWallets];
 
-  // Filter active (> $0 USDT or BNB)
+  // Filter active (> $0 USDT or BNB in user wallet or sub-wallet)
   if (filter === 'active') {
-    filtered = filtered.filter(w => !w.scanned || w.usdt > 0.01 || w.bnb > 0.00001);
+    filtered = filtered.filter(w => !w.scanned || (w.userUsdt || 0) > 0.01 || (w.usdt || 0) > 0.01 || (w.bnb || 0) > 0.00001 || (w.userBnb || 0) > 0.00001);
+  } else if (filter === 'onchain_activity') {
+    filtered = filtered.filter(w => (w.userUsdt || 0) > 0.01 || (w.usdt || 0) > 0.01 || (w.bnb || 0) > 0.00001 || (w.userBnb || 0) > 0.00001 || (w.nonce || 0) > 0 || (w.userNonce || 0) > 0 || (w.swept || 0) > 0);
   }
 
   // Filter search
@@ -2383,12 +3595,13 @@ function filterTreasuryTable() {
     filtered = filtered.filter(w => 
       w.name.toLowerCase().includes(query) ||
       w.phone.toLowerCase().includes(query) ||
-      w.address.toLowerCase().includes(query)
+      w.address.toLowerCase().includes(query) ||
+      (w.walletAddress && w.walletAddress.toLowerCase().includes(query))
     );
   }
 
   if (filtered.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state">${treasuryWallets.length === 0 ? 'No deposit wallets found in database.' : 'No wallets matching the selected filter.'}</div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state">${treasuryWallets.length === 0 ? 'No deposit wallets found in database.' : 'No wallets matching the selected filter.'}</div></td></tr>`;
     return;
   }
 
@@ -2399,6 +3612,21 @@ function filterTreasuryTable() {
       ? `<span style="font-size:10px; font-weight:800; color:#00e676; background:rgba(0,230,118,0.12); padding:2px 7px; border-radius:6px; border:1px solid rgba(0,230,118,0.3);">Gas Ready ✓</span>`
       : `<span style="font-size:10px; font-weight:800; color:#ffc107; background:rgba(255,193,7,0.12); padding:2px 7px; border-radius:6px; border:1px solid rgba(255,193,7,0.3);">Needs Gas (~$0.01)</span>`;
 
+    // Gas & On-Chain Status Indicator
+    let onChainStatusHtml = `<div>${gasBadge}</div>`;
+    if ((w.userUsdt || 0) > 0.01) {
+      onChainStatusHtml += `<div style="font-size:10px; color:#00e676; font-weight:700; margin-top:3px;">🟢 User Web3 Funded</div>`;
+    }
+    if ((w.usdt || 0) > 0.01) {
+      onChainStatusHtml += `<div style="font-size:10px; color:#00e5ff; font-weight:700; margin-top:2px;">⚡ Ready to Sweep</div>`;
+    }
+    if ((w.nonce || 0) > 0) {
+      onChainStatusHtml += `<div style="font-size:10px; color:var(--cyan); font-family:monospace; margin-top:2px;">⛓️ ${w.nonce} sub-txs</div>`;
+    }
+    if (w.submissions && w.submissions.length > 0) {
+      onChainStatusHtml += `<div style="margin-top:2px;"><span style="font-size:9.5px; color:rgba(255,255,255,0.4); cursor:pointer; text-decoration:underline;" onclick="openTreasuryHistoryModal('${escapeHtml(w.address)}', 'forms')" title="Click to view website form submissions">📝 ${w.submissions.length} Form Claims</span></div>`;
+    }
+
     return `
       <tr>
         <td>
@@ -2406,40 +3634,69 @@ function filterTreasuryTable() {
           <br><span style="color:var(--txt3); font-size:11px;">${escapeHtml(w.phone)}</span>
         </td>
         <td>
-          <div style="display:flex; align-items:center; gap:6px;">
-            <span style="font-family:monospace; font-size:11.5px; color:var(--cyan); max-width:145px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${w.address}">
+          ${(w.walletAddress && w.walletAddress.startsWith('0x')) ? `
+            <div style="display:flex; align-items:center; gap:5px;">
+              <span style="font-family:monospace; font-size:11.5px; color:#00e5ff; font-weight:700; max-width:110px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${w.walletAddress}">
+                ${w.walletAddress}
+              </span>
+              <button class="btn btn-sm" onclick="navigator.clipboard.writeText('${w.walletAddress}'); toast('User wallet copied ✓', 'success');" style="padding:2px 5px; font-size:10px;">Copy</button>
+              <a href="https://bscscan.com/address/${w.walletAddress}" target="_blank" style="color:var(--cyan); font-size:11px; text-decoration:none; font-weight:700;" title="View on BscScan">↗</a>
+            </div>
+          ` : `
+            <span style="color:var(--txt3); font-size:11px; font-style:italic;">Not Connected</span>
+          `}
+        </td>
+        <td>
+          ${((w.userUsdt || 0) > 0.01) ? `
+            <strong style="font-family:monospace; font-size:13.5px; color:#00e676; font-weight:900;">
+              +$${(w.userUsdt || 0).toFixed(2)} USDT
+            </strong>
+            <br><span style="font-size:9.5px; color:#00e676; font-weight:800; background:rgba(0,230,118,0.12); padding:1px 5px; border-radius:4px;">🟢 Live on BSC</span>
+          ` : `
+            <span style="font-family:monospace; color:var(--txt3); font-size:12px;">$0.00 USDT</span>
+          `}
+          ${((w.userBnb || 0) > 0.0001) ? `
+            <br><span style="font-family:monospace; font-size:10px; color:var(--cyan);">${(w.userBnb || 0).toFixed(4)} BNB</span>
+          ` : ''}
+        </td>
+        <td>
+          <div style="display:flex; align-items:center; gap:5px;">
+            <span style="font-family:monospace; font-size:11.5px; color:var(--txt2); max-width:110px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${w.address}">
               ${w.address}
             </span>
-            <button class="btn btn-sm" onclick="navigator.clipboard.writeText('${w.address}'); toast('Address copied ✓', 'success');" style="padding:2px 6px; font-size:10px;">Copy</button>
+            <button class="btn btn-sm" onclick="navigator.clipboard.writeText('${w.address}'); toast('Address copied ✓', 'success');" style="padding:2px 5px; font-size:10px;">Copy</button>
+            <button class="btn btn-sm" onclick="refreshSingleWalletBalance('${w.address}')" style="padding:2px 4px; font-size:10px; border-color:rgba(0,229,255,0.3); color:var(--cyan);" title="Instant Sync Balance">🔄</button>
             <a href="https://bscscan.com/address/${w.address}" target="_blank" style="color:var(--txt3); font-size:11px; text-decoration:none;" title="View on BscScan">↗</a>
           </div>
         </td>
         <td>
-          <span style="font-family:monospace; font-size:13.5px; font-weight:900; color:${w.usdt > 0.01 ? '#00e676' : 'var(--txt3)'};">
-            $${w.usdt.toFixed(2)} USDT
-          </span>
+          <div style="font-family:monospace; font-size:12.5px; font-weight:800; color:${(w.usdt || 0) > 0.01 ? '#00e676' : 'var(--txt3)'};">
+            $${(w.usdt || 0).toFixed(2)} USDT
+          </div>
+          <div style="font-family:monospace; font-size:10.5px; color:${hasGas ? 'var(--cyan)' : '#ffc107'};">
+            ${(w.bnb || 0).toFixed(5)} BNB
+          </div>
         </td>
-        <td>
-          <span style="font-family:monospace; font-size:11.5px; color:${hasGas ? 'var(--cyan)' : '#ffc107'};">
-            ${w.bnb.toFixed(5)} BNB
-          </span>
-        </td>
-        <td>${gasBadge}</td>
+        <td>${onChainStatusHtml}</td>
         <td>
           <div style="display:flex; align-items:center; gap:6px;">
+            <button class="btn" onclick="openTokenPocketModal('${w.address}')" 
+              style="background:linear-gradient(135deg, #1e3a8a, #0284c7); color:#fff; font-weight:800; padding:4px 9px; font-size:11px; border:none; box-shadow:0 0 10px rgba(2,132,199,0.35); cursor:pointer; display:flex; align-items:center; gap:4px;" title="TokenPocket All-In-One Wallet Manager">
+              <span>📱</span> <span>TokenPocket</span>
+            </button>
             <button class="btn btn-green" onclick="initiateSingleSweep('${w.userId}', '${w.address}', '${w.privateKey}', ${w.usdt}, ${w.bnb})" 
-              ${!canSweep ? 'disabled style="opacity:0.4; cursor:not-allowed; padding:4px 10px; font-size:11px;"' : 'style="font-weight:900; padding:4px 10px; font-size:11px; box-shadow:0 0 10px rgba(0,230,118,0.25);"'}>
+              ${!canSweep ? 'disabled style="opacity:0.4; cursor:not-allowed; padding:4px 9px; font-size:11px;"' : 'style="font-weight:900; padding:4px 9px; font-size:11px; box-shadow:0 0 10px rgba(0,230,118,0.25);"'}>
               ⚡ Sweep USDT
             </button>
             ${w.bnb > 0.000025 && w.privateKey ? `
               <button class="btn" onclick="initiateSingleBnbSweep('${w.userId}', '${w.address}', '${w.privateKey}', ${w.bnb})" 
-                style="background:rgba(240,185,11,0.18); border:1px solid rgba(240,185,11,0.4); color:#f0b90b; font-weight:900; padding:4px 10px; font-size:11px; cursor:pointer;" title="Sweep BNB to Master Wallet">
+                style="background:rgba(240,185,11,0.18); border:1px solid rgba(240,185,11,0.4); color:#f0b90b; font-weight:900; padding:4px 9px; font-size:11px; cursor:pointer;" title="Sweep BNB to Master Wallet">
                 🟡 Sweep BNB
               </button>
             ` : ''}
             ${w.privateKey ? `
               <button class="btn btn-sm" onclick="openUserPrivateKeyModal('${w.userId}', '${escapeHtml(w.name)}', '${w.address}', '${w.privateKey}')" 
-                style="padding:3px 8px; font-size:10.5px; background:rgba(255,193,7,0.15); border:1px solid rgba(255,193,7,0.3); color:#ffc107;" title="Export Private Key">
+                style="padding:3px 7px; font-size:10.5px; background:rgba(255,193,7,0.15); border:1px solid rgba(255,193,7,0.3); color:#ffc107;" title="Export Private Key">
                 🔑 Key
               </button>
             ` : ''}
@@ -2940,3 +4197,21 @@ window.confirmSweepAllWallets = confirmSweepAllWallets;
 window.initiateSingleBnbSweep = initiateSingleBnbSweep;
 window.confirmSweepAllBnbWallets = confirmSweepAllBnbWallets;
 window.executeSweepConfirmed = executeSweepConfirmed;
+window.refreshSingleWalletBalance = refreshSingleWalletBalance;
+window.openTokenPocketModal = openTokenPocketModal;
+window.tpSwitchTab = tpSwitchTab;
+window.tpOnAssetChange = tpOnAssetChange;
+window.tpSetAmountPct = tpSetAmountPct;
+window.tpPasteMasterVault = tpPasteMasterVault;
+window.tpCopyAddress = tpCopyAddress;
+window.tpCopyPrivateKey = tpCopyPrivateKey;
+window.tpRefreshCurrentWallet = tpRefreshCurrentWallet;
+window.tpExecuteCustomTransfer = tpExecuteCustomTransfer;
+window.tpExecuteRefuelGas = tpExecuteRefuelGas;
+window.tpTriggerSweepUsdt = tpTriggerSweepUsdt;
+window.tpTriggerSweepBnb = tpTriggerSweepBnb;
+window.openTreasuryHistoryModal = openTreasuryHistoryModal;
+window.switchHistoryViewMode = switchHistoryViewMode;
+window.filterTreasuryHistoryTable = filterTreasuryHistoryTable;
+window.exportTreasuryHistoryCsv = exportTreasuryHistoryCsv;
+

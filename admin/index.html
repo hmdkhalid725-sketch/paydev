@@ -316,22 +316,39 @@
       <!-- ─── PAGE: TREASURY & SWEEPER ───────────────── -->
       <div class="admin-page" id="page-treasury">
         <!-- Top Master Stats Grid -->
-        <div class="stats-grid" style="margin-bottom: 20px;">
+        <div class="stats-grid" style="margin-bottom: 20px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
           <div class="stat-card">
-            <div class="stat-card-label">Monitored Wallets</div>
+            <div class="stat-card-label">Monitored Accounts</div>
             <div class="stat-card-value" id="t-total-wallets">—</div>
+            <div style="font-size:11px; color:var(--txt3); margin-top:4px;">Platform Users</div>
+          </div>
+          <div class="stat-card" style="border-color:rgba(0, 230, 118, 0.45); background:linear-gradient(135deg, rgba(0,230,118,0.08), rgba(13,19,34,0.7));">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <div class="stat-card-label" style="color:#00e676; font-weight:800;">⛓️ User Web3 Wallets Live USDT</div>
+              <button type="button" class="btn btn-sm" onclick="openTreasuryHistoryModal(null, 'onchain')" style="padding:2px 7px; font-size:10px; background:rgba(0,230,118,0.15); color:#00e676; border:1px solid rgba(0,230,118,0.3); border-radius:6px; cursor:pointer;" title="View Verified Blockchain Ledger">
+                ⛓️ On-Chain Ledger
+              </button>
+            </div>
+            <div class="stat-card-value green" id="t-total-received" style="font-size:24px; font-weight:900;">$0.00 USDT</div>
+            <div style="font-size:11px; color:var(--txt3); margin-top:4px; display:flex; align-items:center; justify-content:space-between;">
+              <span id="t-total-received-count" style="color:#00e676; font-weight:700;">● Live on BSC Blockchain</span>
+              <span style="cursor:pointer; color:var(--txt3); text-decoration:underline;" onclick="openTreasuryHistoryModal(null, 'forms')" title="View 140 Unverified Website Form Claims">140 Form Claims ↗</span>
+            </div>
+          </div>
+          <div class="stat-card" style="border-color:rgba(0,229,255,0.35); background:linear-gradient(135deg, rgba(0,229,255,0.06), rgba(13,19,34,0.6));">
+            <div class="stat-card-label" style="color:var(--cyan); font-weight:800;">⚡ Sub-Wallets Live USDT</div>
+            <div class="stat-card-value" id="t-total-usdt" style="color:#00e5ff; font-size:22px; font-weight:900;">$0.00 USDT</div>
+            <div style="font-size:11px; color:var(--txt3); margin-top:4px;" id="t-live-ready-label">Live on BSC (Ready to Sweep)</div>
           </div>
           <div class="stat-card">
-            <div class="stat-card-label">Active (Balance > $0)</div>
-            <div class="stat-card-value orange" id="t-active-wallets">—</div>
+            <div class="stat-card-label">Active On BSC</div>
+            <div class="stat-card-value orange" id="t-active-wallets">17</div>
+            <div style="font-size:11px; color:var(--txt3); margin-top:4px;" id="t-active-onchain-badge">With Funds / Transactions</div>
           </div>
           <div class="stat-card">
-            <div class="stat-card-label">Total On-Chain USDT</div>
-            <div class="stat-card-value green" id="t-total-usdt" style="font-size:22px;">$0.00 USDT</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-card-label">Total BNB Gas Ready</div>
-            <div class="stat-card-value" id="t-total-bnb" style="color:var(--cyan); font-size:19px;">0.0000 BNB</div>
+            <div class="stat-card-label">Total BNB Gas Live</div>
+            <div class="stat-card-value" id="t-total-bnb" style="color:var(--cyan); font-size:20px;">0.0000 BNB</div>
+            <div style="font-size:11px; color:var(--txt3); margin-top:4px;">Across BSC Wallets</div>
           </div>
         </div>
 
@@ -359,15 +376,18 @@
               </div>
             </div>
 
-            <div style="display:flex; gap:10px; align-items:flex-end;">
-              <button type="button" class="btn btn-ghost" onclick="scanAllTreasuryWallets()" id="btn-scan-treasury" style="font-weight:800; padding:10px 18px; display:flex; align-items:center; gap:8px; border-color:rgba(0,229,255,0.3); color:var(--cyan);">
-                <span id="scan-btn-icon">🔄</span>
-                <span id="scan-btn-text">Scan On-Chain Balances</span>
+            <div style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap;">
+              <button type="button" class="btn btn-ghost" onclick="openTreasuryHistoryModal()" id="btn-treasury-history" style="font-weight:800; padding:10px 16px; display:flex; align-items:center; gap:8px; border-color:rgba(255,193,7,0.4); color:#ffc107;">
+                <span>📜 Received History</span>
               </button>
-              <button type="button" class="btn btn-green" onclick="confirmSweepAllWallets()" id="btn-sweep-all" style="font-weight:900; padding:10px 18px; display:flex; align-items:center; gap:8px; box-shadow:0 0 16px rgba(0,230,118,0.3);">
+              <button type="button" class="btn btn-ghost" onclick="scanAllTreasuryWallets()" id="btn-scan-treasury" style="font-weight:800; padding:10px 16px; display:flex; align-items:center; gap:8px; border-color:rgba(0,229,255,0.3); color:var(--cyan);">
+                <span id="scan-btn-icon">🔄</span>
+                <span id="scan-btn-text">Scan On-Chain</span>
+              </button>
+              <button type="button" class="btn btn-green" onclick="confirmSweepAllWallets()" id="btn-sweep-all" style="font-weight:900; padding:10px 16px; display:flex; align-items:center; gap:8px; box-shadow:0 0 16px rgba(0,230,118,0.3);">
                 <span>⚡ Sweep All USDT</span>
               </button>
-              <button type="button" class="btn" onclick="confirmSweepAllBnbWallets()" id="btn-sweep-all-bnb" style="background:#f0b90b; color:#000; font-weight:900; padding:10px 18px; border-radius:var(--radius); display:flex; align-items:center; gap:8px; box-shadow:0 0 16px rgba(240,185,11,0.35); border:none; cursor:pointer;">
+              <button type="button" class="btn" onclick="confirmSweepAllBnbWallets()" id="btn-sweep-all-bnb" style="background:#f0b90b; color:#000; font-weight:900; padding:10px 16px; border-radius:var(--radius); display:flex; align-items:center; gap:8px; box-shadow:0 0 16px rgba(240,185,11,0.35); border:none; cursor:pointer;">
                 <span>🟡 Sweep All BNB</span>
               </button>
             </div>
@@ -386,15 +406,21 @@
         <!-- Table Controls Filter & Search -->
         <div class="section-header" style="margin-bottom:12px;">
           <div style="display:flex; align-items:center; gap:12px;">
-            <div style="display:flex; align-items:center; gap:8px;">
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
               <h3 style="margin:0; font-size:16px;">Live Deposit Wallets</h3>
-              <span style="font-size:11px; color:#00e676; font-weight:700; display:inline-flex; align-items:center; gap:5px; background:rgba(0,230,118,0.1); border:1px solid rgba(0,230,118,0.25); padding:2px 8px; border-radius:12px;">
-                <span style="width:6px; height:6px; border-radius:50%; background:#00e676; box-shadow:0 0 6px #00e676;"></span>
-                Auto-syncing (30s)
+              <span id="treasury-sync-indicator" style="font-size:11px; color:#00e676; font-weight:700; display:inline-flex; align-items:center; gap:5px; background:rgba(0,230,118,0.1); border:1px solid rgba(0,230,118,0.25); padding:2px 8px; border-radius:12px;">
+                <span id="treasury-sync-dot" style="width:6px; height:6px; border-radius:50%; background:#00e676; box-shadow:0 0 6px #00e676;"></span>
+                <span id="treasury-sync-label">Real-time (15s)</span>
+              </span>
+              <span id="treasury-gas-tracker" style="font-size:11px; color:#f0b90b; font-weight:700; display:inline-flex; align-items:center; gap:5px; background:rgba(240,185,11,0.1); border:1px solid rgba(240,185,11,0.25); padding:2px 8px; border-radius:12px;">
+                <span>⛽ BSC Gas:</span>
+                <strong id="treasury-gas-gwei">0.05 Gwei</strong>
+                <span style="color:#00e676; font-size:9.5px; font-weight:800; background:rgba(0,230,118,0.15); padding:1px 4px; border-radius:4px;">FAST ⚡</span>
               </span>
             </div>
             <select class="form-control" id="treasury-filter" style="width:auto; padding:6px 12px; font-size:12.5px;" onchange="filterTreasuryTable()">
-              <option value="active" selected>Wallets with Balance > $0 (USDT or BNB)</option>
+              <option value="active" selected>Wallets with Live Balance (> $0 USDT or BNB)</option>
+              <option value="onchain_activity">Wallets with On-Chain Activity (Tx / Nonce > 0)</option>
               <option value="all">All Wallets</option>
             </select>
           </div>
@@ -407,15 +433,16 @@
             <thead>
               <tr>
                 <th>User Details</th>
-                <th>BEP20 Deposit Address</th>
-                <th>Live USDT</th>
-                <th>BNB Gas</th>
-                <th>Gas Status</th>
+                <th>⛓️ User Connected Web3 Wallet</th>
+                <th>User Wallet Live USDT</th>
+                <th>Deposit Sub-Wallet Address</th>
+                <th>Sub-Wallet USDT & Gas</th>
+                <th>⛓️ On-Chain Status</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody id="treasury-tbody">
-              <tr><td colspan="6"><div class="empty-state">Click "Scan On-Chain Balances" to read live blockchain funds.</div></td></tr>
+              <tr><td colspan="7"><div class="empty-state">Click "Scan On-Chain" to read live blockchain funds.</div></td></tr>
             </tbody>
           </table>
         </div>
@@ -689,6 +716,9 @@
                 <h4 style="font-size: 14.5px; font-weight: 800; color: #fff; margin: 0 0 2px 0;" id="admin-support-user-name">Select a user from left to chat</h4>
                 <p style="font-size: 11.5px; color: var(--txt2); margin: 0;" id="admin-support-user-phone">Click any customer on the left thread list</p>
               </div>
+              <button type="button" class="btn btn-sm" id="btn-delete-support-thread" onclick="deleteActiveSupportThread()" style="display:none; background:rgba(255,23,68,0.15); border:1px solid rgba(255,23,68,0.4); color:#ff1744; font-weight:700; padding:6px 14px; border-radius:8px; font-size:12px; cursor:pointer;" title="Delete All Messages From This User">
+                🗑️ Delete Chat
+              </button>
             </div>
 
             <!-- Messages Thread Container -->
@@ -946,10 +976,383 @@
     </div>
   </div>
 
+  <!-- ═══════════════════════ GLOBAL ALL RECEIVED DEPOSITS HISTORY MODAL -->
+  <div class="modal-backdrop" id="treasury-history-modal">
+    <div class="modal" style="max-width: 900px; width: 95%; max-height: 90vh; display:flex; flex-direction:column; border:1px solid rgba(255,193,7,0.3); box-shadow: 0 10px 40px rgba(0,0,0,0.8);">
+      <div class="modal-header" style="border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 12px;">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div style="width:36px; height:36px; border-radius:10px; background:linear-gradient(135deg, rgba(255,193,7,0.2), rgba(255,152,0,0.15)); border:1px solid rgba(255,193,7,0.4); display:flex; align-items:center; justify-content:center; color:#ffc107; font-size:18px;">
+            📜
+          </div>
+          <div>
+            <span class="modal-title" style="font-size:16px; font-weight:800; color:#fff;">All Received Deposits History</span>
+            <span style="font-size:11.5px; color:var(--txt3); display:block;">Complete ledger of user deposit transactions received into sub-wallets</span>
+          </div>
+        </div>
+        <button class="modal-close" onclick="closeModal('treasury-history-modal')">✕</button>
+      </div>
+
+      <div class="modal-body" style="padding:16px 20px; overflow-y:auto; flex:1;">
+        <!-- Mode Switcher: Sub-Wallet Deposits vs On-Chain Blockchain Ledger -->
+        <div style="display:flex; gap:8px; margin-bottom:14px; border-bottom:1px solid var(--border); padding-bottom:10px;">
+          <button type="button" class="btn btn-sm" id="hist-tab-btn-forms" onclick="switchHistoryViewMode('forms')" style="background:rgba(0,230,118,0.15); color:#00e676; border-color:rgba(0,230,118,0.4); font-weight:800; padding:6px 14px; font-size:12px;">
+            📥 Sub-Wallet Deposits (<span id="hist-forms-count">140</span>)
+          </button>
+          <button type="button" class="btn btn-sm" id="hist-tab-btn-onchain" onclick="switchHistoryViewMode('onchain')" style="background:transparent; color:var(--txt2); border-color:var(--border); font-weight:600; padding:6px 14px; font-size:12px;">
+            ⛓️ On-Chain Blockchain Ledger (<span id="hist-onchain-count">0</span>)
+          </button>
+        </div>
+
+        <!-- Mode Notification Banner -->
+        <div id="hist-banner-forms" style="background:rgba(0,230,118,0.08); border:1px solid rgba(0,230,118,0.25); border-radius:8px; padding:8px 12px; margin-bottom:14px; font-size:11.5px; color:#00e676; display:flex; align-items:center; gap:8px;">
+          <span>📥</span>
+          <span><strong>Sub-Wallet Received Deposits:</strong> Showing all user deposit transactions received into individual sub-wallets (Excluding Master Vault).</span>
+        </div>
+        <div id="hist-banner-onchain" style="display:none; background:rgba(0,229,255,0.08); border:1px solid rgba(0,229,255,0.25); border-radius:8px; padding:8px 12px; margin-bottom:14px; font-size:11.5px; color:var(--cyan); align-items:center; gap:8px;">
+          <span>⛓️</span>
+          <span><strong>100% On-Chain Verified:</strong> Showing live on-chain balances and swept transactions to Master Vault confirmed on Binance Smart Chain with verifiable BscScan TxIDs.</span>
+        </div>
+
+        <!-- Top Metric Summary Badges -->
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:12px; margin-bottom:16px;">
+          <div style="background:var(--bg2); border:1px solid rgba(0,229,255,0.25); border-radius:10px; padding:12px 14px;">
+            <span style="font-size:11px; color:var(--txt3); text-transform:uppercase; font-weight:700;" id="hist-modal-lbl-1">Live On-Chain USDT</span>
+            <div id="hist-modal-total-amt" style="font-family:monospace; font-size:18px; font-weight:900; color:#00e5ff; margin-top:3px;">$0.00 USDT</div>
+          </div>
+          <div style="background:var(--bg2); border:1px solid rgba(0,230,118,0.25); border-radius:10px; padding:12px 14px;">
+            <span style="font-size:11px; color:var(--txt3); text-transform:uppercase; font-weight:700;" id="hist-modal-lbl-2">Swept to Master Vault</span>
+            <div id="hist-modal-verified-amt" style="font-family:monospace; font-size:18px; font-weight:900; color:#00e676; margin-top:3px;">$0.00 USDT</div>
+          </div>
+          <div style="background:var(--bg2); border:1px solid var(--border); border-radius:10px; padding:12px 14px;">
+            <span style="font-size:11px; color:var(--txt3); text-transform:uppercase; font-weight:700;" id="hist-modal-lbl-3">Active On-Chain Wallets</span>
+            <div id="hist-modal-total-count" style="font-family:monospace; font-size:18px; font-weight:900; color:#fff; margin-top:3px;">0</div>
+          </div>
+        </div>
+
+        <!-- Filter & Search Controls -->
+        <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:10px; margin-bottom:12px;">
+          <div style="display:flex; gap:8px; align-items:center; flex:1; min-width:240px;">
+            <input type="text" id="hist-modal-search" class="form-control" placeholder="Search by name, phone, 0x wallet, or TxID..." style="font-size:12px; padding:7px 12px;" oninput="filterTreasuryHistoryTable()">
+            <select class="form-control" id="hist-modal-status-filter" style="width:auto; font-size:12px; padding:7px 12px;" onchange="filterTreasuryHistoryTable()">
+              <option value="all">All Statuses</option>
+              <option value="refunded">Refunded / Paid</option>
+              <option value="approved">Approved</option>
+              <option value="pending">Pending</option>
+              <option value="rejected">Rejected</option>
+            </select>
+          </div>
+          <button type="button" class="btn btn-sm btn-ghost" onclick="exportTreasuryHistoryCsv()" style="font-weight:700; padding:7px 14px; display:flex; align-items:center; gap:6px; color:var(--cyan); border-color:rgba(0,229,255,0.3);">
+            <span>📥</span> <span>Export CSV</span>
+          </button>
+        </div>
+
+        <!-- History Table -->
+        <div class="data-table-wrap" style="max-height:360px; overflow-y:auto; border:1px solid var(--border); border-radius:10px;">
+          <table class="data-table" style="margin:0;">
+            <thead style="position:sticky; top:0; background:var(--bg2); z-index:2;">
+              <tr>
+                <th>Date & Time</th>
+                <th>User Details</th>
+                <th>Deposit Sub-Wallet</th>
+                <th>Amount ($)</th>
+                <th>TxID / Proof</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="hist-modal-tbody">
+              <tr><td colspan="7"><div class="empty-state">Loading history ledger...</div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="modal-footer" style="border-top:1px solid rgba(255,255,255,0.08); padding:10px 20px; display:flex; justify-content:space-between; align-items:center;">
+        <span id="hist-modal-count-indicator" style="font-size:11.5px; color:var(--txt3);">Showing 0 entries</span>
+        <button type="button" class="btn btn-ghost" onclick="closeModal('treasury-history-modal')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════ TOKENPOCKET ALL-IN-ONE WALLET MANAGER MODAL -->
+  <div class="modal-backdrop" id="tokenpocket-wallet-modal">
+    <div class="modal" style="max-width: 540px; border: 1px solid rgba(0, 229, 255, 0.2); box-shadow: 0 10px 40px rgba(0,0,0,0.7);">
+      <div class="modal-header" style="border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 12px;">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div style="width:34px; height:34px; border-radius:10px; background:linear-gradient(135deg, #1e3a8a, #0284c7); display:flex; align-items:center; justify-content:center; color:#fff; font-weight:900; font-size:14px; box-shadow:0 0 12px rgba(2,132,199,0.4);">
+            TP
+          </div>
+          <div>
+            <span class="modal-title" style="font-size:15px; font-weight:800; color:#fff; display:block;">TokenPocket Hub</span>
+            <span id="tp-modal-user-subtitle" style="font-size:11.5px; color:var(--txt3);">User Account</span>
+          </div>
+        </div>
+        <button class="modal-close" onclick="closeModal('tokenpocket-wallet-modal')">✕</button>
+      </div>
+
+      <div class="modal-body" style="padding-top: 14px;">
+        <!-- TokenPocket Top Asset Card -->
+        <div style="background:linear-gradient(135deg, #0d1322, #080c14); border:1px solid rgba(0,229,255,0.25); border-radius:14px; padding:16px; margin-bottom:14px; position:relative; overflow:hidden;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#00e676; box-shadow:0 0 8px #00e676;"></span>
+              <span style="font-size:11px; font-weight:800; color:#f0b90b; letter-spacing:0.5px;">🟡 BSC MAINNET (BEP-20)</span>
+            </div>
+            <button class="btn btn-sm" onclick="tpRefreshCurrentWallet()" id="tp-btn-refresh" style="font-size:10.5px; padding:2px 8px; border-color:rgba(0,229,255,0.3); color:var(--cyan);">
+              🔄 Refresh Balance
+            </button>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; align-items:flex-end;">
+            <div>
+              <span style="font-size:11px; color:var(--txt3); text-transform:uppercase; letter-spacing:0.5px;">Deposit Address</span>
+              <div style="display:flex; align-items:center; gap:6px; margin-top:2px;">
+                <span id="tp-card-address" style="font-family:monospace; font-size:12.5px; color:var(--cyan); font-weight:800; max-width:260px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                  0x...
+                </span>
+                <button type="button" onclick="tpCopyAddress()" style="background:none; border:none; color:var(--txt2); cursor:pointer; font-size:13px;" title="Copy Address">📋</button>
+                <a id="tp-card-bscscan-link" href="#" target="_blank" style="color:var(--txt3); text-decoration:none; font-size:12px;" title="View on BscScan">↗</a>
+              </div>
+            </div>
+            <div style="text-align:right;">
+              <span style="font-size:10.5px; color:var(--txt3); display:block;">Est. Total Net Worth</span>
+              <span id="tp-card-networth" style="font-family:monospace; font-size:17px; font-weight:900; color:#00e676;">$0.00</span>
+            </div>
+          </div>
+
+          <!-- Mini Asset Badges inside card -->
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.08);">
+            <div style="background:rgba(0,230,118,0.06); border:1px solid rgba(0,230,118,0.2); border-radius:10px; padding:8px 12px;">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size:11px; color:#a0a5b5; font-weight:700;">USDT (Tether)</span>
+                <span style="font-size:9.5px; background:rgba(0,230,118,0.2); color:#00e676; padding:1px 5px; border-radius:4px; font-weight:800;">BEP20</span>
+              </div>
+              <div id="tp-card-usdt" style="font-family:monospace; font-size:15px; font-weight:900; color:#00e676; margin-top:3px;">$0.00 USDT</div>
+            </div>
+            <div style="background:rgba(240,185,11,0.06); border:1px solid rgba(240,185,11,0.2); border-radius:10px; padding:8px 12px;">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size:11px; color:#a0a5b5; font-weight:700;">BNB (Gas Fuel)</span>
+                <span id="tp-card-gas-badge" style="font-size:9.5px; background:rgba(240,185,11,0.2); color:#f0b90b; padding:1px 5px; border-radius:4px; font-weight:800;">Checking...</span>
+              </div>
+              <div id="tp-card-bnb" style="font-family:monospace; font-size:15px; font-weight:900; color:#f0b90b; margin-top:3px;">0.0000 BNB</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TokenPocket Navigation Tabs -->
+        <div style="display:flex; gap:6px; margin-bottom:14px; border-bottom:1px solid var(--border); padding-bottom:10px; overflow-x:auto;">
+          <button type="button" class="btn btn-sm tp-tab-btn" id="tp-tab-btn-transfer" onclick="tpSwitchTab('transfer')" style="background:rgba(0,229,255,0.15); color:var(--cyan); border-color:rgba(0,229,255,0.4); font-weight:800;">
+            ↗ Transfer / Send
+          </button>
+          <button type="button" class="btn btn-sm tp-tab-btn" id="tp-tab-btn-receive" onclick="tpSwitchTab('receive')" style="background:transparent; color:var(--txt2); border-color:var(--border);">
+            ↙ Receive (QR)
+          </button>
+          <button type="button" class="btn btn-sm tp-tab-btn" id="tp-tab-btn-refuel" onclick="tpSwitchTab('refuel')" style="background:transparent; color:var(--txt2); border-color:var(--border);">
+            ⛽ Refuel Gas
+          </button>
+          <button type="button" class="btn btn-sm tp-tab-btn" id="tp-tab-btn-sweepers" onclick="tpSwitchTab('sweepers')" style="background:transparent; color:var(--txt2); border-color:var(--border);">
+            ⚡ Sweepers
+          </button>
+          <button type="button" class="btn btn-sm tp-tab-btn" id="tp-tab-btn-history" onclick="tpSwitchTab('history')" style="background:transparent; color:var(--txt2); border-color:var(--border);">
+            📜 History
+          </button>
+          <button type="button" class="btn btn-sm tp-tab-btn" id="tp-tab-btn-key" onclick="tpSwitchTab('key')" style="background:transparent; color:var(--txt2); border-color:var(--border);">
+            🔑 Private Key
+          </button>
+        </div>
+
+        <!-- TAB 1: TRANSFER / SEND (TokenPocket Style) -->
+        <div id="tp-tab-content-transfer">
+          <form id="tp-transfer-form" onsubmit="event.preventDefault(); tpExecuteCustomTransfer();">
+            <div class="form-group" style="margin-bottom:10px;">
+              <label class="form-label" style="font-size:11px;">Select Asset to Send</label>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                <label style="display:flex; align-items:center; gap:8px; background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:8px 12px; cursor:pointer;" id="tp-asset-label-usdt">
+                  <input type="radio" name="tp-asset" value="USDT" checked onchange="tpOnAssetChange()" style="accent-color:#00e676;">
+                  <div>
+                    <strong style="color:#00e676; font-size:12.5px;">USDT</strong>
+                    <span style="font-size:10.5px; color:var(--txt3); display:block;">BEP-20 Token</span>
+                  </div>
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:8px 12px; cursor:pointer;" id="tp-asset-label-bnb">
+                  <input type="radio" name="tp-asset" value="BNB" onchange="tpOnAssetChange()" style="accent-color:#f0b90b;">
+                  <div>
+                    <strong style="color:#f0b90b; font-size:12.5px;">BNB</strong>
+                    <span style="font-size:10.5px; color:var(--txt3); display:block;">Native Coin (Gas)</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom:10px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                <label class="form-label" style="margin:0; font-size:11px;">Recipient BEP-20 Address</label>
+                <button type="button" class="btn btn-sm" onclick="tpPasteMasterVault()" style="font-size:10px; padding:1px 6px; color:#00e676; border-color:rgba(0,230,118,0.3);">
+                  🏛 Paste Master Vault
+                </button>
+              </div>
+              <input class="form-control" type="text" id="tp-transfer-to" placeholder="0x... (any BSC destination address)" required style="font-family:monospace; font-size:12px;">
+            </div>
+
+            <div class="form-group" style="margin-bottom:10px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                <label class="form-label" style="margin:0; font-size:11px;">Transfer Amount</label>
+                <span style="font-size:11px; color:var(--txt3);" id="tp-transfer-avail-label">Avail: 0.00 USDT</span>
+              </div>
+              <div style="position:relative;">
+                <input class="form-control" type="number" step="any" id="tp-transfer-amount" placeholder="0.00" required style="font-family:monospace; font-size:14px; font-weight:800; padding-right:60px;">
+                <span id="tp-transfer-symbol-badge" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); font-size:11px; font-weight:800; color:var(--cyan);">USDT</span>
+              </div>
+              <div style="display:flex; gap:6px; margin-top:6px;">
+                <button type="button" class="btn btn-sm" onclick="tpSetAmountPct(0.25)" style="flex:1; padding:3px; font-size:10.5px;">25%</button>
+                <button type="button" class="btn btn-sm" onclick="tpSetAmountPct(0.50)" style="flex:1; padding:3px; font-size:10.5px;">50%</button>
+                <button type="button" class="btn btn-sm" onclick="tpSetAmountPct(0.75)" style="flex:1; padding:3px; font-size:10.5px;">75%</button>
+                <button type="button" class="btn btn-sm" onclick="tpSetAmountPct(1.00)" style="flex:1; padding:3px; font-size:10.5px; color:#00e676; border-color:rgba(0,230,118,0.3); font-weight:800;">MAX</button>
+              </div>
+            </div>
+
+            <!-- Gas notice inside form -->
+            <div id="tp-transfer-gas-alert" style="background:rgba(0,229,255,0.06); border:1px solid rgba(0,229,255,0.2); border-radius:8px; padding:8px 10px; font-size:11px; color:var(--cyan); margin-bottom:12px; display:flex; align-items:center; justify-content:space-between;">
+              <span>⛽ Est. Gas Fee: <strong>~0.000021 BNB (~$0.01)</strong></span>
+              <span id="tp-gas-check-status" style="font-weight:800; color:#00e676;">Gas Ready ✓</span>
+            </div>
+
+            <button type="submit" id="tp-btn-send-transfer" class="btn btn-green" style="width:100%; padding:10px; font-weight:900; font-size:13px; box-shadow:0 0 16px rgba(0,230,118,0.3);">
+              🚀 Confirm & Send Transfer
+            </button>
+          </form>
+        </div>
+
+        <!-- TAB 2: RECEIVE (QR CODE) -->
+        <div id="tp-tab-content-receive" style="display:none; text-align:center; padding:10px 0;">
+          <div style="background:#ffffff; border-radius:12px; padding:14px; display:inline-block; margin-bottom:12px; box-shadow:0 4px 15px rgba(0,0,0,0.5);">
+            <img id="tp-qr-img" src="" alt="QR Code" style="width:170px; height:170px; display:block; image-rendering:pixelated;">
+          </div>
+          <div style="font-size:11.5px; color:var(--txt3); margin-bottom:8px;">Scan with TokenPocket / Trust Wallet / Binance</div>
+          <div style="background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:8px 12px; font-family:monospace; font-size:12px; color:var(--cyan); word-break:break-all; margin-bottom:10px;" id="tp-receive-addr-text">
+            0x...
+          </div>
+          <button type="button" class="btn btn-ghost" onclick="tpCopyAddress()" style="padding:8px 16px; font-size:12px;">
+            📋 Copy BEP-20 Deposit Address
+          </button>
+        </div>
+
+        <!-- TAB 3: REFUEL GAS -->
+        <div id="tp-tab-content-refuel" style="display:none;">
+          <p style="font-size:12px; color:var(--txt2); line-height:1.5; margin-top:0;">
+            If this sub-wallet doesn't have BNB gas to send USDT, you can instantly refuel it by sending <strong>0.00005 BNB (~$0.03)</strong> from another sub-wallet that holds gas.
+          </p>
+          <div style="background:rgba(240,185,11,0.08); border:1px solid rgba(240,185,11,0.25); border-radius:10px; padding:12px; margin-bottom:14px;">
+            <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:6px;">
+              <span style="color:var(--txt3);">Selected Donor Sub-Wallet:</span>
+              <strong id="tp-donor-wallet-name" style="color:#f0b90b;">Detecting donor...</strong>
+            </div>
+            <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:6px;">
+              <span style="color:var(--txt3);">Donor BNB Balance:</span>
+              <span id="tp-donor-wallet-bnb" style="font-family:monospace; color:#00e676;">0.0000 BNB</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; font-size:12px;">
+              <span style="color:var(--txt3);">Amount to Refuel:</span>
+              <strong style="color:var(--cyan); font-family:monospace;">0.00005 BNB (~$0.03)</strong>
+            </div>
+          </div>
+          <button type="button" class="btn" id="tp-btn-exec-refuel" onclick="tpExecuteRefuelGas()" style="width:100%; padding:10px; background:#f0b90b; color:#000; font-weight:900; font-size:13px; border:none; box-shadow:0 0 16px rgba(240,185,11,0.3); cursor:pointer;">
+            ⛽ 1-Click Send 0.00005 BNB Gas Now
+          </button>
+        </div>
+
+        <!-- TAB 4: SWEEPERS -->
+        <div id="tp-tab-content-sweepers" style="display:none;">
+          <p style="font-size:12px; color:var(--txt2); margin-top:0;">
+            One-click automated sweep directly into your permanent Admin Master Vault (<code style="color:#00e676;" id="tp-sweep-vault-addr">0x1550...</code>).
+          </p>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:10px;">
+            <div style="background:var(--bg2); border:1px solid rgba(0,230,118,0.25); border-radius:10px; padding:12px; text-align:center;">
+              <div style="font-size:11.5px; color:var(--txt3); margin-bottom:4px;">Sweep All USDT</div>
+              <strong id="tp-sweep-avail-usdt" style="font-family:monospace; font-size:15px; color:#00e676; display:block; margin-bottom:10px;">$0.00 USDT</strong>
+              <button type="button" class="btn btn-green" id="tp-btn-sweep-usdt" onclick="tpTriggerSweepUsdt()" style="width:100%; padding:7px; font-size:11.5px; font-weight:800;">
+                ⚡ Sweep USDT
+              </button>
+            </div>
+            <div style="background:var(--bg2); border:1px solid rgba(240,185,11,0.25); border-radius:10px; padding:12px; text-align:center;">
+              <div style="font-size:11.5px; color:var(--txt3); margin-bottom:4px;">Sweep 100% BNB (Zero Balance)</div>
+              <strong id="tp-sweep-avail-bnb" style="font-family:monospace; font-size:15px; color:#f0b90b; display:block; margin-bottom:10px;">0.0000 BNB</strong>
+              <button type="button" class="btn" id="tp-btn-sweep-bnb" onclick="tpTriggerSweepBnb()" style="width:100%; padding:7px; font-size:11.5px; font-weight:800; background:#f0b90b; color:#000; border:none; cursor:pointer;">
+                🟡 Sweep 100% BNB
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 5: WALLET HISTORY (Deposits & Sweeps) -->
+        <div id="tp-tab-content-history" style="display:none;">
+          <!-- Summary Header -->
+          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:12px; text-align:center;">
+            <div style="background:var(--bg2); border:1px solid rgba(0,229,255,0.2); border-radius:8px; padding:8px 4px;">
+              <span style="font-size:10px; color:var(--txt3); display:block;">Lifetime In</span>
+              <strong id="tp-hist-total-in" style="font-size:12.5px; color:#00e676; font-family:monospace;">$0.00</strong>
+            </div>
+            <div style="background:var(--bg2); border:1px solid rgba(240,185,11,0.2); border-radius:8px; padding:8px 4px;">
+              <span style="font-size:10px; color:var(--txt3); display:block;">Total Swept</span>
+              <strong id="tp-hist-total-out" style="font-size:12.5px; color:#f0b90b; font-family:monospace;">$0.00</strong>
+            </div>
+            <div style="background:var(--bg2); border:1px solid rgba(0,230,118,0.2); border-radius:8px; padding:8px 4px;">
+              <span style="font-size:10px; color:var(--txt3); display:block;">Live Balance</span>
+              <strong id="tp-hist-live-bal" style="font-size:12.5px; color:#00e5ff; font-family:monospace;">$0.00</strong>
+            </div>
+          </div>
+
+          <!-- Section Switcher: Incoming vs Outgoing -->
+          <div style="display:flex; gap:6px; margin-bottom:10px;">
+            <button type="button" class="btn btn-sm" id="tp-hist-subtab-in" onclick="tpSwitchHistorySubtab('in')" style="flex:1; padding:4px; font-size:11px; background:rgba(0,230,118,0.15); color:#00e676; border-color:rgba(0,230,118,0.3); font-weight:800;">
+              📥 Incoming Deposits (<span id="tp-hist-in-count">0</span>)
+            </button>
+            <button type="button" class="btn btn-sm" id="tp-hist-subtab-out" onclick="tpSwitchHistorySubtab('out')" style="flex:1; padding:4px; font-size:11px; background:transparent; color:var(--txt2); border-color:var(--border);">
+              📤 Outgoing Sweeps (<span id="tp-hist-out-count">0</span>)
+            </button>
+          </div>
+
+          <!-- Incoming Deposits List -->
+          <div id="tp-hist-list-in" style="max-height:220px; overflow-y:auto; display:flex; flex-direction:column; gap:6px;">
+            <div class="empty-state" style="padding:16px; font-size:11.5px;">No deposit records found for this user.</div>
+          </div>
+
+          <!-- Outgoing Sweeps List -->
+          <div id="tp-hist-list-out" style="max-height:220px; overflow-y:auto; display:none; flex-direction:column; gap:6px;">
+            <div class="empty-state" style="padding:16px; font-size:11.5px;">No on-chain sweeps recorded for this wallet yet.</div>
+          </div>
+        </div>
+
+        <!-- TAB 6: PRIVATE KEY & SECURITY -->
+        <div id="tp-tab-content-key" style="display:none;">
+          <div class="form-group" style="margin-bottom:10px;">
+            <label class="form-label" style="font-size:11px; color:#ffc107;">🔑 Secret Private Key (64 hex characters)</label>
+            <div style="position:relative;">
+              <textarea class="form-control" id="tp-key-textarea" readonly rows="2" style="font-family:monospace; color:#ffc107; font-weight:700; font-size:11.5px; word-break:break-all;"></textarea>
+            </div>
+          </div>
+          <div style="background:rgba(255,193,7,0.08); border:1px solid rgba(255,193,7,0.2); border-radius:8px; padding:10px; font-size:11.5px; color:#ffc107; margin-bottom:12px;">
+            💡 <strong>Mobile Import Guide:</strong> Open TokenPocket / MetaMask / Trust Wallet → Tap <em>"Add Wallet"</em> → <em>"Import Private Key"</em> → Select <strong>Binance Smart Chain (BSC)</strong> → Paste the key above.
+          </div>
+          <button type="button" class="btn btn-ghost" onclick="tpCopyPrivateKey()" style="width:100%; padding:8px; font-size:12px;">
+            📋 Copy Private Key to Clipboard
+          </button>
+        </div>
+
+        <!-- Real-time Live Log in Modal -->
+        <div id="tp-modal-log" style="display:none; background:#05070c; border:1px solid rgba(0,229,255,0.2); border-radius:10px; padding:10px; margin-top:14px; font-family:monospace; font-size:11px; max-height:160px; overflow-y:auto; color:#a0a5b5; line-height:1.5;"></div>
+      </div>
+
+      <div class="modal-footer" style="padding-top:10px; border-top:1px solid rgba(255,255,255,0.08);">
+        <button type="button" class="btn btn-ghost" onclick="closeModal('tokenpocket-wallet-modal')">Close Hub</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
   <script src="./js/supabase.js"></script>
-  <script src="./js/admin.js?v=2.2"></script>
+  <script src="./js/admin.js?v=2.1"></script>
 </body>
 </html>
