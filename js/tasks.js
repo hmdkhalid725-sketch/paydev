@@ -756,7 +756,8 @@ window.getUserUniqueBscDepositAddress = async function() {
   }
 };
 
-// ── BSC (BEP20) REAL-TIME BLOCKCHAIN AUTO-DETECTOR & VERIFIER ────────────────
+// ── BSC (BEP20) REAL-TIME BLOCKCHAIN DETECTOR ────────────────────────────────
+// Strict Rule: Submissions remain 'pending' for manual Admin approval! NO auto-approval!
 window.verifyBscUsdtTransactionOnChain = async function(txHash, userSubmissionId) {
   if (!txHash || !txHash.startsWith('0x') || txHash.length < 50) {
     return { success: false, reason: 'Invalid TxHash format' };
@@ -779,18 +780,8 @@ window.verifyBscUsdtTransactionOnChain = async function(txHash, userSubmissionId
     const resData = await response.json();
 
     if (resData && resData.result && resData.result.status === "0x1") {
-      // Transaction is 100% Confirmed on BSC Blockchain!
-      if (window.supabaseClient && userSubmissionId) {
-        await window.supabaseClient
-          .from('task_submissions')
-          .update({ status: 'approved' })
-          .eq('id', userSubmissionId);
-        
-        if (typeof showToast === 'function') {
-          showToast('Blockchain transaction confirmed! Deposit approved.', 'success');
-        }
-      }
-      return { success: true, status: 'approved' };
+      // Transaction is confirmed on BSC blockchain, but approval is strictly MANUAL by Admin
+      return { success: true, status: 'confirmed_on_chain', verified: true };
     }
   } catch (e) {
     console.log('BSC RPC query notice:', e);
@@ -798,3 +789,4 @@ window.verifyBscUsdtTransactionOnChain = async function(txHash, userSubmissionId
 
   return { success: false, reason: 'Pending blockchain confirmation' };
 };
+
